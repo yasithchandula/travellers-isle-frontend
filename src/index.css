@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add your custom brand variables or global styles below */
+
+:root {
+  --ti-primary: #d65050;   /* Travellers Isle deep teal/navy */
+  --ti-accent: #c9a66b;    /* Warm sand accent */
+  --ti-bg: #f7fafb;        /* Soft off-white background */
+}
+
+/* Optional helper classes */
+.body-bg {
+  background: var(--ti-bg);
+}
+
+.btn-primary {
+  @apply bg-[color:var(--ti-primary)] text-white px-4 py-2 rounded-xl hover:opacity-90 transition;
+}
+
+.btn-accent {
+  @apply bg-[color:var(--ti-accent)] text-white px-4 py-2 rounded-xl hover:opacity-90 transition;
+}
+
+/* .card {
+  @apply bg-white rounded-2xl shadow-md;
+} */

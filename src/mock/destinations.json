@@ -1,0 +1,5 @@
+[
+  { "id": 1, "name": "Sigiriya", "region": "Central Province", "description": "Ancient rock fortress and palace." },
+  { "id": 2, "name": "Kandy", "region": "Central Province", "description": "Cultural capital, Temple of the Tooth." },
+  { "id": 3, "name": "Galle", "region": "Southern Province", "description": "Historic coastal city with fort." }
+]

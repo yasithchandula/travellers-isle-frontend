@@ -1,0 +1,5 @@
+[
+  { "id": 1, "name": "Yala Safari", "location": "Yala National Park", "type": "Wildlife", "price": 12000 },
+  { "id": 2, "name": "Madu River Boat Ride", "location": "Balapitiya", "type": "Nature", "price": 8000 },
+  { "id": 3, "name": "Sigiriya Rock Climb", "location": "Sigiriya", "type": "Adventure", "price": 5000 }
+]

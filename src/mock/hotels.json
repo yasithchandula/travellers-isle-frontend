@@ -1,0 +1,5 @@
+[
+  { "id": 1, "name": "Cinnamon Grand Colombo", "city": "Colombo", "rating": 5, "pricePerNight": 25000 },
+  { "id": 2, "name": "Heritance Kandalama", "city": "Dambulla", "rating": 4, "pricePerNight": 18000 },
+  { "id": 3, "name": "The Grand Hotel", "city": "Nuwara Eliya", "rating": 5, "pricePerNight": 22000 }
+]

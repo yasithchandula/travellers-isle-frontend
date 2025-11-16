@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "customer": "John Carter",
+    "destination": "Kandy - Nuwara Eliya - Bentota",
+    "total": 540000,
+    "currency": "LKR",
+    "status": "Draft",
+    "createdAt": "2025-11-01"
+  },
+  {
+    "id": 2,
+    "customer": "Ayesha Perera",
+    "destination": "Sigiriya - Trincomalee",
+    "total": 430000,
+    "currency": "LKR",
+    "status": "Approved",
+    "createdAt": "2025-10-25"
+  }
+]

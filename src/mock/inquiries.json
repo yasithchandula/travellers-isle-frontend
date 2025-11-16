@@ -1,0 +1,5 @@
+[
+  { "id": 1, "guest": "John Carter", "adults": 2, "children": 1, "startDate": "2025-12-10", "endDate": "2025-12-15", "status": "Pending" },
+  { "id": 2, "guest": "Ayesha Perera", "adults": 4, "children": 0, "startDate": "2025-12-20", "endDate": "2025-12-27", "status": "Urgent" },
+  { "id": 3, "guest": "Liam Patel", "adults": 2, "children": 2, "startDate": "2025-11-22", "endDate": "2025-11-28", "status": "New" }
+]
