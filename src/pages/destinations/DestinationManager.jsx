@@ -5,7 +5,8 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
-import CityForm from "../../components/forms/cityForm";
+import CityForm from "../../components/forms/CityForm";
+
 
 import {
   fetchCities,
@@ -14,6 +15,7 @@ import {
   editCity,
   deactivate
 } from "../../app/slices/citySlice";
+
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
