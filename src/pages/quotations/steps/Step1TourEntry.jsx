@@ -1,6 +1,7 @@
 import Input from "../../../components/common/Input";
 import Button from "../../../components/common/Button";
 import { useState } from "react";
+import Card from "../../../components/common/Card";
 
 export default function Step1TourEntry({ data, onChange, next }) {
   const [form, setForm] = useState(data);
@@ -20,7 +21,7 @@ export default function Step1TourEntry({ data, onChange, next }) {
   }
 
   return (
-    <div>
+    <Card>
       <div className="grid grid-cols-2 gap-4">
         <Input label="Guest Name" value={form.guestName} onChange={(v)=>update("guestName",v)} />
         <Input label="Email" value={form.email} onChange={(v)=>update("email",v)} />
@@ -58,6 +59,6 @@ export default function Step1TourEntry({ data, onChange, next }) {
       <div className="flex justify-end mt-6">
         <Button onClick={proceed}>Next →</Button>
       </div>
-    </div>
+    </Card>
   );
 }
