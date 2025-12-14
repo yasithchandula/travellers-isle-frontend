@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
 
+
 export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [address, setAddress] = useState(initial?.address || "");

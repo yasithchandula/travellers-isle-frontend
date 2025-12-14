@@ -5,7 +5,7 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
-import HotelForm from "../../components/forms/HotelForm";
+import HotelForm from "../../components/forms/hotelForm";
 
 import {
   fetchHotels,

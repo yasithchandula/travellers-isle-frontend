@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
 
+
 export default function CustomerForm({ initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [email, setEmail] = useState(initial?.email || "");
