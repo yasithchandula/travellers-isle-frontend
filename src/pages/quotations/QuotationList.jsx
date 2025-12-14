@@ -35,19 +35,19 @@ export default function QuotationList() {
       const pax = (qt.adults || 0) + (qt.children?.length || 0);
       if (filters.paxMin && pax < Number(filters.paxMin)) return false;
       if (filters.paxMax && pax > Number(filters.paxMax)) return false;
-      if (q && !(`${qt.guestName||""} ${qt.tourNumber||""}`.toLowerCase().includes(q))) return false;
+      if (q && !(`${qt.guestName || ""} ${qt.tourNumber || ""}`.toLowerCase().includes(q))) return false;
       return true;
     });
   }, [quotations, filters]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Quotations</h2>
-          <Button onClick={() => navigate("/quotations/new")}>+ New Quotation</Button>
-        </div>
 
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Quotations</h2>
+        <Button onClick={() => navigate("/quotations/new")}>+ New Quotation</Button>
+      </div>
+      <Card>
         <QuotationFilters filters={filters} setFilters={setFilters} />
 
         <QuotationTable

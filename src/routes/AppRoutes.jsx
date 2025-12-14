@@ -17,17 +17,17 @@ export default function AppRoutes() {
       <Routes>
 
         {/* PUBLIC ROUTES */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
 
         {/* PROTECTED ROUTES */}
-        <Route
+        {/* <Route
           path="/"
           element={
             <Layout>
               <Dashboard />
             </Layout>
           }
-        />
+        /> */}
 
         <Route
           path="/dashboard"
