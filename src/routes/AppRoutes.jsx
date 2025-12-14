@@ -1,25 +1,125 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "../components/layout/Layout";
 import Dashboard from "../pages/dashboard/Dashboard";
-import PrivateRoute from "./PrivateRoute";
+import UserManagement from "../pages/users/UserManagement";
+import InquiryList from "../pages/inquiries/InquiryList";
+import CustomerManager from "../pages/customers/CustomerManager";
+import DestinationManager from "../pages/destinations/DestinationManager";
+import HotelManager from "../pages/hotels/HotelManager";
+import ExcursionManager from "../pages/excursions/ExcursionManager";
+import QuotationList from "../pages/quotations/QuotationList";
+import QuotationFlow from "../pages/quotations/QuotationFlow";
+import Login from "../pages/auth/Login";
 
 export default function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <BrowserRouter>
+      <Routes>
 
-      <Route
-        path="/dashboard"
-        element={
-        //   <PrivateRoute>
-            <Dashboard />
-        //   </PrivateRoute>
-        }
-      />
+        {/* PUBLIC ROUTES */}
+        <Route path="/login" element={<Login />} />
 
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
+        {/* PROTECTED ROUTES */}
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Dashboard />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <Layout>
+              <Dashboard />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/users"
+          element={
+            <Layout>
+              <UserManagement />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/inquiries"
+          element={
+            <Layout>
+              <InquiryList />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/customers"
+          element={
+            <Layout>
+              <CustomerManager />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/destinations"
+          element={
+            <Layout>
+              <DestinationManager />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/hotels"
+          element={
+            <Layout>
+              <HotelManager />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/excursions"
+          element={
+            <Layout>
+              <ExcursionManager />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/quotations"
+          element={
+            <Layout>
+              <QuotationList />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/quotations/new"
+          element={
+            <Layout>
+              <QuotationFlow mode="new" />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/quotations/:id"
+          element={
+            <Layout>
+              <QuotationFlow mode="edit" />
+            </Layout>
+          }
+        />
+
+      </Routes>
+    </BrowserRouter>
   );
 }

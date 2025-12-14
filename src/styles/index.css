@@ -2,3 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand tokens inspired by travellersisle.com */
+:root {
+  --ti-primary: #0e4b5a;   /* deep teal/navy */
+  --ti-accent: #c9a66b;    /* warm sand */
+  --ti-bg: #f7fafb;        /* soft light */
+}
+
+.body-bg {
+  background: var(--ti-bg);
+}
+
+.btn-primary { @apply bg-[color:var(--ti-primary)] text-white rounded-xl px-4 py-2 hover:opacity-90 transition; }
+.btn-accent  { @apply bg-[color:var(--ti-accent)]  text-white rounded-xl px-4 py-2 hover:opacity-90 transition; }
+.card        { @apply bg-white rounded-2xl shadow-md; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+

@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "name": "Admin User",
+    "role": "ADMIN",
+    "email": "admin@travellers.com",
+    "status": "active"
+  }
+]

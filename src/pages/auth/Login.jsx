@@ -1,58 +1,96 @@
-import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
-import authApi from "../../api/authApi";
+import { useState } from "react";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
+import logo from "/logo.png"; // put your logo into public/logo.svg
 
 export default function Login() {
-  const { register, handleSubmit } = useForm();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (data) => {
-    try {
-      const res = await authApi.login(data);
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("role", res.user.role);
-      navigate("/dashboard");
-    } catch (err) {
-      alert("Invalid credentials");
-    }
-  };
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoading(true);
+
+    setTimeout(() => {
+      setLoading(false);
+      // mock redirect
+      window.location.href = "/dashboard";
+    }, 1200);
+  }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="bg-white p-8 rounded-xl shadow-lg w-96"
+    <div className="min-h-screen bg-ti-sand flex items-center justify-center px-4">
+      <div
+        className="
+          bg-white w-full max-w-md p-8 rounded-2xl shadow-md 
+          border border-ti-sky animate-fadeIn
+        "
       >
-        <h2 className="text-2xl font-semibold text-center mb-6 text-[#0e4b5a]">
-          Travellers Isle Staff Login
-        </h2>
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <img src={logo} alt="Logo" className="h-14 mb-3" />
+          <h2 className="text-2xl font-serif text-ti-forest">
+            Welcome to Travellers Isle
+          </h2>
+          <p className="text-ti-forest/70 text-sm mt-1">
+            Login to continue
+          </p>
+        </div>
 
-        <input
-          {...register("email")}
-          placeholder="Email"
-          className="border w-full mb-3 p-2 rounded"
-        />
-        <input
-          {...register("password")}
-          type="password"
-          placeholder="Password"
-          className="border w-full mb-5 p-2 rounded"
-        />
+        {/* FORM */}
+        <form className="flex flex-col gap-5" onSubmit={handleLogin}>
 
-        <button
-          type="submit"
-          className="w-full bg-[#0e4b5a] text-white py-2 rounded hover:bg-[#0b3c4a]"
-        >
-          Login
-        </button>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={setEmail}
+          />
 
-        <p className="text-sm text-center text-gray-500 mt-4">
-          No account?{" "}
-          <Link to="/register" className="text-[#0e4b5a] underline">
-            Register here
-          </Link>
-        </p>
-      </form>
+          <div>
+            <label className="text-sm text-ti-forest">Password</label>
+            <div className="relative">
+              <input
+                type={showPw ? "text" : "password"}
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                placeholder="••••••••"
+                className="
+                  w-full rounded-lg border border-ti-mint bg-white 
+                  px-3 py-2 outline-none transition 
+                  focus:ring-2 focus:ring-ti-teal
+                "
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-2 text-ti-forest/70 hover:text-ti-teal"
+              >
+                {showPw ? "👁️" : "👁️‍🗨️"}
+              </button>
+            </div>
+          </div>
+
+          {/* Forgot password */}
+          <div className="text-right">
+            <button
+              type="button"
+              className="text-sm text-ti-teal hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          {/* Login button */}
+          <Button type="submit" full loading={loading}>
+            Login
+          </Button>
+
+        </form>
+      </div>
     </div>
   );
 }

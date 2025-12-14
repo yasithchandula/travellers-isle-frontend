@@ -1,5 +1,5 @@
 [
-  { "id": 1, "name": "Admin User", "email": "admin@travellersisle.com", "role": "ADMIN" },
-  { "id": 2, "name": "Front Desk Agent", "email": "agent@travellersisle.com", "role": "AGENT" },
-  { "id": 3, "name": "Tour Executive", "email": "executive@travellersisle.com", "role": "EXECUTIVE" }
+  { "id": 1, "name": "Admin User", "email": "admin@test.com", "password": "admin123", "role": "ADMIN" },
+  { "id": 2, "name": "Front Desk Agent", "email": "agent@travellersisle.com", "password": "agent123", "role": "AGENT" },
+  { "id": 3, "name": "Tour Executive", "email": "executive@travellersisle.com", "password": "exec123", "role": "EXECUTIVE" }
 ]
