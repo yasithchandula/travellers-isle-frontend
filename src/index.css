@@ -14,15 +14,37 @@
 .body-bg {
   background: var(--ti-bg);
 }
-
-.btn-primary {
-  @apply bg-[color:var(--ti-primary)] text-white px-4 py-2 rounded-xl hover:opacity-90 transition;
-}
-
-.btn-accent {
-  @apply bg-[color:var(--ti-accent)] text-white px-4 py-2 rounded-xl hover:opacity-90 transition;
-}
-
 /* .card {
   @apply bg-white rounded-2xl shadow-md;
 } */
+
+@font-face {
+  font-family: "Product Sans";
+  src: url("/fonts/product-sans/Product-Sans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Product Sans Bold";
+  src: url("/fonts/product-sans/product_sans_bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+
+body {
+  @apply bg-ti-sand text-ti-forest font-sans;
+}
+
+h1, h2, h3, h4 {
+  @apply font-serif text-ti-forest;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-md border border-ti-sky p-6;
+}
+
+.hover-soft {
+  @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
+}
