@@ -140,8 +140,8 @@ export default function InquiryList() {
                   </td>
 
                   <td className="p-3 flex gap-2">
-                    <Button variant="secondary" onClick={() => startAssign(i.id)}>Assign</Button>
-                    <Button variant="success" onClick={() => convert(i.id)}>Convert</Button>
+                    <Button variant="primary" onClick={() => startAssign(i.id)}>Assign</Button>
+                    <Button variant="secondary" onClick={() => convert(i.id)}>Convert</Button>
                     <Button variant="danger" onClick={() => dispatch(spamInquiry(i.id))}>Spam</Button>
                   </td>
                 </tr>

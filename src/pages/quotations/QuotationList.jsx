@@ -41,10 +41,10 @@ export default function QuotationList() {
   }, [quotations, filters]);
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className=" max-w-6xl mx-auto">
 
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Quotations</h2>
+        <h1 className="text-2xl font-semibold">Quotations</h1>
         <Button onClick={() => navigate("/quotations/new")}>+ New Quotation</Button>
       </div>
       <Card>

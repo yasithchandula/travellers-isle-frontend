@@ -145,8 +145,8 @@ export default function CustomerManager() {
       >
         <p className="mb-4">Deactivate this customer?</p>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setConfirmId(null)}>Cancel</Button>
-          <Button variant="danger" onClick={() => handleDeactivate(confirmId)}>
+          <Button variant="outline" size="md" onClick={() => setConfirmId(null)}>Cancel</Button>
+          <Button variant="danger" size="md" onClick={() => handleDeactivate(confirmId)}>
             Deactivate
           </Button>
         </div>

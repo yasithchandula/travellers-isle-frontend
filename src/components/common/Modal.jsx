@@ -4,7 +4,7 @@ export default function Modal({ open, onClose, title, children }) {
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl p-8 
-          border border-ti-sky w-full max-w-lg
+          border border-ti-sky w-full max-w-5xl
           animate-fadeIn"
           style={{ maxHeight: '90vh', overflow: 'auto' }}>
         <h2 className="text-xl font-semibold mb-4">{title}</h2>

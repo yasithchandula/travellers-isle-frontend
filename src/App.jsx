@@ -1,4 +1,9 @@
 import AppRoutes from "./routes/AppRoutes";
 export default function App() {
-  return <AppRoutes />;
+  return (
+    <div className="compact">
+      <AppRoutes />
+    </div>
+  );
 }
+
