@@ -50,60 +50,104 @@ export default function CustomerForm({ initial, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Input label="Name" value={name} onChange={setName} />
-      <Input label="Email" type="email" value={email} onChange={setEmail} />
-      <Input label="Phone" value={phone} onChange={setPhone} />
-      <Input label="Address" value={address} onChange={setAddress} />
+    <form onSubmit={handleSubmit} className="space-y-4">
 
-      {/* ALLERGIES */}
-      <div className="mb-3">
-        <label className="block mb-1">Allergies</label>
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Input label="Name" value={name} onChange={setName} />
+        <Input label="Email" type="email" value={email} onChange={setEmail} />
+        <Input label="Phone" value={phone} onChange={setPhone} />
+        <Input label="Address" value={address} onChange={setAddress} />
+      </div>
+
+      {/* Allergies */}
+      <div className="border rounded p-2 space-y-2">
+        <label className="block text-xs font-medium">Allergies</label>
+
         <div className="flex gap-2">
           <input
-            className="border px-2 py-1 rounded w-full"
-            placeholder="Add allergy..."
+            className="border px-2 py-1 rounded w-full text-sm"
+            placeholder="Add allergy…"
             value={allergyText}
             onChange={(e) => setAllergyText(e.target.value)}
           />
-          <Button variant="secondary" onClick={addAllergy} type="button">Add</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            onClick={addAllergy}
+          >
+            Add
+          </Button>
         </div>
 
-        <div className="flex gap-2 flex-wrap mt-2">
-          {allergies.map((a, i) => (
-            <span key={i} className="bg-red-100 text-red-700 px-2 py-1 rounded text-sm">
-              {a}
-            </span>
-          ))}
-        </div>
+        {allergies.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {allergies.map((a, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700"
+              >
+                {a}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* CELEBRATIONS */}
-      <div className="mb-4">
-        <label className="block mb-1">Special Celebrations</label>
+      {/* Celebrations */}
+      <div className="border rounded p-2 space-y-2">
+        <label className="block text-xs font-medium">
+          Special Celebrations
+        </label>
+
         <div className="flex gap-2">
           <input
-            className="border px-2 py-1 rounded w-full"
-            placeholder="Birthday, Honeymoon..."
+            className="border px-2 py-1 rounded w-full text-sm"
+            placeholder="Birthday, Honeymoon…"
             value={celebrationText}
             onChange={(e) => setCelebrationText(e.target.value)}
           />
-          <Button variant="secondary" type="button" onClick={addCelebration}>Add</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            onClick={addCelebration}
+          >
+            Add
+          </Button>
         </div>
 
-        <div className="flex gap-2 flex-wrap mt-2">
-          {celebrations.map((c, i) => (
-            <span key={i} className="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">
-              {c}
-            </span>
-          ))}
-        </div>
+        {celebrations.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {celebrations.map((c, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" onClick={onCancel} type="button">Cancel</Button>
-        <Button type="submit">{initial ? "Save Changes" : "Create Customer"}</Button>
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pt-3 border-t">
+        <Button
+          variant="outline"
+          size="md"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancel
+        </Button>
+        <Button size="md" type="submit">
+          {initial ? "Save Changes" : "Create Customer"}
+        </Button>
       </div>
+
     </form>
   );
+
 }

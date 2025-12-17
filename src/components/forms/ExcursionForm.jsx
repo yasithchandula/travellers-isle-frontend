@@ -12,6 +12,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   const [pricingType, setPricingType] = useState(initial?.pricingType || "PER_PERSON");
   const [assignedCityIds, setAssignedCityIds] = useState(initial?.assignedCityIds || []);
   const [isOptionalSupplement, setIsOptionalSupplement] = useState(!!initial?.isOptionalSupplement);
+  const [citySelect, setCitySelect] = useState("");
 
   // Per Person
   const [pp, setPP] = useState(initial?.perPerson || {
@@ -101,141 +102,274 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Input label="Excursion Name" value={name} onChange={setName} />
-      <label className="block text-sm text-gray-700 mb-1">Description</label>
-      <textarea className="w-full border rounded px-3 py-2 mb-3" value={description} onChange={(e)=>setDescription(e.target.value)} />
+    <form onSubmit={handleSubmit} className="space-y-4">
 
-      <div className="grid grid-cols-2 gap-4">
+      <Input label="Excursion Name" value={name} onChange={setName} />
+
+      <div>
+        <label className="block text-xs mb-1">Description</label>
+        <textarea
+          className="w-full border rounded px-2 py-1.5 text-sm h-20"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block mb-1 text-sm">Pricing Type</label>
-          <select className="w-full border rounded px-3 py-2" value={pricingType} onChange={(e)=>setPricingType(e.target.value)}>
-            {PRICING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          <label className="block mb-1 text-xs">Pricing Type</label>
+          <select
+            className="w-full border rounded px-2 py-1.5 text-sm"
+            value={pricingType}
+            onChange={(e) => setPricingType(e.target.value)}
+          >
+            {PRICING_TYPES.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
           </select>
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Tags (comma separated)</label>
-          <input className="w-full border rounded px-3 py-2" value={tagsText} onChange={(e)=>setTagsText(e.target.value)} placeholder="family, culture, adventure" />
+          <label className="block mb-1 text-xs">Tags</label>
+          <input
+            className="w-full border rounded px-2 py-1.5 text-sm"
+            value={tagsText}
+            onChange={(e) => setTagsText(e.target.value)}
+            placeholder="family, culture, adventure"
+          />
         </div>
       </div>
 
-      {/* Conditional sections */}
+      {/* PER PERSON */}
       {pricingType === "PER_PERSON" && (
-        <div className="my-3 p-3 border rounded">
-          <h3 className="font-semibold mb-2">Per Person Pricing</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Infant range (from)" value={pp.infantRange[0]} onChange={(v)=>setPP({...pp, infantRange:[Number(v), pp.infantRange[1]]})} />
-            <Input label="Infant range (to)" value={pp.infantRange[1]} onChange={(v)=>setPP({...pp, infantRange:[pp.infantRange[0], Number(v)]})} />
-            <Input label="Infant USD" value={pp.infantUSD} onChange={(v)=>setPP({...pp, infantUSD:Number(v)})} />
+        <div className="border rounded-md p-3">
+          <h3 className="text-sm font-semibold mb-2">Per Person Pricing</h3>
+
+          <div className="grid grid-cols-5 gap-2 text-xs text-gray-600 mb-1">
+            <div>Category</div>
+            <div>Age From</div>
+            <div>Age To</div>
+            <div>Price (USD)</div>
+            <div>Guide Fee</div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Child range (from)" value={pp.childRange[0]} onChange={(v)=>setPP({...pp, childRange:[Number(v), pp.childRange[1]]})} />
-            <Input label="Child range (to)" value={pp.childRange[1]} onChange={(v)=>setPP({...pp, childRange:[pp.childRange[0], Number(v)]})} />
-            <Input label="Child USD" value={pp.childUSD} onChange={(v)=>setPP({...pp, childUSD:Number(v)})} />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Adult from (age)" value={pp.adultFrom} onChange={(v)=>setPP({...pp, adultFrom:Number(v)})} />
-            <Input label="Adult USD" value={pp.adultUSD} onChange={(v)=>setPP({...pp, adultUSD:Number(v)})} />
-            <Input label="Guide Fee USD (optional)" value={pp.guideFeeUSD} onChange={(v)=>setPP({...pp, guideFeeUSD:Number(v)})} />
-          </div>
-        </div>
-      )}
-
-      {pricingType === "SAFARI" && (
-        <div className="my-3 p-3 border rounded">
-          <h3 className="font-semibold mb-2">Safari Pricing</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Jeep Rent USD" value={safari.jeepRentUSD} onChange={(v)=>setSafari({...safari, jeepRentUSD:Number(v)})} />
-            <Input label="Per Person Entrance USD" value={safari.perPersonEntranceUSD} onChange={(v)=>setSafari({...safari, perPersonEntranceUSD:Number(v)})} />
-            <Input label="Jeep Entrance USD" value={safari.jeepEntranceUSD} onChange={(v)=>setSafari({...safari, jeepEntranceUSD:Number(v)})} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="VAT Rate (0.18 = 18%)" value={safari.vatRate} onChange={(v)=>setSafari({...safari, vatRate:Number(v)})} />
-            <Input label="Jeep Capacity" value={safari.jeepCapacity} onChange={(v)=>setSafari({...safari, jeepCapacity:Number(v)})} />
-            <div className="flex items-end gap-2">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={safari.fullDayAvailable} onChange={(e)=>setSafari({...safari, fullDayAvailable:e.target.checked})} />
-                Full Day Available
-              </label>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Lunch per Person (Full Day) USD" value={safari.lunchPerPersonUSD} onChange={(v)=>setSafari({...safari, lunchPerPersonUSD:Number(v)})} />
-          </div>
-        </div>
-      )}
-
-      {pricingType === "BOAT" && (
-        <div className="my-3 p-3 border rounded">
-          <h3 className="font-semibold mb-2">Boat Pricing</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Boat Capacity" value={boat.boatCapacity} onChange={(v)=>setBoat({...boat, boatCapacity:Number(v)})} />
-            <Input label="Boat Price USD" value={boat.boatPriceUSD} onChange={(v)=>setBoat({...boat, boatPriceUSD:Number(v)})} />
-            <Input label="Guide Fee USD (optional)" value={boat.guideFeeUSD} onChange={(v)=>setBoat({...boat, guideFeeUSD:Number(v)})} />
-          </div>
-        </div>
-      )}
-
-      {pricingType === "CUSTOM" && (
-        <div className="my-3 p-3 border rounded">
-          <h3 className="font-semibold mb-2">Custom Pricing</h3>
-          <label className="flex items-center gap-2">
-            <input type="checkbox"
-              checked={custom.allowZero}
-              onChange={(e)=>setCustom({...custom, allowZero: e.target.checked})}
+          {/* Infant */}
+          <div className="grid grid-cols-5 gap-2 items-center">
+            <span className="text-sm">Infant</span>
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              value={pp.infantRange[0]}
+              onChange={(v) => setPP({ ...pp, infantRange: [+v.target.value, pp.infantRange[1]] })}
             />
-            Allow zero at quotation time (otherwise block continuation)
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              value={pp.infantRange[1]}
+              onChange={(v) => setPP({ ...pp, infantRange: [pp.infantRange[0], +v.target.value] })}
+            />
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              value={pp.infantUSD}
+              onChange={(v) => setPP({ ...pp, infantUSD: +v.target.value })}
+            />
+            <span className="text-gray-400 text-xs">—</span>
+          </div>
+
+          {/* Child */}
+          <div className="grid grid-cols-5 gap-2 items-center mt-1">
+            <span className="text-sm">Child</span>
+            <input className="border rounded px-2 py-1 text-sm"
+              value={pp.childRange[0]}
+              onChange={(v) => setPP({ ...pp, childRange: [+v.target.value, pp.childRange[1]] })}
+            />
+            <input className="border rounded px-2 py-1 text-sm"
+              value={pp.childRange[1]}
+              onChange={(v) => setPP({ ...pp, childRange: [pp.childRange[0], +v.target.value] })}
+            />
+            <input className="border rounded px-2 py-1 text-sm"
+              value={pp.childUSD}
+              onChange={(v) => setPP({ ...pp, childUSD: +v.target.value })}
+            />
+            <span className="text-gray-400 text-xs">—</span>
+          </div>
+
+          {/* Adult */}
+          <div className="grid grid-cols-5 gap-2 items-center mt-1">
+            <span className="text-sm">Adult</span>
+            <input className="border rounded px-2 py-1 text-sm"
+              value={pp.adultFrom}
+              onChange={(v) => setPP({ ...pp, adultFrom: +v.target.value })}
+            />
+            <span className="text-gray-400 text-sm">∞</span>
+            <input className="border rounded px-2 py-1 text-sm"
+              value={pp.adultUSD}
+              onChange={(v) => setPP({ ...pp, adultUSD: +v.target.value })}
+            />
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              value={pp.guideFeeUSD}
+              onChange={(v) => setPP({ ...pp, guideFeeUSD: +v.target.value })}
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+      )}
+
+
+      {/* SAFARI */}
+      {pricingType === "SAFARI" && (
+        <div className="border rounded-md p-3 space-y-2">
+          <h3 className="text-sm font-semibold">Safari Pricing</h3>
+
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Jeep Rent (USD)" value={safari.jeepRentUSD} onChange={(v) => setSafari({ ...safari, jeepRentUSD: +v })} />
+            <Input label="Entrance / Pax" value={safari.perPersonEntranceUSD} onChange={(v) => setSafari({ ...safari, perPersonEntranceUSD: +v })} />
+            <Input label="Jeep Entrance" value={safari.jeepEntranceUSD} onChange={(v) => setSafari({ ...safari, jeepEntranceUSD: +v })} />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 items-end">
+            <Input label="VAT Rate" value={safari.vatRate} onChange={(v) => setSafari({ ...safari, vatRate: +v })} />
+            <Input label="Jeep Capacity" value={safari.jeepCapacity} onChange={(v) => setSafari({ ...safari, jeepCapacity: +v })} />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={safari.fullDayAvailable}
+                onChange={(e) => setSafari({ ...safari, fullDayAvailable: e.target.checked })}
+              />
+              Full Day
+            </label>
+          </div>
+
+          {safari.fullDayAvailable && (
+            <Input
+              label="Lunch / Pax (USD)"
+              value={safari.lunchPerPersonUSD}
+              onChange={(v) => setSafari({ ...safari, lunchPerPersonUSD: +v })}
+            />
+          )}
+        </div>
+      )}
+
+
+      {/* BOAT */}
+      {pricingType === "BOAT" && (
+        <div className="border rounded-md p-3">
+          <h3 className="text-sm font-semibold mb-2">Boat Pricing</h3>
+
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Capacity" value={boat.boatCapacity} onChange={(v) => setBoat({ ...boat, boatCapacity: +v })} />
+            <Input label="Boat Price (USD)" value={boat.boatPriceUSD} onChange={(v) => setBoat({ ...boat, boatPriceUSD: +v })} />
+            <Input label="Guide Fee (USD)" value={boat.guideFeeUSD} onChange={(v) => setBoat({ ...boat, guideFeeUSD: +v })} />
+          </div>
+        </div>
+      )}
+
+
+      {/* CUSTOM */}
+      {pricingType === "CUSTOM" && (
+        <div className="p-2 border rounded">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={custom.allowZero}
+              onChange={(e) => setCustom({ ...custom, allowZero: e.target.checked })}
+            />
+            Allow zero at quotation time
           </label>
         </div>
       )}
 
-      {/* Assignment to Cities */}
-      <div className="my-3 p-3 border rounded">
-        <h3 className="font-semibold mb-2">Assign to Destinations / Stops</h3>
+      {/* Cities */}
+      <div className="p-2 border rounded space-y-2">
+        <label className="block text-xs font-medium">Assign Cities</label>
+
+        <div className="flex gap-2">
+          <select
+            className="flex-1 border rounded px-2 py-1.5 text-sm"
+            value={citySelect}
+            onChange={(e) => setCitySelect(e.target.value)}
+          >
+            <option value="">Select city</option>
+            {cities.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              if (!citySelect) return;
+              const id = Number(citySelect);
+              if (!assignedCityIds.includes(id)) {
+                setAssignedCityIds([...assignedCityIds, id]);
+              }
+              setCitySelect("");
+            }}
+          >
+            Add
+          </Button>
+        </div>
+
         <div className="flex flex-wrap gap-2">
-          {cities.map(c => (
-            <label key={c.id} className="px-3 py-1 border rounded cursor-pointer flex items-center gap-2">
-              <input type="checkbox" checked={assignedCityIds.includes(c.id)} onChange={()=>toggleCity(c.id)} />
-              {c.name}
-            </label>
-          ))}
+          {assignedCityIds.map(id => {
+            const city = cities.find(c => c.id === id);
+            return (
+              <span
+                key={id}
+                className="px-2 py-1 border rounded text-xs flex items-center gap-1"
+              >
+                {city?.name}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAssignedCityIds(assignedCityIds.filter(x => x !== id))
+                  }
+                  className="text-red-500"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
         </div>
       </div>
 
-      {/* Optional supplement & reminder */}
-      <div className="grid grid-cols-2 gap-4 my-3">
+
+      {/* Flags */}
+      <div className="grid grid-cols-2 gap-3 text-sm">
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={isOptionalSupplement} onChange={(e)=>setIsOptionalSupplement(e.target.checked)} />
-          Mark as Optional Supplement
+          <input type="checkbox" checked={isOptionalSupplement} onChange={(e) => setIsOptionalSupplement(e.target.checked)} />
+          Optional Supplement
         </label>
 
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={reminder.enabled} onChange={(e)=>setReminder({...reminder, enabled:e.target.checked})} />
-          Enable Reminder (pre-booking)
+          <input type="checkbox" checked={reminder.enabled} onChange={(e) => setReminder({ ...reminder, enabled: e.target.checked })} />
+          Enable Reminder
         </label>
       </div>
 
       {reminder.enabled && (
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          <Input label="Days Before (email batch)" value={reminder.daysBefore} onChange={(v)=>setReminder({...reminder, daysBefore:Number(v)})} />
-          <label className="flex items-end gap-2">
-            <input type="checkbox" checked={reminder.nextDayAlso} onChange={(e)=>setReminder({...reminder, nextDayAlso:e.target.checked})} />
-            Include Next-Day Reminder
+        <div className="grid grid-cols-3 gap-2">
+          <Input label="Days Before" value={reminder.daysBefore} onChange={(v) => setReminder({ ...reminder, daysBefore: +v })} />
+          <label className="flex items-end gap-2 text-sm">
+            <input type="checkbox" checked={reminder.nextDayAlso} onChange={(e) => setReminder({ ...reminder, nextDayAlso: e.target.checked })} />
+            Next Day
           </label>
-          <Input label="Reminder Note" value={reminder.note} onChange={(v)=>setReminder({...reminder, note:v})} />
+          <Input label="Note" value={reminder.note} onChange={(v) => setReminder({ ...reminder, note: v })} />
         </div>
       )}
 
-      {/* Preview */}
-      <div className="mt-2">{renderPreview()}</div>
+      <div className="text-xs">{renderPreview()}</div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">{initial ? "Save Changes" : "Add Excursion"}</Button>
+      <div className="flex justify-end gap-2 pt-3 border-t">
+        <Button variant="outline" size="md" type="button" onClick={onCancel}>Cancel</Button>
+        <Button size="md" type="submit">
+          {initial ? "Save Changes" : "Add Excursion"}
+        </Button>
       </div>
+
     </form>
   );
+
 }

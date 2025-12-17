@@ -10,6 +10,8 @@ import ExcursionManager from "../pages/excursions/ExcursionManager";
 import QuotationList from "../pages/quotations/QuotationList";
 import QuotationFlow from "../pages/quotations/QuotationFlow";
 import Login from "../pages/auth/Login";
+import StandardDescriptionList from "../pages/standardDescriptions/StandardDescriptionList";
+import StandardDescriptionEditor from "../pages/standardDescriptions/StandardDescriptionEditor";
 
 export default function AppRoutes() {
   return (
@@ -115,6 +117,33 @@ export default function AppRoutes() {
           element={
             <Layout>
               <QuotationFlow mode="edit" />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/standard-descriptions"
+          element={
+            <Layout>
+              <StandardDescriptionList />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/standard-descriptions/new"
+          element={
+            <Layout>
+              <StandardDescriptionEditor mode="new" />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/standard-descriptions/:id"
+          element={
+            <Layout>
+              <StandardDescriptionEditor mode="edit" />
             </Layout>
           }
         />

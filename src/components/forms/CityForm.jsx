@@ -32,40 +32,75 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
     });
   }
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <Input label="City Name" value={name} onChange={setName} />
-      <Input label="Country" value={country} onChange={setCountry} />
-      <Input label="Region" value={region} onChange={setRegion} />
+return (
+  <form onSubmit={handleSubmit} className="space-y-4">
+    {/* Main fields */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <Input
+        label="City Name"
+        value={name}
+        onChange={setName}
+      />
 
-      <div className="my-3">
-        <label className="block mb-1 text-sm">City Type</label>
+      <Input
+        label="Country"
+        value={country}
+        onChange={setCountry}
+      />
 
-        <div className="flex gap-4 items-center">
-          <label className="flex gap-2 items-center">
-            <input
-              type="checkbox"
-              checked={isDestination}
-              onChange={(e) => setIsDestination(e.target.checked)}
-            />
-            Destination
-          </label>
+      <Input
+        label="Region"
+        value={region}
+        onChange={setRegion}
+      />
+    </div>
 
-          <label className="flex gap-2 items-center">
-            <input
-              type="checkbox"
-              checked={isStop}
-              onChange={(e) => setIsStop(e.target.checked)}
-            />
-            Stop
-          </label>
-        </div>
+    {/* City Type */}
+    <div>
+      <label className="block mb-1 text-xs font-medium text-ti-forest">
+        City Type
+      </label>
+
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isDestination}
+            onChange={(e) => setIsDestination(e.target.checked)}
+            className="accent-ti-teal"
+          />
+          Destination
+        </label>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isStop}
+            onChange={(e) => setIsStop(e.target.checked)}
+            className="accent-ti-teal"
+          />
+          Stop
+        </label>
       </div>
+    </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">{initial ? "Save" : "Add City"}</Button>
-      </div>
-    </form>
-  );
+    {/* Actions */}
+    <div className="flex justify-end gap-2 pt-3 border-t">
+      <Button
+        variant="outline"
+        type="button"
+        onClick={onCancel}
+        size="md"
+      >
+        Cancel
+      </Button>
+
+      <Button type="submit" size="md">
+        {initial ? "Save" : "Add City"}
+      </Button>
+    </div>
+  </form>
+);
+
+
 }
