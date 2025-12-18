@@ -22,52 +22,53 @@ export default function Button({
 
   const variants = {
     primary: `
-    bg-ti-teal text-white shadow 
-    hover:bg-[#31685f] 
-    focus:ring-2 focus:ring-ti-mint
-  `,
-
+      bg-ti-teal text-white shadow 
+      hover:bg-[#31685f] 
+      focus:ring-2 focus:ring-ti-mint
+    `,
     secondary: `
-    border border-ti-teal 
-    text-ti-teal 
-    bg-white 
-    hover:bg-ti-sky 
-    hover:text-ti-forest 
-    focus:ring-2 focus:ring-ti-teal
-  `,
-
+      border border-ti-teal text-ti-teal bg-white 
+      hover:bg-ti-sky hover:text-ti-forest 
+      focus:ring-2 focus:ring-ti-teal
+    `,
     outline: `
-    border border-ti-forest 
-    text-ti-forest 
-    bg-white 
-    hover:bg-ti-sky 
-    hover:text-ti-teal
-    focus:ring-2 focus:ring-ti-teal
-  `,
-
+      border border-ti-forest text-ti-forest bg-white 
+      hover:bg-ti-sky hover:text-ti-teal
+      focus:ring-2 focus:ring-ti-teal
+    `,
     ghost: `
-    text-ti-forest 
-    bg-transparent 
-    hover:bg-ti-sky/60 
-    hover:text-ti-teal 
-    focus:ring-2 focus:ring-ti-mint
-  `,
-
+      text-ti-forest bg-transparent 
+      hover:bg-ti-sky/60 hover:text-ti-teal 
+      focus:ring-2 focus:ring-ti-mint
+    `,
     danger: `
-    bg-ti-red text-white shadow 
-    hover:bg-[#d05d5d] 
-    focus:ring-2 focus:ring-red-300
-  `,
+      bg-ti-red text-white shadow 
+      hover:bg-[#d05d5d] 
+      focus:ring-2 focus:ring-red-300
+    `,
   };
-
 
   return (
     <button
       {...props}
-      className={`${base} ${sizes[size]} ${variants[variant]} ${full ? "w-full" : ""}`}
+      disabled={loading || props.disabled}
+      className={`
+        ${base}
+        ${sizes[size]}
+        ${variants[variant]}
+        ${full ? "w-full" : ""}
+      `}
     >
       {loading ? (
-        <span className="loader border-white" />
+        <span
+          className="
+            h-4 w-4
+            rounded-full
+            border-2 border-white/40
+            border-t-white
+            animate-spin
+          "
+        />
       ) : (
         <>
           {iconLeft && <span className="text-lg">{iconLeft}</span>}
