@@ -1,25 +1,26 @@
-import Card from "../components/common/Card";
+const destinations = [
+  { name: "Sigiriya", count: 14 },
+  { name: "Ella", count: 11 },
+  { name: "Galle", count: 9 },
+  { name: "Nuwara Eliya", count: 7 },
+];
 
 export default function TopDestinations() {
-  const sample = [
-    { city: "Kandy", count: 42 },
-    { city: "Ella", count: 38 },
-    { city: "Sigiriya", count: 32 },
-    { city: "Nuwara Eliya", count: 29 },
-  ];
-
   return (
-    <Card>
-      <h3 className="font-serif text-xl mb-4 text-ti-forest">Top Destinations</h3>
-
-      <div className="flex flex-col gap-3">
-        {sample.map((x, i) => (
-          <div key={i} className="flex justify-between">
-            <span className="font-medium">{x.city}</span>
-            <span className="text-ti-teal">{x.count} tours</span>
-          </div>
-        ))}
-      </div>
-    </Card>
+    <ul className="space-y-3">
+      {destinations.map((d) => (
+        <li
+          key={d.name}
+          className="flex items-center justify-between rounded-md border p-3"
+        >
+          <span className="font-medium text-ti-forest">
+            {d.name}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {d.count} tours
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -1,4 +1,3 @@
-import ChartCard from "./ChartCard";
 import { Line } from "react-chartjs-2";
 
 export default function InquiriesChart() {
@@ -8,16 +7,15 @@ export default function InquiriesChart() {
       {
         label: "Inquiries",
         data: [10, 14, 8, 20, 18, 12, 16],
-        borderColor: "#3A7E75",
-        backgroundColor: "rgba(58, 126, 117, 0.2)",
-        tension: 0.4,
+        borderWidth: 2,
+        tension: 0.35,
       },
     ],
   };
 
   return (
-    <ChartCard title="Weekly Inquiries">
+    <div className="h-[280px]">
       <Line data={data} />
-    </ChartCard>
+    </div>
   );
 }
