@@ -11,7 +11,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.10.1",
+    "@reduxjs/toolkit": "^2.11.0",
     "@tiptap/core": "^3.13.0",
     "@tiptap/extension-bullet-list": "^3.13.0",
     "@tiptap/extension-image": "^3.13.0",
