@@ -89,10 +89,10 @@ export default function InquiryList() {
 
         {loading && <div className="text-gray-600">Loading...</div>}
 
-        <div className="overflow-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-left">
+        <div className="overflow-auto rounded-md border">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr className="text-left">
                 <th className="p-3 border-b">Name</th>
                 <th className="p-3 border-b">Email</th>
                 <th className="p-3 border-b">Phone</th>
@@ -106,49 +106,103 @@ export default function InquiryList() {
 
             <tbody>
               {items.map((i) => (
-                <tr key={i.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{i.name}</td>
+                <tr
+                  key={i.id}
+                  className="border-b hover:bg-gray-50 transition"
+                >
+                  {/* Name */}
+                  <td className="p-3">
+                    <div className="font-medium">{i.name}</div>
+                  </td>
+
+                  {/* Email */}
                   <td className="p-3">{i.email}</td>
+
+                  {/* Phone */}
                   <td className="p-3">{i.phone}</td>
-                  <td className="p-3">{i.source}</td>
+
+                  {/* Source */}
+                  <td className="p-3">
+                    <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs capitalize">
+                      {i.source}
+                    </span>
+                  </td>
+
+                  {/* Label */}
                   <td className="p-3">
                     {i.label ? (
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
                         {i.label}
                       </span>
-                    ) : "-"}
+                    ) : (
+                      "-"
+                    )}
                   </td>
+
+                  {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-sm ${
-                        i.status === "new"
+                      className={`px-2 py-1 rounded text-xs capitalize ${i.status === "new"
                           ? "bg-blue-100 text-blue-700"
                           : i.status === "assigned"
-                          ? "bg-purple-100 text-purple-700"
-                          : i.status === "converted"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                            ? "bg-purple-100 text-purple-700"
+                            : i.status === "converted"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {i.status}
                     </span>
                   </td>
+
+                  {/* Assigned To */}
                   <td className="p-3">
                     {i.assignedTo
                       ? users.find((u) => u.id === i.assignedTo)?.name || "Unknown"
                       : "-"}
                   </td>
 
+                  {/* Actions */}
                   <td className="p-3 flex gap-2">
-                    <Button variant="primary" onClick={() => startAssign(i.id)}>Assign</Button>
-                    <Button variant="secondary" onClick={() => convert(i.id)}>Convert</Button>
-                    <Button variant="danger" onClick={() => dispatch(spamInquiry(i.id))}>Spam</Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => startAssign(i.id)}
+                    >
+                      Assign
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => convert(i.id)}
+                    >
+                      Convert
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => dispatch(spamInquiry(i.id))}
+                    >
+                      Spam
+                    </Button>
                   </td>
                 </tr>
               ))}
+
+              {items.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="p-6 text-center text-gray-500"
+                  >
+                    No inquiries found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
       </Card>
 
       {/* Create Inquiry */}

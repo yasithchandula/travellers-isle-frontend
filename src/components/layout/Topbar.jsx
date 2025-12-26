@@ -1,136 +1,123 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "/logo.png"; // put your logo in public/logo.svg or change path
-import Button from "../../components/common/Button";
+import logo from "/logo.png";
+
+import { Bell, LogOut, Settings, User } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function Topbar() {
-  const [openUser, setOpenUser] = useState(false);
-  const [openNotif, setOpenNotif] = useState(false);
-
   return (
-    <div className="
-      h-16 bg-white shadow-sm border-b border-ti-sky px-6
-      flex items-center justify-between relative z-50
-    ">
+    <header className="h-16 bg-white border-b border-ti-sky px-6 flex items-center justify-between sticky top-0 z-50">
       {/* LEFT: Logo */}
       <div className="flex items-center gap-3">
         <img src={logo} alt="Travellers Isle" className="h-10" />
       </div>
 
-      {/* RIGHT: Notifications + Profile */}
-      <div className="flex items-center gap-6 text-ti-forest relative">
+      {/* RIGHT */}
+      <div className="flex items-center gap-4">
 
-        {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setOpenNotif(!openNotif);
-              setOpenUser(false);
-            }}
-            className="
-              text-2xl hover:text-ti-teal transition relative
-            "
-          >
-            🔔
-            {/* Small highlight circle */}
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-ti-red rounded-full"></span>
-          </button>
+        {/* 🔔 Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="w-5 h-5 text-ti-forest" />
+              <span className="absolute -top-1 -right-1">
+                <Badge className="h-2.5 w-2.5 p-0 bg-ti-red rounded-full" />
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
 
-          {openNotif && (
-            <div
-              className="
-                absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl
-                border border-ti-sky p-3 animate-fadeIn
-              "
-            >
-              <h4 className="font-serif text-lg mb-2 text-ti-forest">Notifications</h4>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel className="font-serif text-ti-forest">
+              Notifications
+            </DropdownMenuLabel>
 
-              <div className="flex flex-col gap-2 max-h-64 overflow-auto">
+            <Separator />
 
-                {/* Replace hardcoded items with dynamic data later */}
-                <div className="p-3 bg-ti-sky/50 rounded-lg">
-                  New inquiry received from *George*.
-                </div>
-
-                <div className="p-3 bg-ti-sky/50 rounded-lg">
-                  Quotation #Q-102 marked as *Urgent*.
-                </div>
-
-                <div className="p-3 bg-ti-sky/50 rounded-lg">
-                  Follow-up due for *Family Tour*.
-                </div>
-
+            <div className="max-h-64 overflow-auto py-2 space-y-2">
+              <div className="px-3 py-2 rounded-lg bg-ti-sky/40 text-sm">
+                New inquiry received from <b>George</b>
               </div>
 
-              <div className="text-right mt-3">
-                <Button size="sm" variant="secondary">
-                  View All
-                </Button>
+              <div className="px-3 py-2 rounded-lg bg-ti-sky/40 text-sm">
+                Quotation <b>#Q-102</b> marked as Urgent
+              </div>
+
+              <div className="px-3 py-2 rounded-lg bg-ti-sky/40 text-sm">
+                Follow-up due for <b>Family Tour</b>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* USER PROFILE */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setOpenUser(!openUser);
-              setOpenNotif(false);
-            }}
-            className="
-              w-10 h-10 rounded-full bg-ti-mint flex items-center justify-center
-              text-ti-forest font-semibold hover:ring-2 hover:ring-ti-teal transition
-            "
-          >
-            U
-          </button>
+            <Separator />
 
-          {openUser && (
-            <div
-              className="
-                absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl
-                border border-ti-sky p-3 animate-fadeIn
-              "
-            >
-              <div className="pb-3 mb-3 border-b border-ti-sky">
-                <div className="font-serif text-lg">User Name</div>
-                <div className="text-sm text-ti-forest/70">user@example.com</div>
+            <DropdownMenuItem asChild>
+              <Link to="/notifications" className="w-full justify-center">
+                View all notifications
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* 👤 User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="p-0 rounded-full">
+              <Avatar className="h-10 w-10 bg-ti-mint">
+                <AvatarFallback className="text-ti-forest font-semibold">
+                  U
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="font-serif">User Name</div>
+              <div className="text-xs text-muted-foreground">
+                user@example.com
               </div>
+            </DropdownMenuLabel>
 
-              <ul className="flex flex-col gap-2">
-                <li>
-                  <Link
-                    to="/profile"
-                    className="block p-2 rounded-lg hover:bg-ti-sky/60"
-                  >
-                    Profile Settings
-                  </Link>
-                </li>
+            <DropdownMenuSeparator />
 
-                <li>
-                  <Link
-                    to="/preferences"
-                    className="block p-2 rounded-lg hover:bg-ti-sky/60"
-                  >
-                    Preferences
-                  </Link>
-                </li>
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="flex gap-2">
+                <User className="w-4 h-4" />
+                Profile Settings
+              </Link>
+            </DropdownMenuItem>
 
-                <li>
-                  <button
-                    className="w-full text-left p-2 rounded-lg hover:bg-ti-sky/60"
-                    onClick={() => console.log("Logout")}
-                  >
-                    Logout
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
+            <DropdownMenuItem asChild>
+              <Link to="/preferences" className="flex gap-2">
+                <Settings className="w-4 h-4" />
+                Preferences
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onClick={() => console.log("Logout")}
+              className="text-ti-red focus:text-ti-red"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
       </div>
-    </div>
+    </header>
   );
 }

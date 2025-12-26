@@ -9,6 +9,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [cityId, setCityId] = useState(initial?.cityId || "");
   const [vatNumber, setVatNumber] = useState(initial?.vatNumber || "");
   const [sltdaReg, setSltdaReg] = useState(initial?.sltdaReg || "");
+  const [phone, setPhone] = useState(initial?.phone || "");
 
   // Meal plans
   const [mealPlans, setMealPlans] = useState(initial?.mealPlans || ["BB", "HB", "FB"]);
@@ -83,6 +84,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Input label="Hotel Name" value={name} onChange={setName} />
         <Input label="Address" value={address} onChange={setAddress} />
+        <Input label="Phone" value={phone} onChange={setPhone} />
       </div>
 
       {/* City */}
@@ -132,14 +134,14 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           />
           <input
             className="col-span-3 border px-2 py-1 rounded text-sm"
-            placeholder="Pax"
+            placeholder="Max Occupancy"
             type="number"
             value={roomCount}
             onChange={(e) => setRoomCount(e.target.value)}
           />
           <input
             className="col-span-3 border px-2 py-1 rounded text-sm"
-            placeholder="USD"
+            placeholder="Amount"
             type="number"
             value={roomPrice}
             onChange={(e) => setRoomPrice(e.target.value)}
@@ -185,7 +187,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
 
       {/* Special pricing contact */}
-      <div className="p-3 border rounded space-y-2">
+      {/* <div className="p-3 border rounded space-y-2">
         <h3 className="text-sm font-semibold">Special Pricing Contact</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Input
@@ -199,7 +201,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             onChange={setContactPhone}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-3 border-t">

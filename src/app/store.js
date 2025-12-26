@@ -10,6 +10,7 @@ import cityReducer from "./slices/citySlice";
 import hotelReducer from "./slices/hotelSlice";
 import excursionReducer from "./slices/excursionSlice";
 import quotationReducer from "./slices/quotationSlice";
+import standardDescriptionReducer from "./slices/standardDescriptionSlice";
 
 // ...
 export const store = configureStore({
@@ -21,5 +22,6 @@ export const store = configureStore({
     hotels: hotelReducer,
     excursions: excursionReducer,
     quotations: quotationReducer,
+    standardDescriptions: standardDescriptionReducer
   },
 });

@@ -1,204 +1,152 @@
-import { useMemo, useState, useEffect } from "react";
-import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
-import DestinationSelector from "./selectors/DestinationSelector";
-import StopSelector from "./selectors/StopSelector";
-import ExcursionSelector from "./selectors/ExcursionSelector";
-import DescriptionEditor from "./editor/DescriptionEditor";
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
+import Card from "../../../components/common/Card";
+import DescriptionEditor from "./editor/DescriptionEditor";
 
-export default function DayCard({ index, day, onUpdate, onRemove, openDestination }) {
-  const cities = useSelector((s) => s.cities.items);
-  const excursions = useSelector((s) => s.excursions.items);
+export default function DayCard({
+  day,
+  isFirstDay,
+  prevDestinationId,
+  onUpdate,
+}) {
+  const cities = useSelector((s) => s.cities?.items) || [];
+  const excursions = useSelector((s) => s.excursions?.items) || [];
+  const standards = useSelector(s => s.standardDescriptions?.items || []);
+  console.log("STANDARDS:", standards);
 
-  // Local UI modals
-  const [stopModal, setStopModal] = useState(false);
-  const [excModal, setExcModal] = useState(false);
 
-  // Set/track an "autoDescription" baseline so we can flag customs
-  const autoDescription = useMemo(() => {
-    // SUPER simple placeholder logic for now.
-    // Later: replace with StandardDescriptionAutoFill using start->dest->stops->excursions.
-    const cityName = cities.find((c) => c.id === day.destinationId)?.name || "Destination";
-    const stopNames = (day.stops || [])
-      .map((id) => cities.find((c) => c.id === id)?.name)
-      .filter(Boolean)
-      .join(", ");
-    const exNames = (day.excursions || [])
-      .map((id) => excursions.find((e) => e.id === id)?.name)
-      .filter(Boolean)
-      .join(", ");
+  const startCityId = isFirstDay ? day.startCityId : prevDestinationId;
+  const destinationId = day.destinationId;
 
-    return `
-      <h3>Day ${day.day}: ${cityName}</h3>
-      ${stopNames ? `<p><strong>Stops:</strong> ${stopNames}</p>` : ""}
-      ${exNames ? `<p><strong>Planned experiences:</strong> ${exNames}</p>` : ""}
-      <p>Scenic transfers and curated activities as per plan.</p>
-    `.trim();
-  }, [day.day, day.destinationId, day.stops, day.excursions, cities, excursions]);
+  const availableExcursions = useMemo(() => {
+    if (!destinationId) return [];
 
-  // Initialize description once if empty
-  useEffect(() => {
-    if (!day.description) {
-      onUpdate({ description: autoDescription, custom: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return excursions.filter(
+      (e) =>
+        e.status === "active" &&
+        Array.isArray(e.assignedCityIds) &&
+        e.assignedCityIds.map(Number).includes(Number(destinationId))
+    );
+  }, [excursions, destinationId]);
 
-  // Flag custom automatically
-  useEffect(() => {
-    if (day.description) {
-      const normalizedA = normalizeHTML(autoDescription);
-      const normalizedD = normalizeHTML(day.description);
-      onUpdate({ custom: normalizedD !== normalizedA });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoDescription]);
+  const availableStops = useMemo(() => {
+    if (!destinationId) return [];
 
-  const destinationName =
-    cities.find((c) => c.id === day.destinationId)?.name || "Select destination";
+    return cities.filter(
+      (c) => Number(c.id) !== Number(destinationId)
+    );
+  }, [cities, destinationId]);
 
-  function updateStops(ids) {
-    onUpdate({ stops: ids });
-  }
+  const availableStandards = useMemo(() => {
+    if (!startCityId || !destinationId) return [];
 
-  function updateExcursions(ids) {
-    onUpdate({ excursions: ids });
-  }
+    return standards.filter(
+      (s) =>
+        Number(s.start_city_id) === Number(startCityId) &&
+        Number(s.end_city_id) === Number(destinationId)
+    );
+  }, [standards, startCityId, destinationId]);
 
-  function updateDescription(html) {
-    onUpdate({ description: html });
+
+
+
+
+  function toggleExcursion(id) {
+    const list = day.excursions || [];
+    onUpdate({
+      excursions: list.includes(id)
+        ? list.filter((x) => x !== id)
+        : [...list, id],
+    });
   }
 
   return (
     <Card>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="text-lg font-semibold">DAY {day.day}</div>
-          {day.custom && (
-            <span className="px-2 py-1 rounded text-sm bg-yellow-100 text-yellow-800">
-              Custom
-            </span>
-          )}
-        </div>
-        <Button variant="danger" onClick={onRemove}>Delete Day</Button>
+      <div className="text-lg font-semibold">
+        Day {day.day}
       </div>
 
-      {/* Destination */}
-      <div className="mb-4">
-        <div className="text-sm font-semibold mb-1">Destination</div>
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-2 border rounded bg-white">{destinationName}</div>
-          <Button variant="secondary" onClick={openDestination}>Change</Button>
-        </div>
+      {/* DATE */}
+      <div className="text-sm text-gray-500 mb-2">
+        {day.date}
       </div>
 
-      {/* Stops */}
-      <div className="mb-4">
-        <div className="text-sm font-semibold mb-1">Stops</div>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2 flex-wrap">
-            {(day.stops || []).length ? (
-              day.stops.map((id) => {
-                const name = cities.find((c) => c.id === id)?.name || id;
-                return (
-                  <span key={id} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                    {name}
-                  </span>
-                );
-              })
-            ) : (
-              <span className="text-gray-500">No stops added</span>
-            )}
+      {/* ROUTE */}
+      <div className="text-sm text-gray-700 mb-3">
+        {cities.find((c) => c.id === startCityId)?.name} →{" "}
+        {cities.find((c) => c.id === destinationId)?.name}
+      </div>
+
+      {/* EXCURSIONS (OPTIONAL) */}
+      {availableExcursions.length > 0 && (
+        <div className="mb-3">
+          <div className="text-sm font-semibold mb-1">
+            Excursions (optional)
           </div>
-          <Button variant="secondary" onClick={() => setStopModal(true)}>Edit</Button>
-        </div>
-      </div>
 
-      {/* Excursions */}
-      <div className="mb-4">
-        <div className="text-sm font-semibold mb-1">Excursions</div>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2 flex-wrap">
-            {(day.excursions || []).length ? (
-              day.excursions.map((id) => {
-                const name = excursions.find((e) => e.id === id)?.name || id;
-                return (
-                  <span key={id} className="px-2 py-1 bg-green-100 text-green-700 rounded text-sm">
-                    {name}
-                  </span>
-                );
-              })
-            ) : (
-              <span className="text-gray-500">No excursions added</span>
-            )}
+          <div className="flex flex-wrap gap-2">
+            {availableExcursions.map((e) => (
+              <label
+                key={e.id}
+                className={`px-3 py-1 border rounded cursor-pointer text-sm
+                  ${day.excursions?.includes(e.id)
+                    ? "bg-green-100 border-green-400"
+                    : "bg-white"
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={day.excursions?.includes(e.id) || false}
+                  onChange={() => toggleExcursion(e.id)}
+                />
+                {e.name}
+              </label>
+            ))}
           </div>
-          <Button variant="secondary" onClick={() => setExcModal(true)}>Edit</Button>
         </div>
-      </div>
+      )}
 
-      {/* Description (TipTap) */}
-      <div className="mb-4">
-        <div className="text-sm font-semibold mb-2">Description</div>
-        <DescriptionEditor
-          initialHTML={day.description || autoDescription}
-          onChange={updateDescription}
-        />
-        <div className="flex gap-2 mt-2">
-          <Button
-            variant="outline"
-            onClick={() => updateDescription(autoDescription)}
-            type="button"
+      {availableStandards.length > 0 && (
+        <div className="mb-4">
+          <div className="text-sm font-semibold mb-1">
+            Standard Itinerary
+          </div>
+
+          <select
+            className="w-full border rounded px-2 py-1"
+            value={day.standardDescriptionId || ""}
+            onChange={(e) => {
+              const std = availableStandards.find(
+                (s) => s.id === Number(e.target.value)
+              );
+              if (!std) return;
+
+              onUpdate({
+                standardDescriptionId: std.id,
+                description: std.description_html,
+                custom: false,
+              });
+            }}
           >
-            Reset to Standard
-          </Button>
+            <option value="">Select standard itinerary</option>
+            {availableStandards.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-
-      {/* Notes */}
-      <div className="mb-2">
-        <div className="text-sm font-semibold mb-1">Notes (optional)</div>
-        <input
-          className="w-full border rounded px-3 py-2"
-          placeholder="Internal note for this day…"
-          value={day.notes || ""}
-          onChange={(e) => onUpdate({ notes: e.target.value })}
-        />
-      </div>
-
-      {/* Stop selector modal */}
-      {stopModal && (
-        <StopSelector
-          open={stopModal}
-          onClose={() => setStopModal(false)}
-          selected={day.stops || []}
-          onApply={(ids) => {
-            updateStops(ids);
-            setStopModal(false);
-          }}
-        />
       )}
 
-      {/* Excursion selector modal */}
-      {excModal && (
-        <ExcursionSelector
-          open={excModal}
-          onClose={() => setExcModal(false)}
-          selected={day.excursions || []}
-          onApply={(ids) => {
-            updateExcursions(ids);
-            setExcModal(false);
-          }}
-          limitToCityId={day.destinationId || null}
-        />
-      )}
+
+      {/* DESCRIPTION */}
+      <DescriptionEditor
+        initialHTML={day.description}
+        onChange={(html) =>
+          onUpdate({ description: html, custom: true })
+        }
+      />
     </Card>
   );
-}
-
-function normalizeHTML(html) {
-  return (html || "")
-    .replace(/\s+/g, " ")
-    .replace(/> </g, "><")
-    .trim();
 }

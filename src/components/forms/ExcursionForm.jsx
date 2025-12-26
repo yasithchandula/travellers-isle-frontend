@@ -129,7 +129,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           </select>
         </div>
 
-        <div>
+        {/* <div>
           <label className="block mb-1 text-xs">Tags</label>
           <input
             className="w-full border rounded px-2 py-1.5 text-sm"
@@ -137,7 +137,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             onChange={(e) => setTagsText(e.target.value)}
             placeholder="family, culture, adventure"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* PER PERSON */}
@@ -150,7 +150,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             <div>Age From</div>
             <div>Age To</div>
             <div>Price (USD)</div>
-            <div>Guide Fee</div>
           </div>
 
           {/* Infant */}
@@ -171,7 +170,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               value={pp.infantUSD}
               onChange={(v) => setPP({ ...pp, infantUSD: +v.target.value })}
             />
-            <span className="text-gray-400 text-xs">—</span>
           </div>
 
           {/* Child */}
@@ -189,7 +187,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               value={pp.childUSD}
               onChange={(v) => setPP({ ...pp, childUSD: +v.target.value })}
             />
-            <span className="text-gray-400 text-xs">—</span>
           </div>
 
           {/* Adult */}
@@ -204,6 +201,12 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               value={pp.adultUSD}
               onChange={(v) => setPP({ ...pp, adultUSD: +v.target.value })}
             />
+          </div>
+          {/* Guide Fee */}
+          <div className="grid grid-cols-5 gap-2 items-center mt-1">
+            <span className="text-sm">Guid Fee</span>
+            <span className="text-gray-400 text-sm">-</span>
+            <span className="text-gray-400 text-sm"></span>
             <input
               className="border rounded px-2 py-1 text-sm"
               value={pp.guideFeeUSD}
@@ -227,7 +230,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-end">
-            <Input label="VAT Rate" value={safari.vatRate} onChange={(v) => setSafari({ ...safari, vatRate: +v })} />
+            <Input label="VAT Rate" value={safari.vatRate} onChange={(v) => setSafari({ ...safari, vatRate: +v })} disabled={true}/>
             <Input label="Jeep Capacity" value={safari.jeepCapacity} onChange={(v) => setSafari({ ...safari, jeepCapacity: +v })} />
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -266,20 +269,22 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
 
       {/* CUSTOM */}
       {pricingType === "CUSTOM" && (
-        <div className="p-2 border rounded">
+        <div className="">
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+             Amount
+            <Input
+              type="input"
+              className="col-3"
               checked={custom.allowZero}
               onChange={(e) => setCustom({ ...custom, allowZero: e.target.checked })}
             />
-            Allow zero at quotation time
+           
           </label>
         </div>
       )}
 
       {/* Cities */}
-      <div className="p-2 border rounded space-y-2">
+      {/* <div className="p-2 border rounded space-y-2">
         <label className="block text-xs font-medium">Assign Cities</label>
 
         <div className="flex gap-2">
@@ -333,15 +338,16 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             );
           })}
         </div>
-      </div>
+      </div> */}
 
 
       {/* Flags */}
       <div className="grid grid-cols-2 gap-3 text-sm">
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={isOptionalSupplement} onChange={(e) => setIsOptionalSupplement(e.target.checked)} />
-          Optional Supplement
+          Optional Supplement Extra Charge
+          <input type="input" className="border rounded px-2 py-1 text-sm" onChange={(e) => setIsOptionalSupplement(e.target.checked)} />
         </label>
+        
 
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={reminder.enabled} onChange={(e) => setReminder({ ...reminder, enabled: e.target.checked })} />
@@ -351,12 +357,8 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
 
       {reminder.enabled && (
         <div className="grid grid-cols-3 gap-2">
-          <Input label="Days Before" value={reminder.daysBefore} onChange={(v) => setReminder({ ...reminder, daysBefore: +v })} />
-          <label className="flex items-end gap-2 text-sm">
-            <input type="checkbox" checked={reminder.nextDayAlso} onChange={(e) => setReminder({ ...reminder, nextDayAlso: e.target.checked })} />
-            Next Day
-          </label>
-          <Input label="Note" value={reminder.note} onChange={(v) => setReminder({ ...reminder, note: v })} />
+          <input className="border rounded px-2 py-1 text-sm" label="Days Before" value={reminder.daysBefore} onChange={(v) => setReminder({ ...reminder, daysBefore: +v })} />
+          <input className="border rounded px-2 py-1 text-sm" label="Note" value={reminder.note} onChange={(v) => setReminder({ ...reminder, note: v })} />
         </div>
       )}
 

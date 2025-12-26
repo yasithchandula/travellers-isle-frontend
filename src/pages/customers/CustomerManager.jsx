@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { RefreshCcw, Search } from "lucide-react";
+
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
@@ -70,57 +72,74 @@ export default function CustomerManager() {
         </div>
 
         <div className="overflow-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-3 border-b">Name</th>
-                <th className="p-3 border-b">Email</th>
-                <th className="p-3 border-b">Phone</th>
-                <th className="p-3 border-b">Status</th>
-                <th className="p-3 border-b w-48">Actions</th>
-              </tr>
-            </thead>
+{/* Table */}
+<div className="overflow-auto rounded-md border">
+  <table className="w-full border-collapse text-sm">
+    <thead className="bg-gray-100 sticky top-0 z-10">
+      <tr className="text-left">
+        <th className="p-3 border-b">Name</th>
+        <th className="p-3 border-b">Email</th>
+        <th className="p-3 border-b">Phone</th>
+        <th className="p-3 border-b">Status</th>
+        <th className="p-3 border-b w-48">Actions</th>
+      </tr>
+    </thead>
 
-            <tbody>
-              {items.map((c) => (
-                <tr key={c.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{c.name}</td>
-                  <td className="p-3">{c.email}</td>
-                  <td className="p-3">{c.phone}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-sm ${
-                        c.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="p-3 flex gap-2">
-                    <Button variant="secondary" onClick={() => openEdit(c)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => setConfirmId(c.id)}
-                    >
-                      Deactivate
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+    <tbody>
+      {items.map((c) => (
+        <tr
+          key={c.id}
+          className="border-b hover:bg-gray-50 transition"
+        >
+          <td className="p-3 font-medium">{c.name}</td>
+          <td className="p-3">{c.email}</td>
+          <td className="p-3">{c.phone}</td>
 
-              {items.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="p-6 text-center text-gray-500">
-                    No customers found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <td className="p-3">
+            <span
+              className={`px-2 py-1 rounded text-xs capitalize ${
+                c.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {c.status}
+            </span>
+          </td>
+
+          <td className="p-3 flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openEdit(c)}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setConfirmId(c.id)}
+            >
+              Deactivate
+            </Button>
+          </td>
+        </tr>
+      ))}
+
+      {!loading && items.length === 0 && (
+        <tr>
+          <td
+            colSpan={5}
+            className="p-6 text-center text-gray-500"
+          >
+            No customers found.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
         </div>
       </Card>
 

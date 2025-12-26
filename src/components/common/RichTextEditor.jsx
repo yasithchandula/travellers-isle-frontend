@@ -2,13 +2,18 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import { Bold, Italic, UnderlineIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Bold, Italic, UnderlineIcon, AlignLeft, AlignCenter, AlignRight, Highlighter, List, ListOrdered } from "lucide-react";
+import Highlight from "@tiptap/extension-highlight";
+
 
 export default function TipTapEditor({ value, onChange, height = "200px" }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
+      Highlight.configure({
+        multicolor: true, // allows different colors later
+      }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
@@ -23,6 +28,7 @@ export default function TipTapEditor({ value, onChange, height = "200px" }) {
       },
     },
   });
+
 
   if (!editor) return null;
 
@@ -50,6 +56,15 @@ export default function TipTapEditor({ value, onChange, height = "200px" }) {
         >
           <UnderlineIcon size={18} />
         </button>
+
+        <button
+          className={`p-1 rounded ${editor.isActive("highlight") ? "bg-yellow-300" : ""
+            }`}
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+        >
+          <Highlighter size={18} />
+        </button>
+
 
         <button
           className="p-1 rounded"

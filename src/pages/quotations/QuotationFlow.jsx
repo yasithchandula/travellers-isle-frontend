@@ -60,11 +60,13 @@ export default function QuotationFlow({ mode = "new" }) {
 
       {step === 2 && (
         <Step2Itinerary
-          data={draft.itinerary}
+          tourEntry={draft.tourEntry} 
+          itinerary={draft.itinerary}      
           onChange={(v) => saveStep({ itinerary: v })}
           back={goBack}
           next={goNext}
         />
+
       )}
 
       {step === 3 && (

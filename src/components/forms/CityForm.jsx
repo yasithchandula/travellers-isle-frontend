@@ -7,8 +7,8 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [country, setCountry] = useState(initial?.country || "Sri Lanka");
   const [region, setRegion] = useState(initial?.region || "");
-  const [isDestination, setIsDestination] = useState(initial?.isDestination || false);
-  const [isStop, setIsStop] = useState(initial?.isStop || false);
+  const [isDestination, setIsDestination] = useState(initial?.isDestination || true);
+  const [isStop, setIsStop] = useState(initial?.isStop || true);
 
   useEffect(() => {
     if (initial) {

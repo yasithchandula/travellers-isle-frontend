@@ -1,137 +1,208 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import DayCard from "./DayCard";
+import { useDispatch } from "react-redux";
+import { fetchCities } from "../../../app/slices/citySlice";
+import { fetchExcursions } from "../../../app/slices/excursionSlice";
+import { fetchStandardDescriptions } from "../../../app/slices/standardDescriptionSlice";
 
-import DestinationSelector from "./selectors/DestinationSelector";
-import DuplicateStandardModal from "./modals/DuplicateStandardModal";
-import DuplicateQuotationModal from "./modals/DuplicateQuotationModal";
+// ✅ REQUIRED helper
+function addDays(baseDate, offset) {
+  const d = new Date(baseDate);
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
 
-export default function Step2Itinerary({ tourEntry, data, onChange, next, back }) {
-  const [days, setDays] = useState(data.days || []);
+export default function Step2Itinerary({
+  tourEntry,
+  itinerary,
+  onChange,
+  next,
+  back,
+}) {
+  const dispatch = useDispatch();
+  const cities = useSelector((s) => s.cities?.items) || [];
 
-  const [openDestinationModal, setOpenDestinationModal] = useState(null); // dayIndex
-  const [openDupStd, setOpenDupStd] = useState(false);
-  const [openDupQuote, setOpenDupQuote] = useState(false);
+  const [routeRows, setRouteRows] = useState([]);
+  const [routeDone, setRouteDone] = useState(false);
+  const [days, setDays] = useState(itinerary?.days || []);
 
-  // Sync with parent
-  function updateDays(updated) {
-    setDays(updated);
-    onChange({ ...data, days: updated });
+
+  /* --------------------------------------------------
+     BUILD ROUTE TABLE FROM STEP 1
+  --------------------------------------------------- */
+  useEffect(() => {
+    const totalDays = Number(tourEntry?.days);
+
+    if (!tourEntry?.tourStart || !totalDays) return;
+
+    const rows = Array.from({ length: totalDays }).map((_, i) => ({
+      day: i + 1,
+      date: addDays(tourEntry.tourStart, i), // ✅ now works
+      startCityId: i === 0 ? null : undefined,
+      destinationId: null,
+    }));
+
+    setRouteRows(rows);
+    setRouteDone(false);
+    setDays([]);
+  }, [tourEntry?.tourStart, tourEntry?.days]);
+
+  useEffect(() => {
+    dispatch(fetchCities(""));
+    dispatch(fetchExcursions(""));
+    dispatch(fetchStandardDescriptions(""));
+  }, [dispatch]);
+
+  /* --------------------------------------------------
+     ROUTE LOGIC
+  --------------------------------------------------- */
+  function updateStartCity(cityId) {
+    const updated = [...routeRows];
+    updated[0].startCityId = cityId;
+    setRouteRows(updated);
   }
 
-  // Add day → immediately open destination selector
-  function addDay() {
-    const newDay = {
-      day: days.length + 1,
-      destinationId: null,
+  function updateDestination(index, destinationId) {
+    const updated = [...routeRows];
+    updated[index].destinationId = destinationId;
+
+    if (updated[index + 1]) {
+      updated[index + 1].startCityId = destinationId;
+    }
+
+    setRouteRows(updated);
+  }
+
+  const routeValid = useMemo(() => {
+    return routeRows.length > 0 &&
+      routeRows.every((r) => r.startCityId && r.destinationId);
+  }, [routeRows]);
+
+  function buildDayCards() {
+    const built = routeRows.map((r) => ({
+      day: r.day,
+      date: r.date,
+      startCityId: r.startCityId,
+      destinationId: r.destinationId,
+
       stops: [],
       excursions: [],
       description: "",
       custom: false,
-      notes: ""
-    };
+      notes: "",
+    }));
 
-    const updated = [...days, newDay];
-    updateDays(updated);
-
-    // Open destination selector for this day
-    setOpenDestinationModal(updated.length - 1);
+    setDays(built);
+    setRouteDone(true);
+    onChange({ days: built }); // ✅ save ONLY itinerary
   }
 
-  // Remove day
-  function removeDay(index) {
-    const updated = days.filter((_, i) => i !== index)
-      .map((d, i) => ({ ...d, day: i + 1 }));
-    updateDays(updated);
-  }
-
-  // Update a specific day’s fields
   function updateDay(index, patch) {
     const updated = [...days];
     updated[index] = { ...updated[index], ...patch };
-    updateDays(updated);
-  }
-
-  // Duplicate standard itinerary
-  function applyStandardItinerary(stdDays) {
-    updateDays(stdDays);
-    setOpenDupStd(false);
-  }
-
-  // Duplicate previous quotation
-  function applyQuotationDuplicate(prevDays) {
-    updateDays(prevDays);
-    setOpenDupQuote(false);
+    setDays(updated);
+    onChange({ days: updated });
   }
 
   return (
     <div>
+      {/* ROUTE TABLE */}
+      <Card>
+        <div className="text-lg font-semibold mb-3">
+          Tour Route & Dates
+        </div>
 
-      {/* Header buttons */}
-      <div className="flex gap-3 mb-4">
-        <Button onClick={addDay}>+ Add Day</Button>
-        <Button variant="secondary" onClick={() => setOpenDupStd(true)}>
-          Duplicate Standard Itinerary
-        </Button>
-        <Button variant="secondary" onClick={() => setOpenDupQuote(true)}>
-          Duplicate Previous Quotation
-        </Button>
-      </div>
+        <table className="w-full border text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="border p-2">Day</th>
+              <th className="border p-2">Date</th>
+              <th className="border p-2">Start</th>
+              <th className="border p-2">Destination</th>
+            </tr>
+          </thead>
 
-      {/* Day Cards */}
-      <div className="flex flex-col gap-4">
-        {days.map((day, index) => (
-          <DayCard
-            key={index}
-            index={index}
-            day={day}
-            onUpdate={(patch) => updateDay(index, patch)}
-            onRemove={() => removeDay(index)}
-            openDestination={() => setOpenDestinationModal(index)}
-          />
-        ))}
+          <tbody>
+            {routeRows.map((r, i) => (
+              <tr key={i}>
+                <td className="border p-2 text-center">Day {r.day}</td>
+                <td className="border p-2">{r.date}</td>
 
-        {days.length === 0 && (
-          <div className="text-gray-500 border p-5 rounded text-center">
-            No days added. Click <b>Add Day</b> to start.
+                <td className="border p-2">
+                  {i === 0 ? (
+                    <select
+                      className="w-full border rounded px-2 py-1"
+                      value={r.startCityId || ""}
+                      onChange={(e) =>
+                        updateStartCity(Number(e.target.value))
+                      }
+                    >
+                      <option value="">Select start</option>
+                      {cities.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    cities.find((c) => c.id === r.startCityId)?.name
+                  )}
+                </td>
+
+                <td className="border p-2">
+                  <select
+                    className="w-full border rounded px-2 py-1"
+                    value={r.destinationId || ""}
+                    disabled={!r.startCityId}
+                    onChange={(e) =>
+                      updateDestination(i, Number(e.target.value))
+                    }
+                  >
+                    <option value="">Select destination</option>
+                    {cities.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="flex justify-end mt-4">
+          <Button disabled={!routeValid} onClick={buildDayCards}>
+            Done → Build Day Cards
+          </Button>
+        </div>
+      </Card>
+
+      {/* DAY CARDS */}
+      {routeDone && (
+        <div className="mt-6 flex flex-col gap-4">
+          {days.map((day, index) => (
+            <DayCard
+              key={index}
+              day={day}
+              isFirstDay={index === 0}
+              prevDestinationId={
+                index > 0 ? days[index - 1].destinationId : null
+              }
+              onUpdate={(patch) => updateDay(index, patch)}
+            />
+          ))}
+
+          <div className="flex justify-between mt-6">
+            <Button variant="outline" onClick={back}>
+              ← Back
+            </Button>
+            <Button onClick={next}>Next →</Button>
           </div>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between mt-8">
-        <Button variant="outline" onClick={back}>← Back</Button>
-        <Button disabled={days.length === 0} onClick={next}>Next →</Button>
-      </div>
-
-      {/* Select Destination Modal */}
-      {openDestinationModal !== null && (
-        <DestinationSelector
-          open={openDestinationModal !== null}
-          onClose={() => setOpenDestinationModal(null)}
-          onSelect={(cityId) => {
-            updateDay(openDestinationModal, { destinationId: cityId });
-            setOpenDestinationModal(null);
-          }}
-        />
-      )}
-
-      {/* Duplicate Standard */}
-      {openDupStd && (
-        <DuplicateStandardModal
-          open={openDupStd}
-          onClose={() => setOpenDupStd(false)}
-          onApply={applyStandardItinerary}
-        />
-      )}
-
-      {/* Duplicate Previous Quotation */}
-      {openDupQuote && (
-        <DuplicateQuotationModal
-          open={openDupQuote}
-          onClose={() => setOpenDupQuote(false)}
-          onApply={applyQuotationDuplicate}
-        />
+        </div>
       )}
     </div>
   );

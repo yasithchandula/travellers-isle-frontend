@@ -73,10 +73,10 @@ export default function DestinationManager() {
           </Button>
         </div>
 
-        <div className="overflow-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-left">
+        <div className="overflow-auto rounded-md border">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr className="text-left">
                 <th className="p-3 border-b">City</th>
                 <th className="p-3 border-b">Country</th>
                 <th className="p-3 border-b">Region</th>
@@ -88,41 +88,75 @@ export default function DestinationManager() {
 
             <tbody>
               {items.map((c) => (
-                <tr key={c.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{c.name}</td>
-                  <td className="p-3">{c.country}</td>
-                  <td className="p-3">{c.region}</td>
+                <tr
+                  key={c.id}
+                  className="border-b hover:bg-gray-50 transition"
+                >
+                  {/* City */}
                   <td className="p-3">
-                    <div className="flex gap-2">
+                    <div className="font-medium">{c.name}</div>
+                  </td>
+
+                  {/* Country */}
+                  <td className="p-3">{c.country}</td>
+
+                  {/* Region */}
+                  <td className="p-3">{c.region}</td>
+
+                  {/* Type */}
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-1">
                       {c.isDestination && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">Destination</span>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                          Destination
+                        </span>
                       )}
                       {c.isStop && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-sm">Stop</span>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                          Stop
+                        </span>
                       )}
                     </div>
                   </td>
 
+                  {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-sm ${
-                        c.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
-                      }`}
+                      className={`px-2 py-1 rounded text-xs capitalize ${c.status === "active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
+                        }`}
                     >
                       {c.status}
                     </span>
                   </td>
 
+                  {/* Actions */}
                   <td className="p-3 flex gap-2">
-                    <Button variant="secondary" onClick={() => openEdit(c)}>Edit</Button>
-                    <Button variant="danger" onClick={() => setConfirmId(c.id)}>Disable</Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openEdit(c)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setConfirmId(c.id)}
+                    >
+                      Disable
+                    </Button>
                   </td>
                 </tr>
               ))}
 
               {items.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="p-6 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="p-6 text-center text-gray-500"
+                  >
                     No cities found.
                   </td>
                 </tr>
@@ -130,6 +164,7 @@ export default function DestinationManager() {
             </tbody>
           </table>
         </div>
+
       </Card>
 
       {/* Create / Edit */}
