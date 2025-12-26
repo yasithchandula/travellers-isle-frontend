@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import Card from "../../../components/common/Card";
 import DescriptionEditor from "./editor/DescriptionEditor";
@@ -11,13 +11,13 @@ export default function DayCard({
 }) {
   const cities = useSelector((s) => s.cities?.items) || [];
   const excursions = useSelector((s) => s.excursions?.items) || [];
-  const standards = useSelector(s => s.standardDescriptions?.items || []);
-  console.log("STANDARDS:", standards);
-
+  const standards =
+    useSelector((s) => s.standardDescriptions?.items) || [];
 
   const startCityId = isFirstDay ? day.startCityId : prevDestinationId;
   const destinationId = day.destinationId;
 
+  /* -------------------- Excursions -------------------- */
   const availableExcursions = useMemo(() => {
     if (!destinationId) return [];
 
@@ -29,14 +29,7 @@ export default function DayCard({
     );
   }, [excursions, destinationId]);
 
-  const availableStops = useMemo(() => {
-    if (!destinationId) return [];
-
-    return cities.filter(
-      (c) => Number(c.id) !== Number(destinationId)
-    );
-  }, [cities, destinationId]);
-
+  /* -------------------- Standards -------------------- */
   const availableStandards = useMemo(() => {
     if (!startCityId || !destinationId) return [];
 
@@ -47,10 +40,19 @@ export default function DayCard({
     );
   }, [standards, startCityId, destinationId]);
 
+  /* -------------------- Search State -------------------- */
+  const [stdQuery, setStdQuery] = useState("");
+  const [stdOpen, setStdOpen] = useState(false);
 
+  const filteredStandards = useMemo(() => {
+    if (!stdQuery) return availableStandards;
 
+    return availableStandards.filter((s) =>
+      s.title.toLowerCase().includes(stdQuery.toLowerCase())
+    );
+  }, [availableStandards, stdQuery]);
 
-
+  /* -------------------- Handlers -------------------- */
   function toggleExcursion(id) {
     const list = day.excursions || [];
     onUpdate({
@@ -60,8 +62,20 @@ export default function DayCard({
     });
   }
 
+  function applyStandard(std) {
+    onUpdate({
+      standardDescriptionId: std.id,
+      description: std.description_html,
+      custom: false,
+    });
+    setStdQuery(std.title);
+    setStdOpen(false);
+  }
+
+  /* -------------------- UI -------------------- */
   return (
     <Card>
+      {/* HEADER */}
       <div className="text-lg font-semibold">
         Day {day.day}
       </div>
@@ -77,9 +91,63 @@ export default function DayCard({
         {cities.find((c) => c.id === destinationId)?.name}
       </div>
 
-      {/* EXCURSIONS (OPTIONAL) */}
+      {/* STANDARD ITINERARY SEARCH */}
+      {availableStandards.length > 0 && (
+        <div className="mb-4 relative">
+          <div className="text-sm font-semibold mb-1">
+            Standard Itinerary
+          </div>
+
+          <input
+            type="text"
+            className="w-full border rounded px-3 py-2 text-sm"
+            placeholder="Search standard itinerary..."
+            value={stdQuery}
+            onChange={(e) => {
+              setStdQuery(e.target.value);
+              setStdOpen(true);
+            }}
+            onFocus={() => setStdOpen(true)}
+          />
+
+          {stdOpen && (
+            <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+              {filteredStandards.length > 0 ? (
+                filteredStandards.map((s) => (
+                  <div
+                    key={s.id}
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                    onClick={() => applyStandard(s)}
+                  >
+                    <div className="font-medium">{s.title}</div>
+                    <div className="text-xs text-gray-500">
+                      {
+                        cities.find(
+                          (c) => c.id === s.start_city_id
+                        )?.name
+                      }{" "}
+                      →{" "}
+                      {
+                        cities.find(
+                          (c) => c.id === s.end_city_id
+                        )?.name
+                      }
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500">
+                  No matching itineraries
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+            {/* EXCURSIONS */}
       {availableExcursions.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-4">
           <div className="text-sm font-semibold mb-1">
             Excursions (optional)
           </div>
@@ -89,9 +157,10 @@ export default function DayCard({
               <label
                 key={e.id}
                 className={`px-3 py-1 border rounded cursor-pointer text-sm
-                  ${day.excursions?.includes(e.id)
-                    ? "bg-green-100 border-green-400"
-                    : "bg-white"
+                  ${
+                    day.excursions?.includes(e.id)
+                      ? "bg-green-100 border-green-400"
+                      : "bg-white"
                   }`}
               >
                 <input
@@ -107,40 +176,7 @@ export default function DayCard({
         </div>
       )}
 
-      {availableStandards.length > 0 && (
-        <div className="mb-4">
-          <div className="text-sm font-semibold mb-1">
-            Standard Itinerary
-          </div>
-
-          <select
-            className="w-full border rounded px-2 py-1"
-            value={day.standardDescriptionId || ""}
-            onChange={(e) => {
-              const std = availableStandards.find(
-                (s) => s.id === Number(e.target.value)
-              );
-              if (!std) return;
-
-              onUpdate({
-                standardDescriptionId: std.id,
-                description: std.description_html,
-                custom: false,
-              });
-            }}
-          >
-            <option value="">Select standard itinerary</option>
-            {availableStandards.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-
-      {/* DESCRIPTION */}
+      {/* DESCRIPTION EDITOR */}
       <DescriptionEditor
         initialHTML={day.description}
         onChange={(html) =>
