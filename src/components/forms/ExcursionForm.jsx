@@ -230,8 +230,13 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2 items-end">
-            <Input label="VAT Rate" value={safari.vatRate} onChange={(v) => setSafari({ ...safari, vatRate: +v })} disabled={true}/>
+            <Input label="VAT Rate" value={safari.vatRate} onChange={(v) => setSafari({ ...safari, vatRate: +v })} disabled={true} />
             <Input label="Jeep Capacity" value={safari.jeepCapacity} onChange={(v) => setSafari({ ...safari, jeepCapacity: +v })} />
+            <Input
+              label="Guide Fee (USD)"
+              value={safari.guideFeeUSD}
+              onChange={(v) => setSafari({ ...safari, guideFeeUSD: +v })}
+            />
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -271,14 +276,14 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
       {pricingType === "CUSTOM" && (
         <div className="">
           <label className="flex items-center gap-2 text-sm">
-             Amount
+            Amount
             <Input
               type="input"
               className="col-3"
               checked={custom.allowZero}
               onChange={(e) => setCustom({ ...custom, allowZero: e.target.checked })}
             />
-           
+
           </label>
         </div>
       )}
@@ -347,7 +352,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           Optional Supplement Extra Charge
           <input type="input" className="border rounded px-2 py-1 text-sm" onChange={(e) => setIsOptionalSupplement(e.target.checked)} />
         </label>
-        
+
 
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={reminder.enabled} onChange={(e) => setReminder({ ...reminder, enabled: e.target.checked })} />
