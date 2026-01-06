@@ -1,27 +1,39 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RefreshCcw, Search } from "lucide-react";
-import { InputGroup, InputGroupInput, InputGroupAddon } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
 
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
 
 import ExcursionForm from "../../components/forms/ExcursionForm";
 import {
   fetchExcursions,
-  setExcursionQuery,
+  setExcursionSearch,
   addExcursion,
   editExcursion,
-  disableExc,
 } from "../../app/slices/excursionSlice";
 import { fetchCities } from "../../app/slices/citySlice";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 
 export default function ExcursionManager() {
   const dispatch = useDispatch();
 
-  const { items, loading, query } = useSelector((s) => s.excursions);
+  const { items, loading, search, page, limit } = useSelector(
+    (s) => s.excursions
+  );
   const cities = useSelector((s) => s.cities.items);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,9 +41,9 @@ export default function ExcursionManager() {
   const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchExcursions(query));
+    dispatch(fetchExcursions({ search, page, limit }));
     dispatch(fetchCities(""));
-  }, [dispatch, query]);
+  }, [dispatch, search, page, limit]);
 
   function openCreate() {
     setEditItem(null);
@@ -45,20 +57,12 @@ export default function ExcursionManager() {
 
   function handleSubmit(form) {
     if (editItem) {
-      dispatch(editExcursion({ id: editItem.id, patch: form }));
+      dispatch(editExcursion({ id: editItem.id, payload: form }));
     } else {
       dispatch(addExcursion(form));
     }
     setModalOpen(false);
   }
-
-  function handleDisable(id) {
-    dispatch(disableExc(id));
-    setConfirmId(null);
-  }
-
-  const cityName = (id) =>
-    cities.find((c) => c.id === id)?.name || "-";
 
   return (
     <div className="space-y-4">
@@ -68,37 +72,34 @@ export default function ExcursionManager() {
         <Button onClick={openCreate}>+ Add Excursion</Button>
       </div>
 
-      {/* Main Card */}
       <Card>
         {/* Toolbar */}
         <div className="flex flex-col md:flex-row gap-3 md:items-center mb-4">
-          {/* Search */}
           <div className="relative flex-1">
-            {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              className="pl-9"
-              placeholder="Search name, description, tags..."
-              value={query}
-              onChange={(e) => dispatch(setExcursionQuery(e.target.value))}
-            /> */}
-
             <InputGroup>
-              <InputGroupInput placeholder="Search name, description, tags..."
-                value={query}
-                onChange={(e) => dispatch(setExcursionQuery(e.target.value))} />
+              <InputGroupInput
+                placeholder="Search name, description, tags..."
+                value={search}
+                onChange={(e) =>
+                  dispatch(setExcursionSearch(e.target.value))
+                }
+              />
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>
-              <InputGroupAddon align="inline-end">12 results</InputGroupAddon>
+              <InputGroupAddon align="inline-end">
+                {items.length} results
+              </InputGroupAddon>
             </InputGroup>
           </div>
 
-          {/* Refresh */}
           <Button
             variant="secondary"
             size="sm"
             disabled={loading}
-            onClick={() => dispatch(fetchExcursions(query))}
+            onClick={() =>
+              dispatch(fetchExcursions({ search, page, limit }))
+            }
             className="flex items-center gap-2"
           >
             <RefreshCcw
@@ -107,7 +108,6 @@ export default function ExcursionManager() {
           </Button>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="text-sm text-gray-600 mb-3">
             Loading excursions...
@@ -121,7 +121,6 @@ export default function ExcursionManager() {
               <tr className="text-left">
                 <th className="p-3 border-b">Name</th>
                 <th className="p-3 border-b">Type</th>
-                <th className="p-3 border-b">Cities</th>
                 <th className="p-3 border-b">Tags</th>
                 <th className="p-3 border-b">Optional</th>
                 <th className="p-3 border-b">Reminder</th>
@@ -133,48 +132,30 @@ export default function ExcursionManager() {
             <tbody>
               {items.map((e) => (
                 <tr
-                  key={e.id}
-                  className="border-b hover:bg-gray-50 transition justify-center"
+                  key={`excursion-${e.id}`}
+                  className="border-b hover:bg-gray-50 transition"
                 >
                   {/* Name */}
-                  <td className="p-3 justify-center">
+                  <td className="p-3">
                     <div className="font-medium">{e.name}</div>
                     <div className="text-xs text-gray-500 line-clamp-1">
-                      {e.description}
+                      {e.description || "-"}
                     </div>
                   </td>
 
                   {/* Type */}
-                  <td className="p-3">{e.pricingType}</td>
-
-                  {/* Cities */}
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {e.assignedCityIds?.length ? (
-                        e.assignedCityIds.map((id) => (
-                          <span
-                            key={id}
-                            className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
-                          >
-                            {cityName(id)}
-                          </span>
-                        ))
-                      ) : (
-                        "-"
-                      )}
-                    </div>
-                  </td>
+                  <td className="p-3">{e.pricing_type}</td>
 
                   {/* Tags */}
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1">
-                      {e.tags?.length ? (
-                        e.tags.map((t, i) => (
+                      {e.tags ? (
+                        e.tags.split(",").filter(Boolean).map((t) => (
                           <span
-                            key={i}
+                            key={`${e.id}-tag-${t.trim()}`}
                             className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
                           >
-                            {t}
+                            {t.trim()}
                           </span>
                         ))
                       ) : (
@@ -186,21 +167,20 @@ export default function ExcursionManager() {
                   {/* Optional */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs ${e.isOptionalSupplement
+                      className={`px-2 py-1 rounded text-xs ${e.is_optional_supplement
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-gray-100 text-gray-600"
                         }`}
                     >
-                      {e.isOptionalSupplement ? "Yes" : "No"}
+                      {e.is_optional_supplement ? "Yes" : "No"}
                     </span>
                   </td>
 
                   {/* Reminder */}
                   <td className="p-3">
-                    {e.reminder?.enabled ? (
+                    {e.enable_reminder ? (
                       <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-                        {`D-${e.reminder.daysBefore}${e.reminder.nextDayAlso ? " & D+1" : ""
-                          }`}
+                        Enabled
                       </span>
                     ) : (
                       "-"
@@ -210,12 +190,12 @@ export default function ExcursionManager() {
                   {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs capitalize ${e.status === "active"
+                      className={`px-2 py-1 rounded text-xs ${e.is_active
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-700"
                         }`}
                     >
-                      {e.status}
+                      {e.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
 
@@ -241,10 +221,7 @@ export default function ExcursionManager() {
 
               {!loading && items.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="p-6 text-center text-gray-500"
-                  >
+                  <td colSpan={7} className="p-6 text-center text-gray-500">
                     No excursions found.
                   </td>
                 </tr>
@@ -254,44 +231,51 @@ export default function ExcursionManager() {
         </div>
       </Card>
 
-      {/* Create / Edit Modal */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editItem ? "Edit Excursion" : "Add Excursion"}
-      >
-        <ExcursionForm
-          initial={editItem}
-          cities={cities}
-          onSubmit={handleSubmit}
-          onCancel={() => setModalOpen(false)}
-        />
-      </Modal>
+      {/* Create / Edit Excursion */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader>
+            <DialogTitle>
+              {editItem ? "Edit Excursion" : "Add Excursion"}
+            </DialogTitle>
+          </DialogHeader>
 
-      {/* Disable Confirmation */}
-      <Modal
-        open={!!confirmId}
-        onClose={() => setConfirmId(null)}
-        title="Disable Excursion"
-      >
-        <p className="mb-4">Disable this excursion?</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setConfirmId(null)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleDisable(confirmId)}
-          >
-            Disable
-          </Button>
-        </div>
-      </Modal>
+          <ExcursionForm
+            initial={editItem}
+            cities={cities}
+            onSubmit={handleSubmit}
+            onCancel={() => setModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Disable Excursion Confirmation */}
+      <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle>
+              Disable Excursion
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground mb-4">
+            Disable functionality is not available via API yet.
+          </p>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setConfirmId(null)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
     </div>
   );
 }
