@@ -1,94 +1,72 @@
-const LS_KEY = "ti_cities_mock";
+import api from "@/api/axios";
 
-const seed = [
-  {
-    id: 1,
-    name: "Colombo",
-    country: "Sri Lanka",
-    region: "West",
-    isDestination: true,
-    isStop: true,
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Kandy",
-    country: "Sri Lanka",
-    region: "Central",
-    isDestination: true,
-    isStop: true,
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Sigiriya",
-    country: "Sri Lanka",
-    region: "Central",
-    isDestination: true,
-    isStop: false,
-    status: "active",
-  },
-];
+/**
+ * GET ALL (POST as per backend)
+ */
+export async function getCities({ search = "", page = 1, limit = 10 }) {
+  const { data } = await api.post("/cities/all/", {
+    search,
+    page,
+    limit,
+  });
 
-function ensureSeed() {
-  if (!localStorage.getItem(LS_KEY)) {
-    localStorage.setItem(LS_KEY, JSON.stringify(seed));
-  }
+  return {
+    ...data.data,
+    items: data.data.items.map((c) => ({
+      ...c,
+      isDestination: c.is_destination,
+      isStop: c.is_stop,
+    })),
+  };
 }
 
-function read() {
-  ensureSeed();
-  return JSON.parse(localStorage.getItem(LS_KEY));
-}
 
-function write(data) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data));
-}
-
-function delay(result, ms = 250) {
-  return new Promise((resolve) => setTimeout(() => resolve(result), ms));
-}
-
-export async function getCities({ q = "" } = {}) {
-  const data = read();
-  const query = q.trim().toLowerCase();
-  const filtered = !query
-    ? data
-    : data.filter((c) => c.name.toLowerCase().includes(query) || c.region.toLowerCase().includes(query));
-  return delay(filtered);
-}
-
+/**
+ * CREATE
+ */
 export async function createCity(payload) {
-  const data = read();
-  const dup = data.some((c) => c.name.toLowerCase() === payload.name.toLowerCase());
-  if (dup) {
-    const e = new Error("City already exists");
-    e.code = "CITY_EXISTS";
-    throw e;
+  const { data } = await api.put("/cities/create/", {
+    name: payload.name,
+    country: payload.country,
+    region: payload.region,
+    is_destination: payload.isDestination,
+    is_stop: payload.isStop,
+  });
+
+  const c = data.data;
+
+  if (!c) {
+    throw new Error("Invalid create city response");
   }
-  const id = data.length ? Math.max(...data.map((x) => x.id)) + 1 : 1;
-  const newCity = { id, status: "active", ...payload };
-  data.push(newCity);
-  write(data);
-  return delay(newCity);
+
+  return {
+    ...c,
+    isDestination: c.is_destination,
+    isStop: c.is_stop,
+  };
 }
 
-export async function updateCity(id, patch) {
-  const data = read();
-  const idx = data.findIndex((c) => c.id === id);
-  if (idx === -1) throw new Error("City not found");
 
-  data[idx] = { ...data[idx], ...patch };
-  write(data);
-  return delay(data[idx]);
+/**
+ * UPDATE
+ */
+export async function updateCity(id, payload) {
+  const { data } = await api.patch(`/cities/update/${id}`, {
+    name: payload.name,
+    country: payload.country,
+    region: payload.region,
+    is_destination: payload.isDestination,
+    is_stop: payload.isStop,
+  });
+
+  return data.data;
 }
 
+/**
+ * DEACTIVATE (soft delete)
+ * ❗ adjust endpoint if backend differs
+ */
 export async function deactivateCity(id) {
-  const data = read();
-  const idx = data.findIndex((c) => c.id === id);
-  if (idx === -1) throw new Error("City not found");
-
-  data[idx].status = "inactive";
-  write(data);
-  return delay({ ok: true });
+  const { data } = await api.patch(`/cities/deactivate/${id}`);
+  return data.data;
 }

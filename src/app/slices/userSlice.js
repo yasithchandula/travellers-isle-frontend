@@ -3,6 +3,7 @@ import { getUsers, createUser, updateUser, deleteUser } from "../../api/mock/use
 
 export const fetchUsers = createAsyncThunk("users/fetch", async (q = "") => {
   const data = await getUsers({ q });
+
   return data;
 });
 
@@ -26,7 +27,8 @@ export const editUser = createAsyncThunk("users/edit", async ({ id, patch }, { r
 
 export const removeUser = createAsyncThunk("users/remove", async (id, { rejectWithValue }) => {
   try {
-    await deleteUser(id);
+    console.log("Deleting user with ID:", id);
+    await deleteUser({ user_id: id, type: "SOFT" });
     return id;
   } catch (e) {
     return rejectWithValue(e.message || "Failed to delete user");
@@ -48,9 +50,26 @@ const slice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchUsers.pending, (s) => { s.loading = true; s.error = null; })
-      .addCase(fetchUsers.fulfilled, (s, a) => { s.loading = false; s.items = a.payload; })
-      .addCase(fetchUsers.rejected, (s, a) => { s.loading = false; s.error = a.error.message; })
+      .addCase(fetchUsers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        if (!action.payload) return;
+
+        state.items = action.payload.data.items;
+        state.page = action.payload.data.page;
+        state.total = action.payload.data.total;
+        state.totalPages = action.payload.data.total_pages;
+        state.loading = false;
+      })
+
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Unable to load users";
+      })
+
 
       .addCase(addUser.pending, (s) => { s.loading = true; s.error = null; })
       .addCase(addUser.fulfilled, (s, a) => { s.loading = false; s.items.push(a.payload); })

@@ -1,90 +1,86 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
-
 
 export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [address, setAddress] = useState(initial?.address || "");
-  const [cityId, setCityId] = useState(initial?.cityId || "");
-  const [vatNumber, setVatNumber] = useState(initial?.vatNumber || "");
-  const [sltdaReg, setSltdaReg] = useState(initial?.sltdaReg || "");
-  const [phone, setPhone] = useState(initial?.phone || "");
+  const [cityId, setCityId] = useState(initial?.city_id || "");
+  const [vatNumber, setVatNumber] = useState(initial?.vat_number || "");
+  const [sltdaReg, setSltdaReg] = useState(initial?.sltda_registration || "");
 
-  // Meal plans
-  const [mealPlans, setMealPlans] = useState(initial?.mealPlans || ["BB", "HB", "FB"]);
+  /* ======================
+     Contact
+  ====================== */
+  const [contactName, setContactName] = useState(
+    initial?.contact_name || ""
+  );
+  const [contactPhone, setContactPhone] = useState(
+    initial?.contact_phone || ""
+  );
 
-  // Room categories
-  const [roomCategories, setRoomCategories] = useState(initial?.roomCategories || []);
+  /* ======================
+     Room Categories
+  ====================== */
+  const [roomCategories, setRoomCategories] = useState(
+    initial?.room_categories || []
+  );
   const [roomName, setRoomName] = useState("");
   const [roomPrice, setRoomPrice] = useState("");
   const [roomCount, setRoomCount] = useState("");
 
-  // Driver accommodation
-  const [driverPrice, setDriverPrice] = useState(initial?.driverAccommodation?.priceUSD || 0);
-  const [driverNotes, setDriverNotes] = useState(initial?.driverAccommodation?.notes || "");
-
-  // Special pricing contact
-  const [contactName, setContactName] = useState(initial?.specialPricingContact?.name || "");
-  const [contactPhone, setContactPhone] = useState(initial?.specialPricingContact?.phone || "");
-
-  const [earlyCI, setEarlyCI] = useState(initial?.earlyCheckinUSD || 0);
-  const [lateCO, setLateCO] = useState(initial?.lateCheckoutUSD || 0);
-
+  /* ======================
+     Driver Accommodation
+  ====================== */
   const [hasDriverAccommodation, setHasDriverAccommodation] = useState(
-    !!initial?.driverAccommodation
+    !!initial?.driver_accommodation
   );
 
-
-
+  /* ======================
+     Add Room
+  ====================== */
   function addRoom() {
-    if (!roomName.trim()) return;
+    if (!roomName || !roomPrice || !roomCount) return;
+
     setRoomCategories([
       ...roomCategories,
-      { name: roomName.trim(), basePriceUSD: Number(roomPrice) || 0 }
+      {
+        name: roomName.trim(),
+        pax: Number(roomCount),
+        price: Number(roomPrice),
+      },
     ]);
+
     setRoomName("");
     setRoomPrice("");
+    setRoomCount("");
   }
 
+  /* ======================
+     Submit
+  ====================== */
   function handleSubmit(e) {
     e.preventDefault();
 
     onSubmit({
       name,
       address,
-      cityId: Number(cityId),
-      vatNumber,
-      sltdaReg,
-      mealPlans,
-      roomCategories,
-
-      driverAccommodation: hasDriverAccommodation
-        ? {
-          priceUSD: Number(driverPrice),
-          notes: driverNotes,
-        }
-        : null,
-
-
-      specialPricingContact: {
-        name: contactName,
-        phone: contactPhone,
-      },
-
-      earlyCheckinUSD: Number(earlyCI),
-      lateCheckoutUSD: Number(lateCO),
+      city_id: Number(cityId),
+      vat_number: vatNumber,
+      sltda_registration: sltdaReg,
+      driver_accommodation: hasDriverAccommodation,
+      contact_name: contactName,
+      contact_phone: contactPhone,
+      room_categories: roomCategories,
     });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-
       {/* Basic info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Input label="Hotel Name" value={name} onChange={setName} />
         <Input label="Address" value={address} onChange={setAddress} />
-        <Input label="Phone" value={phone} onChange={setPhone} />
       </div>
 
       {/* City */}
@@ -102,7 +98,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             .filter((c) => c.isDestination)
             .map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.city}
               </option>
             ))}
         </select>
@@ -110,8 +106,30 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
       {/* Registrations */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input label="VAT Number" value={vatNumber} onChange={setVatNumber} />
-        <Input label="SLTDA Registration" value={sltdaReg} onChange={setSltdaReg} />
+        <Input
+          label="VAT Number"
+          value={vatNumber}
+          onChange={setVatNumber}
+        />
+        <Input
+          label="SLTDA Registration"
+          value={sltdaReg}
+          onChange={setSltdaReg}
+        />
+      </div>
+
+      {/* Contact */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Input
+          label="Contact Name"
+          value={contactName}
+          onChange={setContactName}
+        />
+        <Input
+          label="Contact Phone"
+          value={contactPhone}
+          onChange={setContactPhone}
+        />
       </div>
 
       {/* Room Categories */}
@@ -121,7 +139,9 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         {roomCategories.map((r, i) => (
           <div key={i} className="flex justify-between text-sm">
             <span>{r.name}</span>
-            <span className="text-gray-600">${r.basePriceUSD}</span>
+            <span>
+              {r.pax} pax – LKR {r.price}
+            </span>
           </div>
         ))}
 
@@ -168,40 +188,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           />
           Driver Accommodation Available
         </label>
-
-        {hasDriverAccommodation && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            <Input
-              label="Driver Price (USD)"
-              value={driverPrice}
-              onChange={setDriverPrice}
-            />
-            <Input
-              label="Notes"
-              value={driverNotes}
-              onChange={setDriverNotes}
-            />
-          </div>
-        )}
       </div>
-
-
-      {/* Special pricing contact */}
-      {/* <div className="p-3 border rounded space-y-2">
-        <h3 className="text-sm font-semibold">Special Pricing Contact</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Input
-            label="Contact Name"
-            value={contactName}
-            onChange={setContactName}
-          />
-          <Input
-            label="Contact Phone"
-            value={contactPhone}
-            onChange={setContactPhone}
-          />
-        </div>
-      </div> */}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-3 border-t">
@@ -217,8 +204,6 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           {initial ? "Save Changes" : "Add Hotel"}
         </Button>
       </div>
-
     </form>
   );
-
 }

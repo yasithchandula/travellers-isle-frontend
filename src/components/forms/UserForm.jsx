@@ -6,21 +6,22 @@ import { ROLES, USER_STATUSES } from "../../utils/constants";
 export default function UserForm({ initial, onSubmit, onCancel, submitting }) {
   const [name, setName] = useState(initial?.name || "");
   const [email, setEmail] = useState(initial?.email || "");
-  const [role, setRole] = useState(initial?.role || "TOUR_EXECUTIVE");
+  const [role, setRole] = useState(initial?.role || "");
   const [status, setStatus] = useState(initial?.status || "active");
   const isEdit = Boolean(initial?.id);
 
   useEffect(() => {
     setName(initial?.name || "");
     setEmail(initial?.email || "");
-    setRole(initial?.role || "TOUR_EXECUTIVE");
+    setRole(initial?.role || "");
     setStatus(initial?.status || "active");
   }, [initial]);
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
-    onSubmit({ name: name.trim(), email: email.trim(), role, status });
+    console.log("Form submitted:", { name, email, role, status });
+    onSubmit({ display_name: name.trim(), email: email.trim(), role, status });
   }
 
   return (
@@ -29,11 +30,12 @@ export default function UserForm({ initial, onSubmit, onCancel, submitting }) {
       {/* Basic info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Input
-          label="Full Name"
+          label="Display Name"
           value={name}
           onChange={setName}
           placeholder="Jane Doe"
         />
+
         <Input
           label="Email"
           type="email"
@@ -53,12 +55,19 @@ export default function UserForm({ initial, onSubmit, onCancel, submitting }) {
             value={role}
             onChange={(e) => setRole(e.target.value)}
             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm
-                     focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+             focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
           >
+            <option value="" disabled>
+              Select role
+            </option>
+
             {ROLES.map((r) => (
-              <option key={r} value={r}>{r}</option>
+              <option key={r} value={r}>
+                {r}
+              </option>
             ))}
           </select>
+
         </div>
 
         <div>

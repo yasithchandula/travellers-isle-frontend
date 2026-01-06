@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RefreshCcw, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
 import HotelForm from "../../components/forms/HotelForm";
-import { InputGroup, InputGroupInput, InputGroupAddon } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 
 import {
   fetchHotels,
-  setHotelQuery,
   addHotel,
   editHotel,
-  disable,
+  disableHotel,
 } from "../../app/slices/hotelSlice";
 
 import { fetchCities } from "../../app/slices/citySlice";
@@ -21,7 +23,7 @@ import { fetchCities } from "../../app/slices/citySlice";
 export default function HotelManager() {
   const dispatch = useDispatch();
 
-  const { items = [], loading, query } = useSelector((s) => s.hotels);
+  const { items = [], loading, page, limit } = useSelector((s) => s.hotels);
   const cities = useSelector((s) => s.cities.items || []);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,16 +31,24 @@ export default function HotelManager() {
   const [confirmId, setConfirmId] = useState(null);
 
   /* =======================
+     Search
+  ======================= */
+  const [search, setSearch] = useState("");
+
+  const filteredItems = Array.isArray(items)
+    ? items.filter((h) =>
+        h.name?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
+
+  /* =======================
      Initial Load
   ======================= */
   useEffect(() => {
-    dispatch(fetchHotels(query));
+    dispatch(fetchHotels({ page: 1, limit: 10 }));
     dispatch(fetchCities(""));
-  }, [dispatch, query]);
+  }, [dispatch]);
 
-  /* =======================
-     Actions
-  ======================= */
   function openCreate() {
     setEditItem(null);
     setModalOpen(true);
@@ -51,39 +61,21 @@ export default function HotelManager() {
 
   function handleSubmit(form) {
     if (editItem) {
-      dispatch(editHotel({ id: editItem.id, patch: form }));
+      dispatch(editHotel({ id: editItem.id, payload: form }));
     } else {
       dispatch(addHotel(form));
     }
-
     setModalOpen(false);
     setEditItem(null);
-    dispatch(fetchHotels(query));
   }
 
   function handleDisable(id) {
-    dispatch(disable(id));
+    dispatch(disableHotel(id));
     setConfirmId(null);
-    dispatch(fetchHotels(query));
   }
 
   function getCityName(cityId) {
-    return cities.find((c) => c.id === cityId)?.name || "-";
-  }
-
-  function renderStatus(status) {
-    const isActive = status === "active" || status === 1 || status === true;
-
-    return (
-      <span
-        className={`px-2 py-1 rounded text-xs font-medium ${isActive
-          ? "bg-green-100 text-green-700"
-          : "bg-gray-200 text-gray-700"
-          }`}
-      >
-        {isActive ? "Active" : "Inactive"}
-      </span>
-    );
+    return cities.find((c) => c.id === Number(cityId))?.name || "-";
   }
 
   return (
@@ -97,30 +89,20 @@ export default function HotelManager() {
       {/* Table */}
       <Card>
         <div className="flex gap-3 mb-3 items-end">
-          {/* <Input
-            label="Search"
-            value={query}
-            onChange={(v) => dispatch(setHotelQuery(v))}
-            placeholder="Hotel name or address..."
-          /> */}
           <InputGroup>
-            <InputGroupInput placeholder="Search name, description, tags..."
-              value={query}
-              onChange={(e) => dispatch(setHotelQuery(e.target.value))} />
             <InputGroupAddon>
               <Search />
             </InputGroupAddon>
-            <InputGroupAddon align="inline-end">12 results</InputGroupAddon>
+            <InputGroupInput
+              placeholder="Search hotel name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <InputGroupAddon align="inline-end">
+              {filteredItems.length} results
+            </InputGroupAddon>
           </InputGroup>
-          <Button
-            variant="outline"
-            disabled={loading}
-            onClick={() => dispatch(fetchHotels(query))}
-          >
-            Refresh
-          </Button>
         </div>
-
 
         <div className="overflow-auto rounded-md border">
           <table className="w-full border-collapse text-sm">
@@ -128,15 +110,15 @@ export default function HotelManager() {
               <tr className="text-left">
                 <th className="p-3 border-b">Hotel</th>
                 <th className="p-3 border-b">City</th>
-                <th className="p-3 border-b">Room Categories</th>
-                <th className="p-3 border-b">Meal Plans</th>
+                <th className="p-3 border-b">Contact</th>
+                <th className="p-3 border-b">Driver Stay</th>
                 <th className="p-3 border-b">Status</th>
                 <th className="p-3 border-b w-48">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {items.map((h) => (
+              {filteredItems.map((h) => (
                 <tr
                   key={h.id}
                   className="border-b hover:bg-gray-50 transition"
@@ -144,51 +126,39 @@ export default function HotelManager() {
                   {/* Hotel */}
                   <td className="p-3">
                     <div className="font-medium">{h.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {h.address}
+                    </div>
                   </td>
 
                   {/* City */}
                   <td className="p-3">
-                    {getCityName(h.cityId) || "-"}
+                    {getCityName(h.city_id)}
                   </td>
 
-                  {/* Room Categories */}
+                  {/* Contact */}
                   <td className="p-3">
-                    {h.roomCategories?.length ? (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                        {h.roomCategories.length} types
-                      </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-
-                  {/* Meal Plans */}
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {h.mealPlans?.length ? (
-                        h.mealPlans.map((m, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                          >
-                            {m}
-                          </span>
-                        ))
-                      ) : (
-                        "-"
-                      )}
+                    <div className="text-sm">{h.contact_name || "-"}</div>
+                    <div className="text-xs text-gray-500">
+                      {h.contact_phone || "-"}
                     </div>
+                  </td>
+
+                  {/* Driver Accommodation */}
+                  <td className="p-3">
+                    {h.driver_accommodation ? "Yes" : "No"}
                   </td>
 
                   {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs capitalize ${h.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-700"
-                        }`}
+                      className={`px-2 py-1 rounded text-xs ${
+                        h.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
                     >
-                      {h.status}
+                      {h.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
 
@@ -212,7 +182,7 @@ export default function HotelManager() {
                 </tr>
               ))}
 
-              {!loading && items.length === 0 && (
+              {!loading && filteredItems.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
@@ -224,8 +194,6 @@ export default function HotelManager() {
               )}
             </tbody>
           </table>
-
-
         </div>
       </Card>
 

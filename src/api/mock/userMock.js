@@ -1,80 +1,69 @@
-const LS_KEY = "ti_users_mock";
+import api from "@/api/axios";
 
-const seed = [
-  { id: 1, name: "Admin User", email: "admin@travellersisle.lk", role: "ADMIN", status: "active" },
-  { id: 2, name: "Mary Silva", email: "mary@travellersisle.lk", role: "MANAGER", status: "active" },
-  { id: 3, name: "Kevin Dias", email: "kevin@travellersisle.lk", role: "TOUR_EXECUTIVE", status: "inactive" },
-];
+/**
+ * GET USERS (Paginated)
+ * POST /users/all
+ */
+export async function getUsers({ page = 1, limit = 10 } = {}) {
+  const { data } = await api.post("/users/all", {
+    page,
+    limit,
+  });
 
-function ensureSeed() {
-  const exists = localStorage.getItem(LS_KEY);
-  if (!exists) localStorage.setItem(LS_KEY, JSON.stringify(seed));
+  return data;
 }
 
-function readAll() {
-  ensureSeed();
-  return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-}
-
-function writeAll(users) {
-  localStorage.setItem(LS_KEY, JSON.stringify(users));
-}
-
-// Simulated network delay
-function delay(result, ms = 300) {
-  return new Promise((resolve) => setTimeout(() => resolve(result), ms));
-}
-
-export async function getUsers({ q = "" } = {}) {
-  const data = readAll();
-  const query = q.trim().toLowerCase();
-  const filtered = !query
-    ? data
-    : data.filter(
-        (u) =>
-          u.name.toLowerCase().includes(query) ||
-          u.email.toLowerCase().includes(query) ||
-          u.role.toLowerCase().includes(query)
-      );
-  return delay(filtered);
-}
-
+/**
+ * CREATE USER
+ * PUT /users/create
+ */
 export async function createUser(payload) {
-  const data = readAll();
-  const exists = data.some((u) => u.email.toLowerCase() === payload.email.toLowerCase());
-  if (exists) {
-    const err = new Error("Email already exists");
-    err.code = "EMAIL_EXISTS";
-    throw err;
-  }
-  const nextId = data.length ? Math.max(...data.map((u) => u.id)) + 1 : 1;
-  const newUser = { id: nextId, status: "active", ...payload };
-  data.push(newUser);
-  writeAll(data);
-  return delay(newUser);
+  const { email, display_name, role } = payload;
+
+  const { data } = await api.put("/users/create", {
+    email,
+    display_name,
+    role,
+  });
+
+  return data;
 }
 
-export async function updateUser(id, patch) {
-  const data = readAll();
-  const idx = data.findIndex((u) => u.id === id);
-  if (idx === -1) throw new Error("User not found");
-  // prevent email duplication
-  if (patch.email) {
-    const dup = data.some((u) => u.id !== id && u.email.toLowerCase() === patch.email.toLowerCase());
-    if (dup) {
-      const err = new Error("Email already exists");
-      err.code = "EMAIL_EXISTS";
-      throw err;
-    }
-  }
-  data[idx] = { ...data[idx], ...patch };
-  writeAll(data);
-  return delay(data[idx]);
+/**
+ * UPDATE USER
+ * PATCH /users/update
+ */
+export async function updateUser(payload) {
+  const {
+    user_id,
+    email,
+    display_name,
+    role,
+    status,
+  } = payload;
+
+  const { data } = await api.patch("/users/update", {
+    user_id,
+    email,
+    display_name,
+    role,
+    status,
+  });
+
+  return data;
 }
 
-export async function deleteUser(id) {
-  const data = readAll();
-  const next = data.filter((u) => u.id !== id);
-  writeAll(next);
-  return delay({ ok: true });
+/**
+ * DELETE USER (SOFT / HARD)
+ * DELETE /users/delete
+ */
+export async function deleteUser({ user_id, type = "SOFT" }) {
+  const { data } = await api.delete("/users/delete", {
+    data: {
+      user_id,
+      type,
+    },
+  });
+
+  return data;
 }

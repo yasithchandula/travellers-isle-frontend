@@ -7,24 +7,45 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [country, setCountry] = useState(initial?.country || "Sri Lanka");
   const [region, setRegion] = useState(initial?.region || "");
-  const [isDestination, setIsDestination] = useState(initial?.isDestination || true);
-  const [isStop, setIsStop] = useState(initial?.isStop || true);
+  const [isDestination, setIsDestination] = useState(
+    initial?.isDestination ?? initial?.is_destination ?? true
+  );
+
+  const [isStop, setIsStop] = useState(
+    initial?.isStop ?? initial?.is_stop ?? true
+  );
+
 
   useEffect(() => {
-    if (initial) {
-      setName(initial.name);
-      setCountry(initial.country);
-      setRegion(initial.region);
-      setIsDestination(initial.isDestination);
-      setIsStop(initial.isStop);
-    }
+    if (!initial) return;
+
+    setName(initial.name || "");
+    setCountry(initial.country || "Sri Lanka");
+    setRegion(initial.region || "");
+    setIsDestination(
+      initial.isDestination ?? initial.is_destination ?? true
+    );
+    setIsStop(
+      initial.isStop ?? initial.is_stop ?? true
+    );
   }, [initial]);
+
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!name.trim()) return;
+
+    if (!name.trim()) {
+      alert("City name is required");
+      return;
+    }
+
+    if (!isDestination && !isStop) {
+      alert("Select at least one city type");
+      return;
+    }
+
     onSubmit({
-      name,
+      name: name.trim(),
       country,
       region,
       isDestination,
@@ -32,75 +53,76 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
     });
   }
 
-return (
-  <form onSubmit={handleSubmit} className="space-y-4">
-    {/* Main fields */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <Input
-        label="City Name"
-        value={name}
-        onChange={setName}
-      />
 
-      <Input
-        label="Country"
-        value={country}
-        onChange={setCountry}
-      />
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Main fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Input
+          label="City Name"
+          value={name}
+          onChange={setName}
+        />
 
-      <Input
-        label="Region"
-        value={region}
-        onChange={setRegion}
-      />
-    </div>
+        <Input
+          label="Country"
+          value={country}
+          onChange={setCountry}
+        />
 
-    {/* City Type */}
-    <div>
-      <label className="block mb-1 text-xs font-medium text-ti-forest">
-        City Type
-      </label>
-
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={isDestination}
-            onChange={(e) => setIsDestination(e.target.checked)}
-            className="accent-ti-teal"
-          />
-          Destination
-        </label>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={isStop}
-            onChange={(e) => setIsStop(e.target.checked)}
-            className="accent-ti-teal"
-          />
-          Stop
-        </label>
+        <Input
+          label="Region"
+          value={region}
+          onChange={setRegion}
+        />
       </div>
-    </div>
 
-    {/* Actions */}
-    <div className="flex justify-end gap-2 pt-3 border-t">
-      <Button
-        variant="outline"
-        type="button"
-        onClick={onCancel}
-        size="md"
-      >
-        Cancel
-      </Button>
+      {/* City Type */}
+      <div>
+        <label className="block mb-1 text-xs font-medium text-ti-forest">
+          City Type
+        </label>
 
-      <Button type="submit" size="md">
-        {initial ? "Save" : "Add City"}
-      </Button>
-    </div>
-  </form>
-);
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isDestination}
+              onChange={(e) => setIsDestination(e.target.checked)}
+              className="accent-ti-teal"
+            />
+            Destination
+          </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isStop}
+              onChange={(e) => setIsStop(e.target.checked)}
+              className="accent-ti-teal"
+            />
+            Stop
+          </label>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pt-3 border-t">
+        <Button
+          variant="outline"
+          type="button"
+          onClick={onCancel}
+          size="md"
+        >
+          Cancel
+        </Button>
+
+        <Button type="submit" size="md">
+          {initial ? "Save" : "Add City"}
+        </Button>
+      </div>
+    </form>
+  );
 
 
 }

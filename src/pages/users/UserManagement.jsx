@@ -64,14 +64,32 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
 
   useEffect(() => {
-    dispatch(fetchUsers(query));
-  }, [dispatch, query]);
+    dispatch(fetchUsers({ page: 1, limit: 10 }));
+  }, [dispatch]);
 
   const visibleUsers = useMemo(() => {
-    if (roleFilter === "all") return items;
-    return items.filter((u) => u.role === roleFilter);
-  }, [items, roleFilter]);
+    let list = items;
 
+    if (query) {
+      const q = query.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.display_name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.role?.toLowerCase().includes(q)
+      );
+    }
+
+    if (roleFilter !== "all") {
+      list = list.filter(
+        (u) => u.role?.toLowerCase() === roleFilter
+      );
+    }
+
+    return list;
+  }, [items, query, roleFilter]);
+
+  console.log("Visible Users:", visibleUsers);
 
 
   function startCreate() {
@@ -91,12 +109,17 @@ export default function UserManagement() {
 
   async function handleSubmit(form) {
     if (editing) {
-      await dispatch(editUser({ id: editing.id, patch: form }));
+      await dispatch(editUser({
+        user_id: editing.user_id,
+        ...form,
+      }));
     } else {
       await dispatch(addUser(form));
     }
+
     closeModal();
   }
+
 
   async function handleDelete(id) {
     await dispatch(removeUser(id));
@@ -135,12 +158,11 @@ export default function UserManagement() {
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="driver">Driver</SelectItem>
+                  <SelectItem value="admin">ADMIN</SelectItem>
+                  <SelectItem value="front_desk">FRONT_DESK</SelectItem>
+                  <SelectItem value="executive">EXECUTIVE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -180,20 +202,21 @@ export default function UserManagement() {
 
               <tbody>
                 {visibleUsers.map((u) => (
-                  <tr key={u.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="p-3 font-medium">{u.name}</td>
+                  <tr key={u.id}>
+                    <td className="p-3 font-medium">{u.display_name}</td>
                     <td className="p-3">{u.email}</td>
                     <td className="p-3">{u.role}</td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded text-xs capitalize ${u.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-700"
+                        className={`px-2 py-1 rounded text-xs ${u.status === "ACTIVE"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
                           }`}
                       >
                         {u.status}
                       </span>
                     </td>
+
                     <td className="p-3 flex gap-2">
                       <Button
                         variant="secondary"
@@ -229,7 +252,7 @@ export default function UserManagement() {
 
       {/* Create / Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-white">
           <DialogHeader>
             <DialogTitle>
               {editing ? "Edit User" : "Create User"}

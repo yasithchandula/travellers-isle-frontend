@@ -10,24 +10,35 @@ import CityForm from "../../components/forms/CityForm";
 
 import {
   fetchCities,
-  setCityQuery,
+  setCitySearch,
   addCity,
   editCity,
   deactivate
 } from "../../app/slices/citySlice";
+import { tr } from "date-fns/locale";
 
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
-  const { items, loading, query } = useSelector((s) => s.cities);
+  const { items, loading, search, page, limit } = useSelector(
+    (s) => s.cities
+  );
 
+  console.log("Cities state:", { items, loading, search, page, limit });
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchCities(query));
-  }, [dispatch, query]);
+    dispatch(
+      fetchCities({
+        search,
+        page,
+        limit,
+      })
+    );
+  }, [dispatch, search, page, limit]);
+
 
   function openCreate() {
     setEditItem(null);
@@ -41,12 +52,18 @@ export default function DestinationManager() {
 
   function handleSubmit(form) {
     if (editItem) {
-      dispatch(editCity({ id: editItem.id, patch: form }));
+      dispatch(
+        editCity({
+          id: editItem.id,
+          payload: form,
+        })
+      );
     } else {
       dispatch(addCity(form));
     }
     setModalOpen(false);
   }
+
 
   function handleDeactivate(id) {
     dispatch(deactivate(id));
@@ -64,13 +81,26 @@ export default function DestinationManager() {
         <div className="flex gap-3 mb-3 items-end">
           <Input
             label="Search"
-            value={query}
-            onChange={(v) => dispatch(setCityQuery(v))}
+            value={search}
+            onChange={(v) => dispatch(setCitySearch(v))}
             placeholder="City or region..."
           />
-          <Button variant="outline" onClick={() => dispatch(fetchCities(query))}>
+
+          <Button
+            variant="outline"
+            onClick={() =>
+              dispatch(
+                fetchCities({
+                  search,
+                  page: 1,
+                  limit,
+                })
+              )
+            }
+          >
             Refresh
           </Button>
+
         </div>
 
         <div className="overflow-auto rounded-md border">
@@ -87,14 +117,14 @@ export default function DestinationManager() {
             </thead>
 
             <tbody>
-              {items.map((c) => (
+              {items.filter(Boolean).map((c) => (
                 <tr
                   key={c.id}
                   className="border-b hover:bg-gray-50 transition"
                 >
                   {/* City */}
                   <td className="p-3">
-                    <div className="font-medium">{c.name}</div>
+                    <div className="font-medium">{c.city}</div>
                   </td>
 
                   {/* Country */}
@@ -122,12 +152,12 @@ export default function DestinationManager() {
                   {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs capitalize ${c.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
+                      className={`px-2 py-1 rounded text-xs capitalize ${c.status === true
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-200 text-gray-700"
                         }`}
                     >
-                      {c.status}
+                      {c. status ? "active" : "inactive"}
                     </span>
                   </td>
 
