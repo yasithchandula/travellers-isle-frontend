@@ -17,6 +17,14 @@ import {
 } from "../../app/slices/citySlice";
 import { tr } from "date-fns/locale";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
@@ -157,7 +165,7 @@ export default function DestinationManager() {
                         : "bg-gray-200 text-gray-700"
                         }`}
                     >
-                      {c. status ? "active" : "inactive"}
+                      {c.status ? "active" : "inactive"}
                     </span>
                   </td>
 
@@ -197,14 +205,23 @@ export default function DestinationManager() {
 
       </Card>
 
-      {/* Create / Edit */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? "Edit City" : "Add City"}>
-        <CityForm
-          initial={editItem}
-          onSubmit={handleSubmit}
-          onCancel={() => setModalOpen(false)}
-        />
-      </Modal>
+      {/* Create / Edit City */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-xl bg-white">
+          <DialogHeader>
+            <DialogTitle>
+              {editItem ? "Edit City" : "Add City"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <CityForm
+            initial={editItem}
+            onSubmit={handleSubmit}
+            onCancel={() => setModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
 
       {/* Confirm Deactivate */}
       <Modal open={!!confirmId} onClose={() => setConfirmId(null)} title="Disable City">

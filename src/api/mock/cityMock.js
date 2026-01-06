@@ -59,8 +59,22 @@ export async function updateCity(id, payload) {
     is_stop: payload.isStop,
   });
 
-  return data.data;
+  const c = data.data;
+
+  if (!c) {
+    return {
+      id,
+      ...payload,
+    };
+  }
+
+  return {
+    ...c,
+    isDestination: c.is_destination,
+    isStop: c.is_stop,
+  };
 }
+
 
 /**
  * DEACTIVATE (soft delete)

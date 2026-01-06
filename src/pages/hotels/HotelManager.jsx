@@ -18,6 +18,14 @@ import {
   disableHotel,
 } from "../../app/slices/hotelSlice";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 import { fetchCities } from "../../app/slices/citySlice";
 
 export default function HotelManager() {
@@ -37,8 +45,8 @@ export default function HotelManager() {
 
   const filteredItems = Array.isArray(items)
     ? items.filter((h) =>
-        h.name?.toLowerCase().includes(search.toLowerCase())
-      )
+      h.name?.toLowerCase().includes(search.toLowerCase())
+    )
     : [];
 
   /* =======================
@@ -152,11 +160,10 @@ export default function HotelManager() {
                   {/* Status */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        h.is_active
+                      className={`px-2 py-1 rounded text-xs ${h.is_active
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-200 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {h.is_active ? "Active" : "Inactive"}
                     </span>
@@ -197,19 +204,24 @@ export default function HotelManager() {
         </div>
       </Card>
 
-      {/* Create / Edit Modal */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editItem ? "Edit Hotel" : "Add Hotel"}
-      >
-        <HotelForm
-          initial={editItem}
-          cities={cities}
-          onSubmit={handleSubmit}
-          onCancel={() => setModalOpen(false)}
-        />
-      </Modal>
+      {/* Create / Edit Dialog */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-3xl bg-white">
+          <DialogHeader>
+            <DialogTitle>
+              {editItem ? "Edit Hotel" : "Add Hotel"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <HotelForm
+            initial={editItem}
+            cities={cities}
+            onSubmit={handleSubmit}
+            onCancel={() => setModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
 
       {/* Disable Confirm Modal */}
       <Modal

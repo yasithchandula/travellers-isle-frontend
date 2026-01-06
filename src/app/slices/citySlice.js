@@ -106,18 +106,26 @@ const citySlice = createSlice({
 
       /* EDIT */
       .addCase(editCity.fulfilled, (s, a) => {
+        if (!a.payload || !a.payload.id) return;
+
         const idx = s.items.findIndex((c) => c.id === a.payload.id);
-        if (idx !== -1) s.items[idx] = a.payload;
+        if (idx !== -1) {
+          s.items[idx] = {
+            ...s.items[idx],
+            ...a.payload,
+          };
+        }
       })
 
-    /* DEACTIVATE */
-    .addCase(deactivate.fulfilled, (s, a) => {
-      const idx = s.items.findIndex((c) => c.id === a.payload);
-      if (idx !== -1) {
-        s.items[idx].status = "inactive";
-      }
-    });
-},
+
+      /* DEACTIVATE */
+      .addCase(deactivate.fulfilled, (s, a) => {
+        const idx = s.items.findIndex((c) => c.id === a.payload);
+        if (idx !== -1) {
+          s.items[idx].status = "inactive";
+        }
+      });
+  },
 });
 
 export const { setCitySearch, setCityPage } = citySlice.actions;

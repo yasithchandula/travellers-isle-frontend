@@ -4,7 +4,7 @@ import Button from "../common/Button";
 
 
 export default function CityForm({ initial, onSubmit, onCancel }) {
-  const [name, setName] = useState(initial?.name || "");
+  const [name, setName] = useState(initial?.city || "");
   const [country, setCountry] = useState(initial?.country || "Sri Lanka");
   const [region, setRegion] = useState(initial?.region || "");
   const [isDestination, setIsDestination] = useState(
@@ -19,7 +19,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
   useEffect(() => {
     if (!initial) return;
 
-    setName(initial.name || "");
+    setName(initial.city || "");
     setCountry(initial.country || "Sri Lanka");
     setRegion(initial.region || "");
     setIsDestination(
