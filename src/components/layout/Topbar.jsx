@@ -15,10 +15,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { logoutAuth } from "@/api/auth";
 
 export default function Topbar() {
   return (
-    <header className="h-16 bg-white border-b border-ti-sky px-6 flex items-center justify-between sticky top-0 z-50">
+    <header className="h-16 bg-white border-ti-sky px-6 flex items-center justify-between sticky top-0 z-50">
       {/* LEFT: Logo */}
       <div className="flex items-center gap-3">
         <img src={logo} alt="Travellers Isle" className="h-10" />
@@ -81,8 +82,8 @@ export default function Topbar() {
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-56 bg-white">
+            {/* <DropdownMenuLabel>
               <div className="font-serif">User Name</div>
               <div className="text-xs text-muted-foreground">
                 user@example.com
@@ -105,10 +106,10 @@ export default function Topbar() {
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator /> */}
 
             <DropdownMenuItem
-              onClick={() => console.log("Logout")}
+              onClick={() => logoutAuth()}
               className="text-ti-red focus:text-ti-red"
             >
               <LogOut className="w-4 h-4 mr-2" />

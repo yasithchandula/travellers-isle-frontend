@@ -20,7 +20,7 @@ export default {
       },
       colors: {
         ti: {
-          teal: "#3A7E75",
+          teal: "#0EAD76E6",
           mint: "#A7D3C4",
           sand: "#F6EFE7",
           forest: "#243F40",

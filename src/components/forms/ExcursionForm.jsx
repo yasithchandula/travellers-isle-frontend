@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
+import { toast } from "sonner";
 import {
   calcPerPersonCost,
   calcSafariCost,
@@ -94,6 +95,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
     initial?.adult_price ?? 0
   );
 
+  const [errors, setErrors] = useState({});
+
+
   // ===== Cities helpers =====
   const selectedCities = useMemo(() => {
     const map = new Map((cities || []).map((c) => [Number(c.id), c]));
@@ -111,15 +115,115 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
     setCityIds((prev) => prev.filter((x) => Number(x) !== Number(id)));
   }
 
+  const [pp, setPP] = useState({
+    infant: { from: 0, to: 2, price: 0 },
+    child: { from: 2, to: 6, price: 8 },
+    adult: { from: 6, price: 12 },
+    guideFee: 0,
+  });
+
+  /* =========================
+     LOGIC HELPERS
+  ========================== */
+
+  function updateInfantTo(value) {
+    const infantTo = Number(value) || 0;
+
+    setPP((prev) => {
+      const childFrom = infantTo;
+      const childTo = Math.max(prev.child.to, childFrom);
+      const adultFrom = childTo;
+
+      return {
+        ...prev,
+        infant: { ...prev.infant, from: 0, to: infantTo },
+        child: { ...prev.child, from: childFrom, to: childTo },
+        adult: { ...prev.adult, from: adultFrom },
+      };
+    });
+  }
+
+  function updateChildTo(value) {
+    const childTo = Number(value) || 0;
+
+    setPP((prev) => {
+      const safeChildTo = Math.max(childTo, prev.child.from);
+
+      return {
+        ...prev,
+        child: { ...prev.child, to: safeChildTo },
+        adult: { ...prev.adult, from: safeChildTo },
+      };
+    });
+  }
+
+  function validate() {
+    const e = {};
+
+    if (!name.trim()) e.name = "Excursion name is required";
+    else if (name.trim().length < 3)
+      e.name = "Name must be at least 3 characters";
+
+    if (!description.trim()) e.description = "Excursion Description is required";
+
+    if (!pricingType) e.pricingType = "Pricing type is required";
+
+    if (!cityIds.length)
+      e.cityIds = "At least one city must be assigned";
+
+    if (pricingType === "PER_PERSON") {
+      if (adultPrice <= 0) e.adultPrice = "Adult price cannot be negative";
+      if (childPrice <= 0) e.childPrice = "Child price cannot be negative";
+      if (infantPrice < 0) e.infantPrice = "Infant price cannot be negative";
+      if (guideFee <= 0) e.guideFee = "Guide fee cannot be negative";
+    }
+
+    if (pricingType === "SAFARI") {
+      if (jeepCapacity < 1) e.jeepCapacity = "Jeep capacity must be at least 1";
+      if (jeepRentPrice <= 0) e.jeepRentPrice = "Jeep rent cannot be negative";
+      if (entrancePerPax <= 0)
+        e.entrancePerPax = "Entrance per pax cannot be negative";
+      if (jeepEntranceFee <= 0) e.jeepEntranceFee = 'Jeep entrance per pax cannot be negative'
+    }
+
+    if (pricingType === "BOAT") {
+      if (boatCapacity <= 0)
+        e.boatCapacity = "Boat capacity must be at least 1";
+      if (boatPrice <= 0) e.boatPrice = "Boat price cannot be negative";
+    }
+
+    if (pricingType === "CUSTOM") {
+      if (!allowZeroAtQuotation && customAmount <= 0)
+        e.customAmount =
+          "Amount must be greater than 0 or enable Allow Zero at Quotation";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function toNumberSafe(v) {
+    if (v === "" || v === null || v === undefined) return 0;
+    const n = Number(v);
+    return Number.isNaN(n) ? 0 : n;
+  }
+
+
+
   // ===== Submit =====
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!validate()) {
+      toast.error("Please fix the highlighted errors");
+      return;
+    }
 
     const payload = {
       name,
       description,
       pricing_type: pricingType,
-      tags: tagsText, // backend expects comma string
+      tags: tagsText,
       city_ids: cityIds.map(Number),
       is_optional_supplement: !!isOptionalSupplement,
       enable_reminder: !!enableReminder,
@@ -144,8 +248,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
         jeep_entrance_fee: Number(jeepEntranceFee),
         jeep_capacity: Number(jeepCapacity),
         is_full_day: !!isFullDay,
-
-        // keep these because your example includes them (all 0)
         adult_price: Number(safariAdultPrice),
         child_price: Number(safariChildPrice),
         infant_price: Number(safariInfantPrice),
@@ -163,16 +265,24 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
     if (pricingType === "CUSTOM") {
       Object.assign(payload, {
         adult_price: Number(customAmount),
-        // allow_zero_at_quotation already included above
       });
     }
 
-    if (pricingType === "FREE") {
-      // only flags; allow_zero_at_quotation already included above
-    }
+    try {
+      await onSubmit(payload);
 
-    onSubmit(payload);
+      // toast.success(
+      //   initial ? "Excursion updated successfully" : "Excursion added successfully",
+      //   { id: "excursion" }
+      // );
+    } catch (err) {
+      toast.error(
+        err?.message || "Failed to save excursion. Please try again.",
+        { id: "excursion" }
+      );
+    }
   }
+
 
   // ===== Preview (kept) =====
   function renderPreview() {
@@ -239,6 +349,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input label="Excursion Name" value={name} onChange={setName} />
+      {errors.name && (
+        <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+      )}
 
       <div>
         <label className="block text-xs mb-1">Description</label>
@@ -247,6 +360,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+        {errors.description && (
+          <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -265,7 +381,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           </select>
         </div>
 
-        <div>
+        {/* <div>
           <label className="block mb-1 text-xs">Tags</label>
           <input
             className="w-full border rounded px-2 py-1.5 text-sm"
@@ -273,11 +389,11 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             onChange={(e) => setTagsText(e.target.value)}
             placeholder="ocean, whale-watching, boat"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Global Age Rules (in API examples) */}
-      <div className="border rounded-md p-3">
+      {/* <div className="border rounded-md p-3">
         <h3 className="text-sm font-semibold mb-2">Age Rules</h3>
         <div className="grid grid-cols-2 gap-2">
           <Input
@@ -291,33 +407,151 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             onChange={(v) => setChildAgeTo(+v)}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* PER PERSON */}
       {pricingType === "PER_PERSON" && (
-        <div className="border rounded-md p-3 space-y-2">
-          <h3 className="text-sm font-semibold mb-2">Per Person Pricing</h3>
+        <div className="border rounded-md p-3">
+          <h3 className="text-sm font-semibold mb-3">Per Person Pricing</h3>
 
-          <div className="grid grid-cols-4 gap-2">
-            <Input label="Adult Price (USD)" value={adultPrice} onChange={(v) => setAdultPrice(+v)} />
-            <Input label="Child Price (USD)" value={childPrice} onChange={(v) => setChildPrice(+v)} />
-            <Input label="Infant Price (USD)" value={infantPrice} onChange={(v) => setInfantPrice(+v)} />
-            <Input label="Guide Fee (USD)" value={guideFee} onChange={(v) => setGuideFee(+v)} />
+          <div className="grid grid-cols-4 gap-2 text-xs text-gray-600 mb-2">
+            <div>Category</div>
+            <div>Age From</div>
+            <div>Age To</div>
+            <div>Price (USD)</div>
           </div>
+
+          {/* ================= INFANT ================= */}
+          <div className="grid grid-cols-4 gap-2 items-center">
+            <span className="text-sm">Infant</span>
+
+            <input
+              className="border rounded px-2 py-1 text-sm bg-gray-50"
+              value={pp.infant.from}
+              disabled
+            />
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={0}
+              value={pp.infant.to}
+              onChange={(e) => updateInfantTo(e.target.value)}
+            />
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={0}
+              value={infantPrice}
+              onChange={(e) =>
+                setInfantPrice(e.target.value)
+              }
+            />
+            {errors.infantPrice && (
+              <p className="text-xs text-red-500 mt-1 items-end">{errors.infantPrice}</p>
+            )}
+
+            <div />
+          </div>
+
+          {/* ================= CHILD ================= */}
+          <div className="grid grid-cols-4 gap-2 items-center mt-2">
+            <span className="text-sm">Child</span>
+
+            <input
+              className="border rounded px-2 py-1 text-sm bg-gray-50"
+              value={pp.child.from}
+              disabled
+            />
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={pp.child.from}
+              value={pp.child.to}
+              onChange={(e) => updateChildTo(e.target.value)}
+            />
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={0}
+              value={childPrice}
+              onChange={(e) =>
+                setChildPrice(e.target.value)
+              }
+            />
+            <div />
+          </div>
+          {errors.childPrice && (
+            <p className="text-xs text-red-500 text-end">{errors.childPrice}</p>
+          )}
+
+          {/* ================= ADULT ================= */}
+          <div className="grid grid-cols-4 gap-2 items-center mt-2">
+            <span className="text-sm">Adult</span>
+
+            <input
+              className="border rounded px-2 py-1 text-sm bg-gray-50"
+              value={pp.adult.from}
+              disabled
+            />
+
+            <span className="text-gray-400 text-sm flex items-center">∞</span>
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={0}
+              value={adultPrice}
+              onChange={(e) =>
+                setAdultPrice(e.target.value)
+              }
+            />
+            <div />
+          </div>
+          {errors.adultPrice && (
+            <p className="text-xs text-red-500 text-end">{errors.adultPrice}</p>
+          )}
+
+          {/* ================= GUIDE FEE ================= */}
+          <div className="grid grid-cols-4 gap-2 items-center mt-2">
+            <span className="text-sm">Guide Fee</span>
+            <span className="text-gray-400 text-sm">–</span>
+            <span className="text-gray-400 text-sm">–</span>
+
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              type="number"
+              min={0}
+              value={guideFee}
+              onChange={(e) =>
+                setGuideFee(e.target.value)
+              }
+            />
+
+            <div />
+          </div>
+          {errors.guideFee && (
+            <p className="text-xs text-red-500 text-end">{errors.guideFee}</p>
+          )}
         </div>
       )}
+
+
 
       {/* SAFARI */}
       {pricingType === "SAFARI" && (
         <div className="border rounded-md p-3 space-y-2">
           <h3 className="text-sm font-semibold">Safari Pricing</h3>
-
           <div className="grid grid-cols-3 gap-2">
             <Input
               label="Entrance / Pax"
               value={entrancePerPax}
-              onChange={(v) => setEntrancePerPax(+v)}
+              onChange={(v) => setEntrancePerPax(toNumberSafe(v))}
             />
+
             <Input
               label="Jeep Rent Price"
               value={jeepRentPrice}
@@ -329,7 +563,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               onChange={(v) => setJeepEntranceFee(+v)}
             />
           </div>
-
           <div className="grid grid-cols-3 gap-2 items-end">
             <Input
               label="Jeep Capacity"
@@ -346,6 +579,18 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               Full Day
             </label>
           </div>
+          {errors.entrancePerPax && (
+            <p className="text-xs text-red-500 text-end">{errors.entrancePerPax}</p>
+          )}
+          {errors.jeepRentPrice && (
+            <p className="text-xs text-red-500 text-end">{errors.jeepRentPrice}</p>
+          )}
+          {errors.jeepCapacity && (
+            <p className="text-xs text-red-500 text-end">{errors.jeepCapacity}</p>
+          )}
+          {errors.jeepEntranceFee && (
+            <p className="text-xs text-red-500 text-end">{errors.jeepEntranceFee}</p>
+          )}
 
           {/* Safari optional per-pax prices (your docs example sends them as 0) */}
           <div className="grid grid-cols-3 gap-2">
@@ -390,6 +635,12 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               onChange={(v) => setGuideFee(+v)}
             />
           </div>
+          {errors.boatCapacity && (
+            <p className="text-xs text-red-500 text-end">{errors.boatCapacity}</p>
+          )}
+          {errors.boatPrice && (
+            <p className="text-xs text-red-500 text-end">{errors.boatPrice}</p>
+          )}
         </div>
       )}
 
@@ -405,6 +656,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           <small className="text-gray-600">
             If you want to allow entering 0 at quotation, enable “Allow Zero at Quotation”.
           </small>
+          {errors.customAmount && (
+            <p className="text-xs text-red-500 text-end">{errors.customAmount}</p>
+          )}
         </div>
       )}
 
@@ -461,6 +715,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
             <span className="text-xs text-gray-500">No cities selected</span>
           )}
         </div>
+        {errors.cityIds && (
+          <p className="text-xs text-red-500 text-end">{errors.cityIds}</p>
+        )}
       </div>
 
       {/* Flags */}

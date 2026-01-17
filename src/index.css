@@ -1,23 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 @import "tailwindcss";
 
 /* You can add your custom brand variables or global styles below */
-
-:root {
-  --ti-primary: #d65050;   /* Travellers Isle deep teal/navy */
-  --ti-accent: #c9a66b;    /* Warm sand accent */
-  --ti-bg: #f7fafb;        /* Soft off-white background */
-}
-
-/* Optional helper classes */
-.body-bg {
-  background: var(--ti-bg);
-}
-/* .card {
-  @apply bg-white rounded-2xl shadow-md;
-} */
 
 @font-face {
   font-family: "Product Sans";
@@ -32,50 +15,6 @@
   font-weight: 700;
   font-style: normal;
 }
-
-
-body {
-  @apply bg-ti-sand text-ti-forest font-sans;
-}
-
-h1, h2, h3, h4 {
-  @apply font-serif text-ti-forest;
-}
-
-.card {
-  @apply bg-white rounded-xl shadow-md border border-ti-sky p-6;
-}
-
-.hover-soft {
-  @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
-}
-
-/* GLOBAL COMPACT MODE */
-body {
-  font-size: 14px; /* default text smaller */
-}
-
-.compact input,
-.compact select,
-.compact textarea {
-  padding: 6px 8px !important; /* smaller padding */
-  font-size: 14px !important;
-}
-
-.compact .btn {
-  padding: 6px 12px !important;
-  font-size: 14px !important;
-}
-
-.compact .card {
-  padding: 14px !important;
-}
-
-.compact .prose {
-  font-size: 14px !important;
-}
-
-
 
 @layer base {
   :root {
@@ -132,15 +71,3 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
-
-
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-

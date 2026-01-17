@@ -7,7 +7,7 @@ export default function Layout({ children }) {
       <Sidebar />
       <div className="w-full">
         <Topbar />
-        <div className="pt-16 p-6">
+        <div className="pt-4 p-6">
           {children}
         </div>
       </div>

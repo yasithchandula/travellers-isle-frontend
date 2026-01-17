@@ -1,17 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RefreshCcw, Search } from "lucide-react";
+import { Search } from "lucide-react";
+
 import {
   InputGroup,
   InputGroupInput,
   InputGroupAddon,
 } from "@/components/ui/input-group";
 
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import Modal from "../../components/common/Modal";
-
 import ExcursionForm from "../../components/forms/ExcursionForm";
+
 import {
   fetchExcursions,
   setExcursionSearch,
@@ -27,6 +26,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent
+} from "@/components/ui/card";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+
+import { toast } from "sonner";
 
 export default function ExcursionManager() {
   const dispatch = useDispatch();
@@ -39,6 +55,9 @@ export default function ExcursionManager() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
+
+  // 🔹 NEW: local filter
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
   useEffect(() => {
     dispatch(fetchExcursions({ search, page, limit }));
@@ -55,183 +74,219 @@ export default function ExcursionManager() {
     setModalOpen(true);
   }
 
-  function handleSubmit(form) {
-    if (editItem) {
-      dispatch(editExcursion({ id: editItem.id, payload: form }));
-    } else {
-      dispatch(addExcursion(form));
+  async function handleSubmit(form) {
+    const toastId = "excursion-save";
+
+    try {
+      toast.loading(
+        editItem ? "Updating excursion..." : "Creating excursion...",
+        { id: toastId }
+      );
+
+      if (editItem) {
+        await dispatch(
+          editExcursion({ id: editItem.id, payload: form })
+        ).unwrap();
+      } else {
+        await dispatch(addExcursion(form)).unwrap();
+      }
+
+      toast.success(
+        editItem
+          ? "Excursion updated successfully"
+          : "Excursion added successfully",
+        { id: toastId }
+      );
+      await dispatch(fetchExcursions({ search, page, limit }));
+      setModalOpen(false);
+    } catch (err) {
+      toast.error(
+        err?.message || "Failed to save excursion. Please try again.",
+        { id: toastId }
+      );
     }
-    setModalOpen(false);
   }
+
+
+  const filteredItems = useMemo(() => {
+    if (typeFilter === "ALL") return items;
+    return items.filter((e) => e.pricing_type === typeFilter);
+  }, [items, typeFilter]);
+
+  const pricingTypes = useMemo(() => {
+    return Array.from(
+      new Set(items.map((e) => e.pricing_type).filter(Boolean))
+    );
+  }, [items]);
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Excursions</h2>
-        <Button onClick={openCreate}>+ Add Excursion</Button>
-      </div>
-
       <Card>
-        {/* Toolbar */}
-        <div className="flex flex-col md:flex-row gap-3 md:items-center mb-4">
-          <div className="relative flex-1">
-            <InputGroup>
-              <InputGroupInput
-                placeholder="Search name, description, tags..."
-                value={search}
-                onChange={(e) =>
-                  dispatch(setExcursionSearch(e.target.value))
-                }
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupAddon align="inline-end">
-                {items.length} results
-              </InputGroupAddon>
-            </InputGroup>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">Excursion Management</h2>
+            <Button onClick={openCreate}>+ Add Excursion</Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-4">
+            <div className="relative flex-1">
+              <InputGroup className="border-black/20 focus:ring-2 focus:ring-black/20">
+                <InputGroupInput
+                  placeholder="Search name, description, tags..."
+                  value={search}
+                  onChange={(e) =>
+                    dispatch(setExcursionSearch(e.target.value))
+                  }
+                />
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+                <InputGroupAddon align="inline-end">
+                  {filteredItems.length} results
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
+
+            {/* Excursion Filter */}
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px] border-black/20 focus:ring-2 focus:ring-black/20">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+
+              <SelectContent className="bg-white">
+                <SelectItem value="ALL">All Types</SelectItem>
+
+                {pricingTypes.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={loading}
-            onClick={() =>
-              dispatch(fetchExcursions({ search, page, limit }))
-            }
-            className="flex items-center gap-2"
-          >
-            <RefreshCcw
-              className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-            />
-          </Button>
-        </div>
+          {loading && (
+            <div className="text-sm text-gray-600 mb-3">
+              Loading excursions...
+            </div>
+          )}
 
-        {loading && (
-          <div className="text-sm text-gray-600 mb-3">
-            Loading excursions...
-          </div>
-        )}
+          {/* Table */}
+          <div className="overflow-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-gray-100 sticky top-0 z-10">
+                <tr className="text-left">
+                  <th className="p-3 border-b">Name</th>
+                  <th className="p-3 border-b">Type</th>
+                  <th className="p-3 border-b">Tags</th>
+                  <th className="p-3 border-b">Optional</th>
+                  <th className="p-3 border-b">Reminder</th>
+                  <th className="p-3 border-b">Status</th>
+                  <th className="p-3 border-b w-56">Actions</th>
+                </tr>
+              </thead>
 
-        {/* Table */}
-        <div className="overflow-auto rounded-md border">
-          <table className="w-full border-collapse text-sm">
-            <thead className="bg-gray-100 sticky top-0 z-10">
-              <tr className="text-left">
-                <th className="p-3 border-b">Name</th>
-                <th className="p-3 border-b">Type</th>
-                <th className="p-3 border-b">Tags</th>
-                <th className="p-3 border-b">Optional</th>
-                <th className="p-3 border-b">Reminder</th>
-                <th className="p-3 border-b">Status</th>
-                <th className="p-3 border-b w-56">Actions</th>
-              </tr>
-            </thead>
+              <tbody>
+                {filteredItems.map((e) => (
+                  <tr
+                    key={`excursion-${e.id}`}
+                    className="border-b hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3">
+                      <div className="font-medium">{e.name}</div>
+                      <div className="text-xs text-gray-500 line-clamp-1">
+                        {e.description || "-"}
+                      </div>
+                    </td>
 
-            <tbody>
-              {items.map((e) => (
-                <tr
-                  key={`excursion-${e.id}`}
-                  className="border-b hover:bg-gray-50 transition"
-                >
-                  {/* Name */}
-                  <td className="p-3">
-                    <div className="font-medium">{e.name}</div>
-                    <div className="text-xs text-gray-500 line-clamp-1">
-                      {e.description || "-"}
-                    </div>
-                  </td>
+                    <td className="p-3">{e.pricing_type}</td>
 
-                  {/* Type */}
-                  <td className="p-3">{e.pricing_type}</td>
+                    <td className="p-3">
+                      <div className="flex flex-wrap gap-1">
+                        {e.tags ? (
+                          e.tags.split(",").filter(Boolean).map((t) => (
+                            <span
+                              key={`${e.id}-tag-${t.trim()}`}
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                            >
+                              {t.trim()}
+                            </span>
+                          ))
+                        ) : (
+                          "-"
+                        )}
+                      </div>
+                    </td>
 
-                  {/* Tags */}
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {e.tags ? (
-                        e.tags.split(",").filter(Boolean).map((t) => (
-                          <span
-                            key={`${e.id}-tag-${t.trim()}`}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                          >
-                            {t.trim()}
-                          </span>
-                        ))
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${e.is_optional_supplement
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-600"
+                          }`}
+                      >
+                        {e.is_optional_supplement ? "Yes" : "No"}
+                      </span>
+                    </td>
+
+                    <td className="p-3">
+                      {e.enable_reminder ? (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
+                          Enabled
+                        </span>
                       ) : (
                         "-"
                       )}
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Optional */}
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${e.is_optional_supplement
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-600"
-                        }`}
-                    >
-                      {e.is_optional_supplement ? "Yes" : "No"}
-                    </span>
-                  </td>
-
-                  {/* Reminder */}
-                  <td className="p-3">
-                    {e.enable_reminder ? (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-                        Enabled
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${e.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
+                          }`}
+                      >
+                        {e.is_active ? "Active" : "Inactive"}
                       </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                    </td>
 
-                  {/* Status */}
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${e.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-700"
-                        }`}
-                    >
-                      {e.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                    <td className="p-3 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openEdit(e)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setConfirmId(e.id)}
+                      >
+                        Disable
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
 
-                  {/* Actions */}
-                  <td className="p-3 flex gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openEdit(e)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => setConfirmId(e.id)}
-                    >
-                      Disable
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-
-              {!loading && items.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="p-6 text-center text-gray-500">
-                    No excursions found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                {!loading && filteredItems.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-6 text-center text-gray-500">
+                      No excursions found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
       </Card>
 
-      {/* Create / Edit Excursion */}
+      {/* Create / Edit */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
           <DialogHeader>
@@ -249,14 +304,11 @@ export default function ExcursionManager() {
         </DialogContent>
       </Dialog>
 
-
-      {/* Disable Excursion Confirmation */}
+      {/* Disable */}
       <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
         <DialogContent className="max-w-lg bg-white">
           <DialogHeader>
-            <DialogTitle>
-              Disable Excursion
-            </DialogTitle>
+            <DialogTitle>Disable Excursion</DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground mb-4">
@@ -274,8 +326,6 @@ export default function ExcursionManager() {
           </div>
         </DialogContent>
       </Dialog>
-
-
     </div>
   );
 }

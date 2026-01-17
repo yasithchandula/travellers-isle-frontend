@@ -33,9 +33,8 @@ export async function createUser(payload) {
  * UPDATE USER
  * PATCH /users/update
  */
-export async function updateUser(payload) {
+export async function updateUser(user_id, payload) {
   const {
-    user_id,
     email,
     display_name,
     role,
@@ -49,7 +48,6 @@ export async function updateUser(payload) {
     role,
     status,
   });
-
   return data;
 }
 

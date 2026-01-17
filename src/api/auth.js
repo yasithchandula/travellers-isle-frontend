@@ -24,7 +24,7 @@ export async function getAuthUser() {
  * CHANGE PASSWORD
  */
 export async function changePassword(newPassword) {
-  const { data } = await api.post("/auth/change-password", {
+  const { data } = await api.post("/users/change-password", {
     password: newPassword,
   });
 

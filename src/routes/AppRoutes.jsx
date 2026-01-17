@@ -19,7 +19,7 @@ export default function AppRoutes() {
       <Routes>
 
         {/* PUBLIC ROUTES */}
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
 
         {/* PROTECTED ROUTES */}
         {/* <Route

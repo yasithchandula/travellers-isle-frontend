@@ -1,12 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { toast } from "sonner";
+
 import { loginAuth } from "@/api/auth";
-import logo from "/logo.png";
 import ChangePasswordModal from "./ChangePasswordModal";
+import logo from "/logo.png";
 
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -18,18 +28,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState("");
-
-
   const [showChangePw, setShowChangePw] = useState(false);
 
   function validate() {
     const e = {};
 
     if (!email) e.email = "Email is required";
-    else if (!isValidEmail(email)) e.email = "Invalid email address";
+    else if (!isValidEmail(email))
+      e.email = "Please enter a valid email address";
 
     if (!password) e.password = "Password is required";
     else if (password.length < 6)
@@ -41,15 +48,18 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setServerError("");
 
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Please fix the highlighted errors");
+      return;
+    }
 
     setLoading(true);
 
+    const loadingToast = toast.loading("Signing you in...");
+
     try {
       const res = await loginAuth(email, password);
-
       const { status, message, data } = res || {};
 
       if (status !== 200 || !data?.access_token) {
@@ -59,20 +69,25 @@ export default function Login() {
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("auth_user", JSON.stringify(data));
 
-      console.log("Login successful:", data);
+      toast.success("Login successful", {
+        id: loadingToast,
+      });
 
       if (Number(data.must_change_password) === 1) {
+        toast.info("Please change your password to continue");
         setShowChangePw(true);
         return;
       }
 
       navigate("/dashboard");
-
     } catch (err) {
-      setServerError(
+      toast.error(
         err.response?.data?.message ||
-        err.message ||
-        "Login failed"
+          err.message ||
+          "Login failed",
+        {
+          id: loadingToast,
+        }
       );
     } finally {
       setLoading(false);
@@ -80,10 +95,10 @@ export default function Login() {
   }
 
   function handlePasswordChanged() {
+    toast.success("Password updated successfully");
     setShowChangePw(false);
     navigate("/dashboard");
   }
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-ti-sand px-4">
@@ -105,15 +120,12 @@ export default function Login() {
               <Label>Email</Label>
               <Input
                 type="email"
-                name="email"
                 autoComplete="username"
-                placeholder="you@example.ocm"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="placeholder:text-sm placeholder:opacity-50 w-full border rounded-lg px-3 py-2"
+                className={errors.email ? "border-red-500" : ""}
               />
-
               {errors.email && (
                 <p className="text-xs text-red-600">{errors.email}</p>
               )}
@@ -128,8 +140,9 @@ export default function Login() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`pr-10 placeholder:text-sm placeholder:opacity-50 ${errors.password && "border-red-500"
-                    }`}
+                  className={`pr-10 ${
+                    errors.password ? "border-red-500" : ""
+                  }`}
                 />
                 <button
                   type="button"
@@ -144,19 +157,14 @@ export default function Login() {
               )}
             </div>
 
-            {/* Server error */}
-            {serverError && (
-              <p className="text-sm text-red-600 text-center">
-                {serverError}
-              </p>
-            )}
-
-            {/* Submit */}
-            <Button type="submit" className="w-full bg-ti-forest hover:bg-ti-forest/90 text-white" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-ti-forest hover:bg-ti-forest/90 text-white"
+            >
               {loading ? "Logging in..." : "Login"}
             </Button>
 
-            {/* Forgot password */}
             <div className="text-center">
               <button
                 type="button"
@@ -166,7 +174,8 @@ export default function Login() {
               </button>
             </div>
           </form>
-          {/* 🔐 Change Password Modal */}
+
+          {/* 🔐 Force Change Password */}
           {showChangePw && (
             <ChangePasswordModal onSuccess={handlePasswordChanged} />
           )}

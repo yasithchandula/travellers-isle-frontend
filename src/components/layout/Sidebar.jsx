@@ -39,7 +39,7 @@ export default function Sidebar() {
       )}
     >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b">
+      <div className="h-16 flex items-center justify-between px-4 ">
         {!collapsed && (
           <span className="text-lg font-semibold text-ti-forest">
             Travellers Isle

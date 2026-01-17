@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "@/api/axios";
+import { toast } from "sonner";
 
 export default function ChangePasswordModal({ onSuccess }) {
   const [oldPw, setOldPw] = useState("");
@@ -12,6 +13,7 @@ export default function ChangePasswordModal({ onSuccess }) {
     e.preventDefault();
     setError("");
 
+    /* ---------- CLIENT VALIDATION ---------- */
     if (!oldPw || !newPw || !confirmPw) {
       setError("All fields are required");
       return;
@@ -27,19 +29,31 @@ export default function ChangePasswordModal({ onSuccess }) {
       return;
     }
 
+    const loadingToast = toast.loading("Updating password...");
+
     try {
       setLoading(true);
 
-      await api.post("/auth/change-password", {
+      await api.put("/users/change-password", {
         old_password: oldPw,
         new_password: newPw,
       });
 
-      onSuccess(); // ✅ redirect / close modal
+      toast.success("Password updated successfully", {
+        id: loadingToast,
+      });
+
+      onSuccess(); 
     } catch (err) {
-      setError(
-        err?.response?.data?.message || "Password change failed"
-      );
+      const msg =
+        err?.response?.data?.message ||
+        "Password change failed";
+
+      setError(msg);
+
+      toast.error(msg, {
+        id: loadingToast,
+      });
     } finally {
       setLoading(false);
     }
@@ -82,6 +96,7 @@ export default function ChangePasswordModal({ onSuccess }) {
           className="w-full border rounded px-3 py-2 mb-3"
         />
 
+        {/* Inline validation / API error */}
         {error && (
           <p className="text-red-500 text-sm mb-2">
             {error}
