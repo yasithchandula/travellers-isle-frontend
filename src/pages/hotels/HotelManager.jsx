@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Search } from "lucide-react";
-import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Modal from "../../components/common/Modal";
 import HotelForm from "../../components/forms/HotelForm";
@@ -26,7 +25,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { fetchCities } from "../../app/slices/citySlice";
+import { toast } from "sonner";
 
 export default function HotelManager() {
   const dispatch = useDispatch();
@@ -42,12 +57,23 @@ export default function HotelManager() {
      Search
   ======================= */
   const [search, setSearch] = useState("");
+  const [cityFilter, setCityFilter] = useState("ALL");
 
   const filteredItems = Array.isArray(items)
-    ? items.filter((h) =>
-      h.name?.toLowerCase().includes(search.toLowerCase())
-    )
+    ? items.filter((h) => {
+      const matchesName =
+        h.name?.toLowerCase().includes(search.toLowerCase());
+
+      const matchesCity =
+        cityFilter === "ALL" ||
+        Number(h.city_id) === Number(cityFilter);
+
+
+      return matchesName && matchesCity;
+    })
     : [];
+
+
 
   /* =======================
      Initial Load
@@ -67,15 +93,38 @@ export default function HotelManager() {
     setModalOpen(true);
   }
 
-  function handleSubmit(form) {
-    if (editItem) {
-      dispatch(editHotel({ id: editItem.id, payload: form }));
-    } else {
-      dispatch(addHotel(form));
+  async function handleSubmit(form) {
+    const toastId = "hotel-save";
+
+    try {
+      toast.loading(
+        editItem ? "Updating hotel..." : "Adding hotel...",
+        { id: toastId }
+      );
+
+      if (editItem) {
+        await dispatch(
+          editHotel({ id: editItem.id, payload: form })
+        ).unwrap();
+      } else {
+        await dispatch(addHotel(form)).unwrap();
+      }
+
+      toast.success(
+        editItem ? "Hotel updated successfully" : "Hotel added successfully",
+        { id: toastId }
+      );
+      dispatch(fetchHotels({ page: 1, limit: 10 }));
+      setModalOpen(false);
+      setEditItem(null);
+    } catch (err) {
+      toast.error(
+        err?.message || "Failed to save hotel. Please try again.",
+        { id: toastId }
+      );
     }
-    setModalOpen(false);
-    setEditItem(null);
   }
+
 
   function handleDisable(id) {
     dispatch(disableHotel(id));
@@ -83,125 +132,149 @@ export default function HotelManager() {
   }
 
   function getCityName(cityId) {
-    return cities.find((c) => c.id === Number(cityId))?.name || "-";
+    return cities.find((c) => c.id === Number(cityId))?.city || "-";
   }
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Hotel Management</h2>
-        <Button onClick={openCreate}>+ Add Hotel</Button>
-      </div>
-
       {/* Table */}
       <Card>
-        <div className="flex gap-3 mb-3 items-end">
-          <InputGroup>
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupInput
-              placeholder="Search hotel name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <InputGroupAddon align="inline-end">
-              {filteredItems.length} results
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
+        <CardHeader>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Hotel Management</h2>
+            <Button onClick={openCreate}>+ Add Hotel</Button>
+          </div>
+          <div className="flex gap-3 mb-3 items-end">
+            <InputGroup>
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupInput
+                placeholder="Search hotel name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <InputGroupAddon align="inline-end">
+                {filteredItems.length} results
+              </InputGroupAddon>
+            </InputGroup>
 
-        <div className="overflow-auto rounded-md border">
-          <table className="w-full border-collapse text-sm">
-            <thead className="bg-gray-100 sticky top-0 z-10">
-              <tr className="text-left">
-                <th className="p-3 border-b">Hotel</th>
-                <th className="p-3 border-b">City</th>
-                <th className="p-3 border-b">Contact</th>
-                <th className="p-3 border-b">Driver Stay</th>
-                <th className="p-3 border-b">Status</th>
-                <th className="p-3 border-b w-48">Actions</th>
-              </tr>
-            </thead>
+            {/* Excursion Filter */}
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-[180px] border-black/20">
+                <SelectValue placeholder="All Cities" />
+              </SelectTrigger>
 
-            <tbody>
-              {filteredItems.map((h) => (
-                <tr
-                  key={h.id}
-                  className="border-b hover:bg-gray-50 transition"
-                >
-                  {/* Hotel */}
-                  <td className="p-3">
-                    <div className="font-medium">{h.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {h.address}
-                    </div>
-                  </td>
+              <SelectContent className="bg-white">
+                <SelectItem value="ALL">All Cities</SelectItem>
 
-                  {/* City */}
-                  <td className="p-3">
-                    {getCityName(h.city_id)}
-                  </td>
+                {cities
+                  .filter((c) => c.isDestination)
+                  .map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.city}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
-                  {/* Contact */}
-                  <td className="p-3">
-                    <div className="text-sm">{h.contact_name || "-"}</div>
-                    <div className="text-xs text-gray-500">
-                      {h.contact_phone || "-"}
-                    </div>
-                  </td>
 
-                  {/* Driver Accommodation */}
-                  <td className="p-3">
-                    {h.driver_accommodation ? "Yes" : "No"}
-                  </td>
+          </div>
 
-                  {/* Status */}
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${h.is_active
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-auto rounded-md ">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-gray-100 sticky top-0 z-10">
+                <tr className="text-left">
+                  <th className="p-3 border-b">Hotel</th>
+                  <th className="p-3 border-b">City</th>
+                  <th className="p-3 border-b">Contact</th>
+                  <th className="p-3 border-b">Driver Stay</th>
+                  <th className="p-3 border-b">Status</th>
+                  <th className="p-3 border-b w-48">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredItems.map((h) => (
+                  <tr
+                    key={h.id}
+                    className="border-b hover:bg-gray-50 transition"
+                  >
+                    {/* Hotel */}
+                    <td className="p-3">
+                      <div className="font-medium">{h.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {h.address}
+                      </div>
+                    </td>
+
+                    {/* City */}
+                    <td className="p-3">
+                      {getCityName(h.city_id)}
+                    </td>
+
+                    {/* Contact */}
+                    <td className="p-3">
+                      <div className="text-sm">{h.contact_name || "-"}</div>
+                      <div className="text-xs text-gray-500">
+                        {h.contact_phone || "-"}
+                      </div>
+                    </td>
+
+                    {/* Driver Accommodation */}
+                    <td className="p-3">
+                      {h.driver_accommodation ? "Yes" : "No"}
+                    </td>
+
+                    {/* Status */}
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${h.is_active
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-200 text-gray-700"
-                        }`}
-                    >
-                      {h.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                          }`}
+                      >
+                        {h.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                  {/* Actions */}
-                  <td className="p-3 flex gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openEdit(h)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => setConfirmId(h.id)}
-                    >
-                      Disable
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+                    {/* Actions */}
+                    <td className="p-3 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openEdit(h)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setConfirmId(h.id)}
+                      >
+                        Disable
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
 
-              {!loading && filteredItems.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-6 text-center text-gray-500"
-                  >
-                    No hotels found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                {!loading && filteredItems.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="p-6 text-center text-gray-500"
+                    >
+                      No hotels found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Create / Edit Dialog */}

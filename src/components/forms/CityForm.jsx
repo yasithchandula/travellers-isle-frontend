@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import Input from "../common/Input";
 import Button from "../common/Button";
-
 
 export default function CityForm({ initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.city || "");
   const [country, setCountry] = useState(initial?.country || "Sri Lanka");
   const [region, setRegion] = useState(initial?.region || "");
   const [isDestination, setIsDestination] = useState(
-    initial?.isDestination ?? initial?.is_destination ?? true
+    initial?.isDestination ?? initial?.is_destination ?? 1
   );
-
   const [isStop, setIsStop] = useState(
-    initial?.isStop ?? initial?.is_stop ?? true
+    initial?.isStop ?? initial?.is_stop ?? 1
   );
 
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!initial) return;
@@ -23,58 +23,102 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
     setCountry(initial.country || "Sri Lanka");
     setRegion(initial.region || "");
     setIsDestination(
-      initial.isDestination ?? initial.is_destination ?? true
+      initial.isDestination ?? initial.is_destination ?? 1
     );
     setIsStop(
-      initial.isStop ?? initial.is_stop ?? true
+      initial.isStop ?? initial.is_stop ?? 1
     );
   }, [initial]);
 
+  /* =========================
+     VALIDATION
+  ========================== */
+  function validate() {
+    const e = {};
+
+    const trimmedName = name.replace(/\s+/g, " ").trim();
+    const trimmedCountry = country.trim();
+    const trimmedRegion = region.trim();
+
+    if (!trimmedName) e.name = "City name is required";
+    if (!trimmedCountry) e.country = "Country is required";
+    if (!trimmedRegion) e.region = "Region is required";
+
+    if (!isDestination && !isStop) {
+      e.cityType = "Select at least one city type";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (!name.trim()) {
-      alert("City name is required");
-      return;
-    }
-
-    if (!isDestination && !isStop) {
-      alert("Select at least one city type");
+    if (!validate()) {
+      toast.error("Please fix the highlighted errors");
       return;
     }
 
     onSubmit({
-      name: name.trim(),
-      country,
-      region,
+      name: name.replace(/\s+/g, " ").trim(),
+      country: country.trim(),
+      region: region.trim(),
       isDestination,
       isStop,
     });
   }
 
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Main fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input
-          label="City Name"
-          value={name}
-          onChange={setName}
-        />
+        <div>
+          <Input
+            label="City Name"
+            value={name}
+            onChange={(v) => {
+              setName(v);
+              if (errors.name) setErrors((p) => ({ ...p, name: null }));
+            }}
+            className={errors.name ? "border-red-500" : ""}
+          />
+          {errors.name && (
+            <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+          )}
+        </div>
 
-        <Input
-          label="Country"
-          value={country}
-          onChange={setCountry}
-        />
+        <div>
+          <Input
+            label="Country"
+            value={country}
+            onChange={(v) => {
+              setCountry(v);
+              if (errors.country)
+                setErrors((p) => ({ ...p, country: null }));
+            }}
+            className={errors.country ? "border-red-500" : ""}
+          />
+          {errors.country && (
+            <p className="text-xs text-red-500 mt-1">{errors.country}</p>
+          )}
+        </div>
 
-        <Input
-          label="Region"
-          value={region}
-          onChange={setRegion}
-        />
+        <div>
+          <Input
+            label="Region"
+            value={region}
+            onChange={(v) => {
+              setRegion(v);
+              if (errors.region)
+                setErrors((p) => ({ ...p, region: null }));
+            }}
+            className={errors.region ? "border-red-500" : ""}
+          />
+          {errors.region && (
+            <p className="text-xs text-red-500 mt-1">{errors.region}</p>
+          )}
+        </div>
       </div>
 
       {/* City Type */}
@@ -88,7 +132,11 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
             <input
               type="checkbox"
               checked={isDestination}
-              onChange={(e) => setIsDestination(e.target.checked)}
+              onChange={(e) => {
+                setIsDestination(Number(e.target.checked));
+                if (errors.cityType)
+                  setErrors((p) => ({ ...p, cityType: null }));
+              }}
               className="accent-ti-teal"
             />
             Destination
@@ -98,12 +146,22 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
             <input
               type="checkbox"
               checked={isStop}
-              onChange={(e) => setIsStop(e.target.checked)}
+              onChange={(e) => {
+                setIsStop(Number(e.target.checked));
+                if (errors.cityType)
+                  setErrors((p) => ({ ...p, cityType: null }));
+              }}
               className="accent-ti-teal"
             />
             Stop
           </label>
         </div>
+
+        {errors.cityType && (
+          <p className="text-xs text-red-500 mt-1">
+            {errors.cityType}
+          </p>
+        )}
       </div>
 
       {/* Actions */}
@@ -123,6 +181,4 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
       </div>
     </form>
   );
-
-
 }

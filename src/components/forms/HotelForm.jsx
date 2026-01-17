@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import Input from "../common/Input";
 import Button from "../common/Button";
 
@@ -28,6 +29,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [roomName, setRoomName] = useState("");
   const [roomPrice, setRoomPrice] = useState("");
   const [roomCount, setRoomCount] = useState("");
+  const [phoneNumber, setPhone] = useState("");
 
   /* ======================
      Driver Accommodation
@@ -36,24 +38,52 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     !!initial?.driver_accommodation
   );
 
+  const [errors, setErrors] = useState({});
+
+  /* ======================
+     VALIDATION
+  ====================== */
+  function validate() {
+    const e = {};
+
+    if (!name.trim()) e.name = "Hotel name is required";
+    if (!address.trim()) e.address = "Address is required";
+    if (!cityId) e.cityId = "City is required";
+    if (!phoneNumber.trim()) e.phoneNumber = "Phone number is required";
+
+    if (!contactName.trim()) e.contactName = "Contact name is required";
+    if (!contactPhone.trim()) e.contactPhone = "Contact phone is required";
+
+    if (!roomCategories.length) {
+      e.roomCategories = "At least one room category is required";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
   /* ======================
      Add Room
   ====================== */
   function addRoom() {
-    if (!roomName || !roomPrice || !roomCount) return;
+    if (!roomName.trim() || !roomCount) return;
 
     setRoomCategories([
       ...roomCategories,
       {
         name: roomName.trim(),
         pax: Number(roomCount),
-        price: Number(roomPrice),
+        price: Number(roomPrice || 0),
       },
     ]);
 
     setRoomName("");
     setRoomPrice("");
     setRoomCount("");
+
+    if (errors.roomCategories) {
+      setErrors((p) => ({ ...p, roomCategories: null }));
+    }
   }
 
   /* ======================
@@ -62,16 +92,22 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   function handleSubmit(e) {
     e.preventDefault();
 
+    if (!validate()) {
+      toast.error("Please fix the highlighted errors");
+      return;
+    }
+
     onSubmit({
-      name,
-      address,
+      name: name.trim(),
+      address: address.trim(),
       city_id: Number(cityId),
-      vat_number: vatNumber,
-      sltda_registration: sltdaReg,
+      vat_number: vatNumber.trim(),
+      sltda_registration: sltdaReg.trim(),
       driver_accommodation: hasDriverAccommodation,
-      contact_name: contactName,
-      contact_phone: contactPhone,
+      contact_name: contactName.trim(),
+      contact_phone: contactPhone.trim(),
       room_categories: roomCategories,
+      phone_number: phoneNumber.trim(),
     });
   }
 
@@ -79,8 +115,36 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Basic info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input label="Hotel Name" value={name} onChange={setName} />
-        <Input label="Address" value={address} onChange={setAddress} />
+        <div>
+          <Input
+            label="Hotel Name"
+            value={name}
+            onChange={(v) => {
+              setName(v);
+              if (errors.name) setErrors((p) => ({ ...p, name: null }));
+            }}
+            className={errors.name ? "border-red-500" : ""}
+          />
+          {errors.name && (
+            <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+          )}
+        </div>
+
+        <div>
+          <Input
+            label="Address"
+            value={address}
+            onChange={(v) => {
+              setAddress(v);
+              if (errors.address)
+                setErrors((p) => ({ ...p, address: null }));
+            }}
+            className={errors.address ? "border-red-500" : ""}
+          />
+          {errors.address && (
+            <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+          )}
+        </div>
       </div>
 
       {/* City */}
@@ -89,9 +153,15 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           City (Destination)
         </label>
         <select
-          className="w-full border rounded px-2 py-1.5 text-sm"
+          className={`w-full border rounded px-2 py-1.5 text-sm ${
+            errors.cityId ? "border-red-500" : ""
+          }`}
           value={cityId}
-          onChange={(e) => setCityId(e.target.value)}
+          onChange={(e) => {
+            setCityId(e.target.value);
+            if (errors.cityId)
+              setErrors((p) => ({ ...p, cityId: null }));
+          }}
         >
           <option value="">Select City</option>
           {cities
@@ -102,6 +172,27 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
               </option>
             ))}
         </select>
+        {errors.cityId && (
+          <p className="text-xs text-red-500 mt-1">{errors.cityId}</p>
+        )}
+      </div>
+
+      <div>
+        <Input
+          label="Phone Number"
+          value={phoneNumber}
+          onChange={(v) => {
+            setPhone(v);
+            if (errors.phoneNumber)
+              setErrors((p) => ({ ...p, phoneNumber: null }));
+          }}
+          className={errors.phoneNumber ? "border-red-500" : ""}
+        />
+        {errors.phoneNumber && (
+          <p className="text-xs text-red-500 mt-1">
+            {errors.phoneNumber}
+          </p>
+        )}
       </div>
 
       {/* Registrations */}
@@ -120,16 +211,41 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
       {/* Contact */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input
-          label="Contact Name"
-          value={contactName}
-          onChange={setContactName}
-        />
-        <Input
-          label="Contact Phone"
-          value={contactPhone}
-          onChange={setContactPhone}
-        />
+        <div>
+          <Input
+            label="Contact Name"
+            value={contactName}
+            onChange={(v) => {
+              setContactName(v);
+              if (errors.contactName)
+                setErrors((p) => ({ ...p, contactName: null }));
+            }}
+            className={errors.contactName ? "border-red-500" : ""}
+          />
+          {errors.contactName && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.contactName}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <Input
+            label="Contact Phone"
+            value={contactPhone}
+            onChange={(v) => {
+              setContactPhone(v);
+              if (errors.contactPhone)
+                setErrors((p) => ({ ...p, contactPhone: null }));
+            }}
+            className={errors.contactPhone ? "border-red-500" : ""}
+          />
+          {errors.contactPhone && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.contactPhone}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Room Categories */}
@@ -137,13 +253,17 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         <h3 className="text-sm font-semibold">Room Categories</h3>
 
         {roomCategories.map((r, i) => (
-          <div key={i} className="flex justify-between text-sm">
+          <div key={i} className="flex gap-5 text-sm">
             <span>{r.name}</span>
-            <span>
-              {r.pax} pax – LKR {r.price}
-            </span>
+            <span>{r.pax} pax</span>
           </div>
         ))}
+
+        {errors.roomCategories && (
+          <p className="text-xs text-red-500">
+            {errors.roomCategories}
+          </p>
+        )}
 
         <div className="grid grid-cols-12 gap-2 pt-2">
           <input
@@ -154,13 +274,13 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           />
           <input
             className="col-span-3 border px-2 py-1 rounded text-sm"
-            placeholder="Max Occupancy"
+            placeholder="Pax"
             type="number"
             value={roomCount}
             onChange={(e) => setRoomCount(e.target.value)}
           />
           <input
-            className="col-span-3 border px-2 py-1 rounded text-sm"
+            className="col-span-3 border px-2 py-1 rounded text-sm hidden"
             placeholder="Amount"
             type="number"
             value={roomPrice}

@@ -57,6 +57,11 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   const [infantPrice, setInfantPrice] = useState(initial?.infant_price ?? 0);
   const [guideFee, setGuideFee] = useState(initial?.guide_fee ?? 0);
 
+  const [currency, setCurrency] = useState(
+    initial?.currency || "USD"
+  );
+
+
   // ===== SAFARI =====
   const [entrancePerPax, setEntrancePerPax] = useState(
     initial?.entrance_per_pax ?? 0
@@ -223,6 +228,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
       name,
       description,
       pricing_type: pricingType,
+      currency: currency,
       tags: tagsText,
       city_ids: cityIds.map(Number),
       is_optional_supplement: !!isOptionalSupplement,
@@ -365,7 +371,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="block mb-1 text-xs">Pricing Type</label>
           <select
@@ -379,18 +385,24 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
               </option>
             ))}
           </select>
+          {errors.pricingType && (
+            <p className="text-xs text-red-500 mt-1">{errors.pricingType}</p>
+          )}
         </div>
 
-        {/* <div>
-          <label className="block mb-1 text-xs">Tags</label>
-          <input
+        <div>
+          <label className="block mb-1 text-xs">Currency</label>
+          <select
             className="w-full border rounded px-2 py-1.5 text-sm"
-            value={tagsText}
-            onChange={(e) => setTagsText(e.target.value)}
-            placeholder="ocean, whale-watching, boat"
-          />
-        </div> */}
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            <option value="USD">USD</option>
+            <option value="LKR">LKR</option>
+          </select>
+        </div>
       </div>
+
 
       {/* Global Age Rules (in API examples) */}
       {/* <div className="border rounded-md p-3">

@@ -33,18 +33,17 @@ export async function createCity(payload) {
     is_stop: payload.isStop,
   });
 
-  const c = data.data;
-
-  if (!c) {
-    throw new Error("Invalid create city response");
+  if (data?.status === 200) {
+    return {
+      ...payload,
+      id: Date.now(),  
+      status: "active",
+    };
   }
 
-  return {
-    ...c,
-    isDestination: c.is_destination,
-    isStop: c.is_stop,
-  };
+  throw new Error(data?.message || "Create city failed");
 }
+
 
 
 /**
