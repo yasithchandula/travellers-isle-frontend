@@ -31,8 +31,8 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   );
   const [citySelect, setCitySelect] = useState("");
 
-  const [isOptionalSupplement, setIsOptionalSupplement] = useState(
-    !!(initial?.is_optional_supplement ?? initial?.isOptionalSupplement)
+  const [optional_supplement_price, setOptionalSupplementPrice] = useState(
+    initial?.optional_supplement_price || 0
   );
   const [enableReminder, setEnableReminder] = useState(
     !!(initial?.enable_reminder ?? initial?.reminder?.enabled)
@@ -173,14 +173,10 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
 
     if (!pricingType) e.pricingType = "Pricing type is required";
 
-    if (!cityIds.length)
-      e.cityIds = "At least one city must be assigned";
-
     if (pricingType === "PER_PERSON") {
       if (adultPrice <= 0) e.adultPrice = "Adult price cannot be negative";
       if (childPrice <= 0) e.childPrice = "Child price cannot be negative";
       if (infantPrice < 0) e.infantPrice = "Infant price cannot be negative";
-      if (guideFee <= 0) e.guideFee = "Guide fee cannot be negative";
     }
 
     if (pricingType === "SAFARI") {
@@ -231,7 +227,7 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
       currency: currency,
       tags: tagsText,
       city_ids: cityIds.map(Number),
-      is_optional_supplement: !!isOptionalSupplement,
+      optional_supplement_price: optional_supplement_price,
       enable_reminder: !!enableReminder,
       allow_zero_at_quotation: !!allowZeroAtQuotation,
       infant_age_to: Number(infantAgeTo),
@@ -731,18 +727,18 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           <p className="text-xs text-red-500 text-end">{errors.cityIds}</p>
         )}
       </div>
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <Input
+          className="col-6"
+          label="Optional Supplement extra charge (Per person)"
+          type="number"
+          value={optional_supplement_price}
+          onChange={(v) => setOptionalSupplementPrice(+v)}
+        />
+      </div>
 
       {/* Flags */}
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isOptionalSupplement}
-            onChange={(e) => setIsOptionalSupplement(e.target.checked)}
-          />
-          Optional Supplement Extra Charge
-        </label>
-
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -774,6 +770,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
           {initial ? "Save Changes" : "Add Excursion"}
         </Button>
       </div>
-    </form>
+    </form >
   );
 }
