@@ -17,7 +17,7 @@ function toTagsText(tags) {
   return "";
 }
 
-export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
+export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hideActions = false, }) {
   // ===== Base =====
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
@@ -230,8 +230,8 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
       optional_supplement_price: optional_supplement_price,
       enable_reminder: !!enableReminder,
       allow_zero_at_quotation: !!allowZeroAtQuotation,
-      infant_age_to: Number(infantAgeTo),
-      child_age_to: Number(childAgeTo),
+      infant_age_to: Number(pp.infant.to),
+      child_age_to: Number(pp.child.to),
     };
 
     if (pricingType === "PER_PERSON") {
@@ -349,7 +349,12 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id="excursion-form"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
+
       <Input label="Excursion Name" value={name} onChange={setName} />
       {errors.name && (
         <p className="text-xs text-red-500 mt-1">{errors.name}</p>
@@ -762,14 +767,17 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel }) {
 
       <div className="text-xs">{renderPreview()}</div>
 
-      <div className="flex justify-end gap-2 pt-3 border-t">
-        <Button variant="outline" size="md" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button size="md" type="submit">
-          {initial ? "Save Changes" : "Add Excursion"}
-        </Button>
-      </div>
+      {!hideActions && (
+        <div className="flex justify-end gap-2 pt-3 border-t">
+          <Button variant="outline" size="md" type="button" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="md" type="submit">
+            {initial ? "Save Changes" : "Add Excursion"}
+          </Button>
+        </div>
+      )}
+
     </form >
   );
 }

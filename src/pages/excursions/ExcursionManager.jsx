@@ -186,7 +186,7 @@ export default function ExcursionManager() {
                   <th className="p-3 border-b">Optional</th>
                   <th className="p-3 border-b">Reminder</th>
                   <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b w-56">Actions</th>
+                  <th className="p-3 border-b">Actions</th>
                 </tr>
               </thead>
 
@@ -262,13 +262,14 @@ export default function ExcursionManager() {
                       >
                         Edit
                       </Button>
-                      <Button
+                      {/* <Button
+                        className="hidden"
                         variant="danger"
                         size="sm"
                         onClick={() => setConfirmId(e.id)}
                       >
                         Disable
-                      </Button>
+                      </Button> */}
                     </td>
                   </tr>
                 ))}
@@ -288,21 +289,70 @@ export default function ExcursionManager() {
 
       {/* Create / Edit */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
-          <DialogHeader>
+        <DialogContent
+          className="
+      max-w-4xl
+      h-[90vh]
+      bg-white
+      p-0
+      flex flex-col
+      overflow-hidden
+    "
+        >
+          {/* ===== HEADER (STICKY) ===== */}
+          <DialogHeader
+            className="
+        px-6 py-4 pb-2
+
+        sticky top-0
+        z-20
+        bg-white
+      "
+          >
             <DialogTitle>
               {editItem ? "Edit Excursion" : "Add Excursion"}
             </DialogTitle>
           </DialogHeader>
 
-          <ExcursionForm
-            initial={editItem}
-            cities={cities}
-            onSubmit={handleSubmit}
-            onCancel={() => setModalOpen(false)}
-          />
+          {/* ===== SCROLL AREA (ONLY THIS SCROLLS) ===== */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <ExcursionForm
+              initial={editItem}
+              cities={cities}
+              onSubmit={handleSubmit}
+              hideActions
+            />
+          </div>
+
+          {/* ===== FOOTER (STICKY) ===== */}
+          <div
+            className="
+        px-6 py-4
+        border-t
+        sticky bottom-0
+        z-20
+        bg-white
+        flex justify-end gap-2
+      "
+          >
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setModalOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              form="excursion-form"
+            >
+              {editItem ? "Save Changes" : "Add Excursion"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Disable */}
       <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
