@@ -82,14 +82,35 @@ const slice = createSlice({
         s.loading = true;
         s.error = null;
       })
-      .addCase(fetchExcursions.fulfilled, (s, a) => {
-        s.loading = false;
-        s.items = a.payload.items;
-        s.page = a.payload.page;
-        s.limit = a.payload.limit;
-        s.total = a.payload.total;
-        s.totalPages = a.payload.totalPages;
+      .addCase(fetchExcursions.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const {
+          items,
+          page,
+          limit,
+          total,
+          totalPages
+        } = action.payload;
+
+        if (page === 1) {
+          state.items = items;
+        } else {
+          const existingIds = new Set(state.items.map(i => i.id));
+
+          const newItems = items.filter(
+            i => !existingIds.has(i.id)
+          );
+
+          state.items = [...state.items, ...newItems];
+        }
+
+        state.page = page;
+        state.limit = limit;
+        state.total = total;
+        state.totalPages = totalPages;
       })
+
 
       .addCase(fetchExcursions.rejected, (s, a) => {
         s.loading = false;

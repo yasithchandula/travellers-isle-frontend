@@ -47,7 +47,7 @@ import { toast } from "sonner";
 export default function ExcursionManager() {
   const dispatch = useDispatch();
 
-  const { items, loading, search, page, limit } = useSelector(
+  const { items, loading, search, page, limit, totalPages } = useSelector(
     (s) => s.excursions
   );
   const cities = useSelector((s) => s.cities.items);
@@ -63,6 +63,17 @@ export default function ExcursionManager() {
     dispatch(fetchExcursions({ search, page, limit }));
     dispatch(fetchCities(""));
   }, [dispatch, search, page, limit]);
+
+  useEffect(() => {
+    if (loading) {
+      toast.loading("Loading more excursions...", {
+        id: "excursion-pagination",
+      });
+    } else {
+      toast.dismiss("excursion-pagination");
+    }
+  }, [loading, page]);
+
 
   function openCreate() {
     setEditItem(null);
@@ -104,6 +115,16 @@ export default function ExcursionManager() {
         err?.message || "Failed to save excursion. Please try again.",
         { id: toastId }
       );
+    }
+  }
+
+  function handleScroll(e) {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 50;
+
+    if (nearBottom && !loading && page < totalPages) {
+      dispatch(fetchExcursions({ search, page: page + 1, limit }));
     }
   }
 
@@ -176,7 +197,7 @@ export default function ExcursionManager() {
           )}
 
           {/* Table */}
-          <div className="overflow-auto">
+          <div className="overflow-auto max-h-[65vh]" onScroll={handleScroll}>
             <table className="w-full border-collapse text-sm">
               <thead className="bg-gray-100 sticky top-0 z-10">
                 <tr className="text-left">
@@ -194,8 +215,9 @@ export default function ExcursionManager() {
                 {filteredItems.map((e) => (
                   <tr
                     key={`excursion-${e.id}`}
-                    className="border-b hover:bg-gray-50 transition"
+                    className="border-b hover:bg-gray-50 transition animate-excursion-row"
                   >
+
                     <td className="p-3">
                       <div className="font-medium">{e.name}</div>
                       <div className="text-xs text-gray-500 line-clamp-1">
