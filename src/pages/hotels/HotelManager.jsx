@@ -250,13 +250,13 @@ export default function HotelManager() {
                       >
                         Edit
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="danger"
                         size="sm"
                         onClick={() => setConfirmId(h.id)}
                       >
                         Disable
-                      </Button>
+                      </Button> */}
                     </td>
                   </tr>
                 ))}

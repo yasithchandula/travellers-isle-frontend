@@ -10,7 +10,6 @@ export default function UserForm({
   onSubmit,
   onCancel,
   submitting,
-  error,
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -133,8 +132,8 @@ export default function UserForm({
             }`}
         >
           {USER_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
+            <option key={s.value} value={s.value}>
+              {s.label}
             </option>
           ))}
         </select>

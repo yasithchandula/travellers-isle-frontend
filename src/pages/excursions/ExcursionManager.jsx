@@ -203,7 +203,7 @@ export default function ExcursionManager() {
                 <tr className="text-left">
                   <th className="p-3 border-b">Name</th>
                   <th className="p-3 border-b">Type</th>
-                  <th className="p-3 border-b">Tags</th>
+                  {/* <th className="p-3 border-b">Tags</th> */}
                   <th className="p-3 border-b">Optional</th>
                   <th className="p-3 border-b">Reminder</th>
                   <th className="p-3 border-b">Status</th>
@@ -227,7 +227,7 @@ export default function ExcursionManager() {
 
                     <td className="p-3">{e.pricing_type}</td>
 
-                    <td className="p-3">
+                    {/* <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {e.tags ? (
                           e.tags.split(",").filter(Boolean).map((t) => (
@@ -242,7 +242,7 @@ export default function ExcursionManager() {
                           "-"
                         )}
                       </div>
-                    </td>
+                    </td> */}
 
                     <td className="p-3">
                       <span
