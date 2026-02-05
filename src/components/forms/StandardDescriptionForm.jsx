@@ -1,56 +1,160 @@
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 import Input from "../common/Input";
 import Select from "../common/Select";
 import Button from "../common/Button";
 import RichTextEditor from "../common/RichTextEditor";
-import Card from "../common/Card";
 
-import { useDispatch, useSelector } from "react-redux";
 import { uploadFile } from "@/app/slices/uploadSlice";
 import { fetchCities } from "@/app/slices/citySlice";
+import { buildImageUrl } from "../../utils/urls";
 
-export default function StandardDescriptionForm({ initial, onSave }) {
+import { toast } from "sonner";
+
+export default function StandardDescriptionForm({
+  initial,
+  onSubmit,
+  hideActions = false,
+}) {
   const dispatch = useDispatch();
-
   const cities = useSelector((s) => s.cities.items || []);
+  const [stopSelect, setStopSelect] = useState("");
+  const [tagSelect, setTagSelect] = useState("");
+  const tagOptions = [
+    "family",
+    "honeymoon",
+    "beach",
+    "culture",
+    "wildlife",
+  ];
+
+
 
   /* =====================
-        LOAD CITIES
-     ===================== */
+     LOAD CITIES
+  ===================== */
   useEffect(() => {
     dispatch(fetchCities(""));
   }, [dispatch]);
 
   /* =====================
-        FORM STATE
-     ===================== */
-  const [form, setForm] = useState(
-    initial || {
-      title: "",
-      gallery: [], // [{ file, preview, url }]
-      featuredPreview: null,
-      startCity: "",
-      endCity: "",
-      stops: [], // city IDs
-      startingParagraph: "",
-      description: "",
-      tags: [],
+     FORM STATE
+  ===================== */
+  const emptyForm = {
+    title: "",
+    start_city_id: "",
+    end_city_id: "",
+    stops: [],
+    starting_paragraph: "",
+    description: "",
+    tags: [],
+    gallery: [],
+    featuredPreview: null,
+  };
+
+  const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+
+  /* =====================
+     EDIT MODE HYDRATION
+  ===================== */
+  useEffect(() => {
+    if (!initial) {
+      setForm(emptyForm);
+      setErrors({});
+      return;
     }
-  );
+
+    setForm({
+      title: initial.title || "",
+
+      start_city_id: String(initial.start_city_id || ""),
+      end_city_id: String(initial.end_city_id || ""),
+
+      stops: Array.isArray(initial.stops)
+        ? initial.stops.map(String)
+        : [],
+
+      starting_paragraph: initial.starting_paragraph || "",
+      description: initial.description || "",
+
+      tags: Array.isArray(initial.tags) ? initial.tags : [],
+
+      gallery: Array.isArray(initial.gallery)
+        ? initial.gallery.map((img) => ({
+          url: img,
+          preview: buildImageUrl(img),
+          file: null,
+          status: "done",
+        }))
+        : [],
+
+
+      featuredPreview: initial.featured_image
+        ? buildImageUrl(initial.featured_image)
+        : initial.gallery?.[0]
+          ? buildImageUrl(initial.gallery[0])
+          : null,
+
+    });
+
+    setErrors({});
+  }, [initial]);
+
 
   function updateField(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => ({ ...e, [field]: null }));
   }
 
   /* =====================
-        CITY FILTERS
-     ===================== */
-  const destinationCities = cities.filter((c) => c.is_destination);
-  const stopCities = cities.filter((c) => c.is_stop);
+     VALIDATION
+  ===================== */
+  function validate() {
+    const e = {};
+
+    if (!form.title.trim()) {
+      e.title = "Title is required";
+    }
+
+    if (!form.start_city_id) {
+      e.start_city_id = "Starting city is required";
+    }
+
+    if (!form.end_city_id) {
+      e.end_city_id = "Destination city is required";
+    }
+
+    if (
+      form.start_city_id &&
+      form.end_city_id &&
+      form.start_city_id === form.end_city_id
+    ) {
+      e.end_city_id =
+        "Starting city and destination city cannot be the same";
+    }
+
+    if (!form.starting_paragraph.trim()) {
+      e.starting_paragraph = "Starting paragraph is required";
+    }
+
+    if (!form.description.trim()) {
+      e.description = "Description is required";
+    }
+
+    if (!form.gallery.length) {
+      e.gallery = "At least one image is required";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
   /* =====================
-        IMAGE UPLOAD
-     ===================== */
+     IMAGE UPLOAD
+  ===================== */
+
   function handleGallerySelect(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -58,47 +162,85 @@ export default function StandardDescriptionForm({ initial, onSave }) {
     files.forEach((file) => {
       const preview = URL.createObjectURL(file);
 
-      // Add preview immediately
-      setForm((prev) => {
-        const newGallery = [
+      // optimistic add
+      setForm((prev) => ({
+        ...prev,
+        gallery: [
           ...prev.gallery,
-          { file, preview, url: null },
-        ];
+          {
+            file,
+            preview,
+            url: null,
+            status: "uploading",
+          },
+        ],
+        featuredPreview: prev.featuredPreview || preview,
+      }));
 
-        return {
-          ...prev,
-          gallery: newGallery,
-          featuredPreview: prev.featuredPreview || preview,
-        };
-      });
-
-      // Upload
       dispatch(uploadFile({ file, type: "standard-description" }))
         .unwrap()
         .then((res) => {
+          if (!res?.link) {
+            throw new Error("Invalid upload response");
+          }
+
           setForm((prev) => ({
             ...prev,
             gallery: prev.gallery.map((g) =>
-              g.preview === preview ? { ...g, url: res.url } : g
+              g.preview === preview
+                ? {
+                  ...g,
+                  url: res.link,
+                  status: "done",
+                }
+                : g
             ),
           }));
+        })
+        .catch((err) => {
+          toast.error(
+            typeof err === "string"
+              ? err
+              : `Failed to upload ${file.name}`
+          );
+
+          setForm((prev) => {
+            const gallery = prev.gallery.filter(
+              (g) => g.preview !== preview
+            );
+
+            URL.revokeObjectURL(preview);
+
+            return {
+              ...prev,
+              gallery,
+              featuredPreview:
+                prev.featuredPreview === preview
+                  ? gallery[0]?.preview || null
+                  : prev.featuredPreview,
+            };
+          });
         });
     });
   }
 
+
+
   function removeGalleryItem(index) {
     setForm((prev) => {
       const removed = prev.gallery[index];
-      URL.revokeObjectURL(removed.preview);
+      if (removed?.preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(removed.preview);
+      }
 
-      const newGallery = prev.gallery.filter((_, i) => i !== index);
+      const gallery = prev.gallery.filter((_, i) => i !== index);
 
       return {
         ...prev,
-        gallery: newGallery,
+        gallery,
         featuredPreview:
           prev.featuredPreview === removed.preview
-            ? newGallery[0]?.preview || null
+            ? gallery[0]?.preview || null
             : prev.featuredPreview,
       };
     });
@@ -109,77 +251,115 @@ export default function StandardDescriptionForm({ initial, onSave }) {
   }
 
   /* =====================
-            STOPS
-     ===================== */
-  function addStop(cityId) {
-    if (!cityId || form.stops.includes(cityId)) return;
-    updateField("stops", [...form.stops, cityId]);
+     SUBMIT
+  ===================== */
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const galleryUrls = form.gallery
+      .map((g) => g.url)
+      .filter(Boolean);
+
+    const featuredImage =
+      form.gallery.find(
+        (g) => g.preview === form.featuredPreview
+      )?.url || galleryUrls[0] || null;
+
+    const payload = {
+      title: form.title,
+      start_city_id: Number(form.start_city_id),
+      end_city_id: Number(form.end_city_id),
+      stops: form.stops.map(Number),
+      starting_paragraph: form.starting_paragraph,
+      description: form.description,
+      tags: form.tags,
+      gallery: galleryUrls,
+      featuredImage,
+    };
+
+    onSubmit(payload);
   }
 
-  function removeStop(cityId) {
-    updateField("stops", form.stops.filter((id) => id !== cityId));
+  function addStop() {
+    if (!stopSelect) return;
+
+    if (form.stops.includes(stopSelect)) {
+      return; // prevent duplicates
+    }
+
+    updateField("stops", [...form.stops, stopSelect]);
+    setStopSelect("");
   }
 
-  /* =====================
-            TAGS
-     ===================== */
-  const tagOptions = ["family", "honeymoon", "beach", "culture", "wildlife"];
-
-  function toggleTag(tag) {
+  function removeStop(id) {
     updateField(
-      "tags",
-      form.tags.includes(tag)
-        ? form.tags.filter((t) => t !== tag)
-        : [...form.tags, tag]
+      "stops",
+      form.stops.filter((s) => String(s) !== String(id))
     );
   }
 
-  /* =====================
-           SUBMIT
-     ===================== */
-  function handleSubmit() {
-    const payload = {
-      ...form,
-      gallery: form.gallery.map((g) => g.url).filter(Boolean),
-      featuredImage:
-        form.gallery.find((g) => g.preview === form.featuredPreview)?.url ||
-        null,
-    };
+  function addTag() {
+    if (!tagSelect) return;
 
-    delete payload.featuredPreview;
+    if (form.tags.includes(tagSelect)) {
+      return; // prevent duplicates
+    }
 
-    onSave(payload);
+    updateField("tags", [...form.tags, tagSelect]);
+    setTagSelect("");
   }
 
+  function removeTag(tag) {
+    updateField(
+      "tags",
+      form.tags.filter((t) => t !== tag)
+    );
+  }
+
+
+
+  const destinationCities = cities.filter((c) => c.is_destination);
+
   return (
-    <Card>
-      {/* TITLE */}
+    <form
+      id="standard-description-form"
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
+      {/* ================= TITLE ================= */}
       <Input
-        label="Name / Title"
+        label="Title / Name"
         value={form.title}
+        error={errors.title}
         onChange={(v) => updateField("title", v)}
       />
 
-      {/* IMAGE UPLOAD */}
-      <div className="mt-6">
+      {/* ================= GALLERY ================= */}
+      <div className="border rounded-md p-3 space-y-2">
+        <h3 className="text-sm font-semibold">Gallery</h3>
+
         <input
           type="file"
-          accept="image/*"
           multiple
+          accept="image/*"
           onChange={handleGallerySelect}
-          className="border p-2 rounded w-full"
+          className="text-sm"
         />
 
-        <div className="grid grid-cols-4 gap-3 mt-4">
+        {errors.gallery && (
+          <p className="text-xs text-ti-red">{errors.gallery}</p>
+        )}
+
+        <div className="grid grid-cols-4 gap-3">
           {form.gallery.map((img, i) => (
-            <div key={i} className="relative group">
+            <div key={i} className="relative">
               <img
                 src={img.preview}
-                className={`h-24 w-full object-cover rounded border ${
-                  form.featuredPreview === img.preview
-                    ? "border-ti-teal border-4"
-                    : ""
-                }`}
+                className={`h-24 w-full object-cover rounded border ${form.featuredPreview === img.preview
+                  ? "border-ti-teal border-4"
+                  : ""
+                  }`}
               />
 
               <button
@@ -204,104 +384,206 @@ export default function StandardDescriptionForm({ initial, onSave }) {
         </div>
       </div>
 
-      {/* CITIES */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        <Select
-          label="Starting City"
-          value={form.startCity}
-          onChange={(v) => updateField("startCity", v)}
-          options={[
-            { value: "", label: "Select city" },
-            ...destinationCities.map((c) => ({
-              value: String(c.id),
-              label: c.city,
-            })),
-          ]}
-        />
+      {/* ================= ROUTE ================= */}
+      <div className="border rounded-md p-3 space-y-3">
+        <h3 className="text-sm font-semibold">Route</h3>
 
-        <Select
-          label="Destination City"
-          value={form.endCity}
-          onChange={(v) => updateField("endCity", v)}
-          options={[
-            { value: "", label: "Select city" },
-            ...destinationCities.map((c) => ({
-              value: String(c.id),
-              label: c.city,
-            })),
-          ]}
-        />
-      </div>
+        {/* ONE ROW */}
+        <div className="grid grid-cols-3 gap-3 items-end">
+          {/* Starting City */}
+          <Select
+            label="Starting City"
+            value={form.start_city_id}
+            error={errors.start_city_id}
+            onChange={(v) => updateField("start_city_id", v)}
+            options={[
+              { value: "", label: "Select city" },
+              ...destinationCities.map((c) => ({
+                value: String(c.id),
+                label: c.city,
+              })),
+            ]}
+          />
 
-      {/* STOPS */}
-      <div className="mt-6">
-        <Select
-          label="Add Intermediate Stop"
-          value=""
-          onChange={(v) => addStop(v)}
-          options={[
-            { value: "", label: "Select stop" },
-            ...stopCities.map((c) => ({
-              value: String(c.id),
-              label: c.city,
-            })),
-          ]}
-        />
+          {/* Destination City */}
+          <Select
+            label="Destination City"
+            value={form.end_city_id}
+            error={errors.end_city_id}
+            onChange={(v) => updateField("end_city_id", v)}
+            options={[
+              { value: "", label: "Select city" },
+              ...destinationCities.map((c) => ({
+                value: String(c.id),
+                label: c.city,
+              })),
+            ]}
+          />
 
-        <div className="mt-3 space-y-2">
-          {form.stops.map((id) => {
-            const city = cities.find((c) => String(c.id) === String(id));
-            return (
-              <div key={id} className="flex justify-between bg-ti-sky/60 p-2 rounded">
-                <span>{city?.city}</span>
-                <button
-                  type="button"
-                  onClick={() => removeStop(id)}
-                  className="text-ti-red"
+          {/* Stops selector */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium">
+              Add Stop
+            </label>
+
+            <div className="flex gap-2">
+              <select
+                className="flex-1 border rounded px-2 py-1.5 text-sm"
+                value={stopSelect}
+                onChange={(e) => setStopSelect(e.target.value)}
+              >
+                <option value="">Select city</option>
+                {(cities || [])
+                  .filter((c) => c.is_stop)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.city}
+                    </option>
+                  ))}
+              </select>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={addStop}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* SELECTED STOPS (FULL WIDTH BELOW) */}
+        <div className="flex flex-wrap gap-2">
+          {form.stops.length ? (
+            form.stops.map((id) => {
+              const city = cities.find(
+                (c) => String(c.id) === String(id)
+              );
+
+              return (
+                <span
+                  key={id}
+                  className="px-2 py-1 border rounded text-xs flex items-center gap-1 bg-ti-sky/60"
                 >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
+                  {city?.city || id}
+                  <button
+                    type="button"
+                    onClick={() => removeStop(id)}
+                    className="text-ti-red"
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-xs text-gray-500">
+              No intermediate stops added
+            </span>
+          )}
         </div>
       </div>
 
-      {/* TEXT */}
-      <RichTextEditor
-        value={form.startingParagraph}
-        onChange={(v) => updateField("startingParagraph", v)}
-      />
 
-      <RichTextEditor
-        value={form.description}
-        onChange={(v) => updateField("description", v)}
-      />
+      {/* ================= CONTENT ================= */}
+      <div className="border rounded-md p-3 space-y-2">
+        <h3 className="text-sm font-semibold">Content</h3>
+        <label className="block text-xs font-medium">
+          Starting Paragraph
+        </label>
 
-      {/* TAGS */}
-      <div className="flex gap-2 flex-wrap mt-4">
-        {tagOptions.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => toggleTag(tag)}
-            className={`px-3 py-1 rounded-full border ${
-              form.tags.includes(tag)
-                ? "bg-ti-teal text-white"
-                : "border-ti-mint"
-            }`}
+        <RichTextEditor
+          value={form.starting_paragraph}
+          onChange={(v) =>
+            updateField("starting_paragraph", v)
+          }
+        />
+        {errors.starting_paragraph && (
+          <p className="text-xs text-ti-red">
+            {errors.starting_paragraph}
+          </p>
+        )}
+
+
+        <label className="block text-xs font-medium pt-2">
+          Description
+        </label>
+
+        <RichTextEditor
+          value={form.description}
+          onChange={(v) => updateField("description", v)}
+        />
+        {errors.description && (
+          <p className="text-xs text-ti-red">
+            {errors.description}
+          </p>
+        )}
+      </div>
+
+      {/* ================= TAGS ================= */}
+      <div className="p-2 border rounded space-y-2">
+        <h3 className="text-sm font-semibold">Tags</h3>
+
+        <div className="flex gap-2">
+          <select
+            className="flex-1 border rounded px-2 py-1.5 text-sm"
+            value={tagSelect}
+            onChange={(e) => setTagSelect(e.target.value)}
           >
-            {tag}
-          </button>
-        ))}
+            <option value="">Select tag</option>
+            {tagOptions.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag}
+              </option>
+            ))}
+          </select>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={addTag}
+          >
+            Add
+          </Button>
+        </div>
+
+        {/* SELECTED TAGS */}
+        <div className="flex flex-wrap gap-2">
+          {form.tags.length ? (
+            form.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-1 border rounded text-xs flex items-center gap-1 bg-ti-mint/60"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="text-ti-red"
+                >
+                  ×
+                </button>
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-500">
+              No tags added
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* SAVE */}
-      <div className="flex justify-end mt-8">
-        <Button onClick={handleSubmit}>
-          Save Standard Description
-        </Button>
-      </div>
-    </Card>
+
+      {!hideActions && (
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button type="submit">
+            {initial ? "Save Changes" : "Add Description"}
+          </Button>
+        </div>
+      )}
+    </form>
   );
 }

@@ -1,37 +1,62 @@
-// Mock standard itinerary descriptions (day-wise templates)
+import api from "@/api/axios";
 
-const standardDescriptions = [
-  {
-    id: 101,
-    title: "Colombo → Kandy Cultural Drive",
-    start_city_id: 1,
-    end_city_id: 2,
-    description_html:
-      "<h3>Colombo to Kandy</h3><p>Visit Pinnawala Elephant Orphanage and the Temple of the Tooth Relic.</p>",
-    status: "active",
-  },
-  {
-    id: 102,
-    title: "Kandy → Nuwara Eliya Hill Country",
-    start_city_id: 2,
-    end_city_id: 3,
-    description_html:
-      "<h3>Kandy to Nuwara Eliya</h3><p>Tea plantations, waterfalls and cool climate experience.</p>",
-    status: "active",
-  },
-  {
-    id: 103,
-    title: "Nuwara Eliya → Ella Scenic Journey",
-    start_city_id: 3,
-    end_city_id: 4,
-    description_html:
-      "<h3>Nuwara Eliya to Ella</h3><p>Scenic train journey and Nine Arch Bridge visit.</p>",
-    status: "active",
-  },
-];
+/**
+ * POST /standard-descriptions/all
+ */
+export async function getStandardDescriptions({
+  search = "",
+  status = "",
+  page = 1,
+  limit = 10,
+}) {
+  const { data } = await api.post("/standard-descriptions/all", {
+    search,
+    status,
+    page,
+    limit,
+  });
 
-export async function getStandardDescriptions() {
-  // simulate API delay
-  await new Promise((r) => setTimeout(r, 300));
-  return standardDescriptions.filter((d) => d.status === "active");
+  return data; // return FULL response
+}
+
+/**
+ * PUT /standard-descriptions/create/
+ */
+export async function createStandardDescription(payload) {
+  const { data } = await api.put(
+    "/standard-descriptions/create/",
+    payload
+  );
+  return data;
+}
+
+/**
+ * PATCH /standard-descriptions/update/:id
+ */
+export async function updateStandardDescription(id, payload) {
+  const { data } = await api.patch(
+    `/standard-descriptions/update/${id}`,
+    payload
+  );
+  return data;
+}
+
+/**
+ * DELETE /standard-descriptions/delete/:id
+ */
+export async function deleteStandardDescription(id) {
+  const { data } = await api.delete(
+    `/standard-descriptions/delete/${id}`
+  );
+  return data;
+}
+
+/**
+ * PATCH /standard-descriptions/approve/:id
+ */
+export async function approveStandardDescription(id) {
+  const { data } = await api.patch(
+    `/standard-descriptions/approve/${id}`
+  );
+  return data;
 }

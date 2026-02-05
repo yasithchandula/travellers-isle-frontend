@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RefreshCcw, UserPlus, Search } from "lucide-react";
+import { RefreshCcw, UserPlus, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import Button from "../../components/common/Button";
@@ -206,8 +206,25 @@ export default function UserManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">User Management</h2>
-            <Button onClick={startCreate}>
-              <UserPlus size={20} /> New User
+            <Button
+              onClick={async () => {
+
+             startCreate();
+
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  <UserPlus size={20} />
+                  New User
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>
@@ -226,9 +243,9 @@ export default function UserManagement() {
             </div> */}
 
             <InputGroup className="border-black/20 focus:ring-2 focus:ring-black/20">
-              <InputGroupInput  onChange={(e) => dispatch(setQuery(e.target.value))} placeholder="Search by name, email, or role..." className="color-black/20" />
+              <InputGroupInput onChange={(e) => dispatch(setQuery(e.target.value))} placeholder="Search by name, email, or role..." className="color-black/20" />
               <InputGroupAddon>
-                <Search/>
+                <Search />
               </InputGroupAddon>
               <InputGroupAddon align="inline-end">{visibleUsers.length} Results</InputGroupAddon>
             </InputGroup>
@@ -274,7 +291,7 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {visibleUsers.slice().sort((a,b)=>a.id-b.id).map((u) => (
+                {visibleUsers.slice().sort((a, b) => a.id - b.id).map((u) => (
                   <tr key={u.id} className="border-b hover:bg-gray-50 transition">
                     <td className="p-3">{u.id}</td>
                     <td className="p-3 font-medium">{u.display_name}</td>
@@ -320,7 +337,9 @@ export default function UserManagement() {
 
       {/* CREATE / EDIT MODAL */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg bg-white">
+        <DialogContent className="sm:max-w-lg bg-white"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               {editing ? "Edit User" : "Create User"}
@@ -339,7 +358,9 @@ export default function UserManagement() {
 
       {/* DELETE CONFIRM */}
       <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent className="bg-white"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>

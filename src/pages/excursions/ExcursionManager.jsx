@@ -14,6 +14,7 @@ import ExcursionForm from "../../components/forms/ExcursionForm";
 import {
   fetchExcursions,
   setExcursionSearch,
+  setExcursionPage,
   addExcursion,
   editExcursion,
 } from "../../app/slices/excursionSlice";
@@ -40,6 +41,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
 
 
 import { toast } from "sonner";
@@ -73,6 +84,11 @@ export default function ExcursionManager() {
       toast.dismiss("excursion-pagination");
     }
   }, [loading, page]);
+
+  useEffect(() => {
+    dispatch(setExcursionPage(1));
+  }, [typeFilter, dispatch]);
+
 
 
   function openCreate() {
@@ -119,13 +135,13 @@ export default function ExcursionManager() {
   }
 
   function handleScroll(e) {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // const { scrollTop, scrollHeight, clientHeight } = e.target;
 
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 50;
+    // const nearBottom = scrollTop + clientHeight >= scrollHeight - 50;
 
-    if (nearBottom && !loading && page < totalPages) {
-      dispatch(fetchExcursions({ search, page: page + 1, limit }));
-    }
+    // if (nearBottom && !loading && page < totalPages) {
+    //   dispatch(fetchExcursions({ search, page: page + 1, limit }));
+    // }
   }
 
 
@@ -306,7 +322,113 @@ export default function ExcursionManager() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center pt-4">
+              <Pagination>
+                <PaginationContent>
+
+                  {/* Previous */}
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page > 1) {
+                          dispatch(fetchExcursions({ search, page: page - 1, limit }));
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+
+                  {/* First page */}
+                  <PaginationItem>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === 1}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        dispatch(fetchExcursions({ search, page: 1, limit }));
+                      }}
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+
+                  {/* Left Ellipsis */}
+                  {page > 3 && (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )}
+
+                  {/* Middle Pages */}
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const p = i + 1;
+
+                    if (p === 1 || p === totalPages) return null;
+                    if (p < page - 1 || p > page + 1) return null;
+
+                    return (
+                      <PaginationItem key={`page-${p}`}>
+                        <PaginationLink
+                          href="#"
+                          isActive={p === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            dispatch(fetchExcursions({ search, page: p, limit }));
+                          }}
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
+                  {/* Right Ellipsis */}
+                  {page < totalPages - 2 && (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )}
+
+                  {/* Last page */}
+                  {totalPages > 1 && (
+                    <PaginationItem>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === totalPages}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          dispatch(
+                            fetchExcursions({ search, page: totalPages, limit })
+                          );
+                        }}
+                      >
+                        {totalPages}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )}
+
+                  {/* Next */}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page < totalPages) {
+                          dispatch(fetchExcursions({ search, page: page + 1, limit }));
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
+
       </Card>
 
       {/* Create / Edit */}
@@ -320,6 +442,8 @@ export default function ExcursionManager() {
       flex flex-col
       overflow-hidden
     "
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           {/* ===== HEADER (STICKY) ===== */}
           <DialogHeader

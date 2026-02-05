@@ -14,7 +14,6 @@ export const fetchExcursions = createAsyncThunk(
     try {
       const res = await getExcursions({ search, page, limit });
 
-      // IMPORTANT: normalize response
       return {
         items: res.data.data,
         page: res.data.page,
@@ -27,7 +26,6 @@ export const fetchExcursions = createAsyncThunk(
     }
   }
 );
-
 
 /**
  * Create
@@ -73,15 +71,21 @@ const slice = createSlice({
   reducers: {
     setExcursionSearch(state, action) {
       state.search = action.payload;
+      state.page = 1;
+    },
+
+    setExcursionPage(state, action) {
+      state.page = action.payload;
     },
   },
+
   extraReducers: (builder) => {
     builder
-      /* Fetch */
       .addCase(fetchExcursions.pending, (s) => {
         s.loading = true;
         s.error = null;
       })
+
       .addCase(fetchExcursions.fulfilled, (state, action) => {
         state.loading = false;
 
@@ -90,20 +94,11 @@ const slice = createSlice({
           page,
           limit,
           total,
-          totalPages
+          totalPages,
         } = action.payload;
 
-        if (page === 1) {
-          state.items = items;
-        } else {
-          const existingIds = new Set(state.items.map(i => i.id));
-
-          const newItems = items.filter(
-            i => !existingIds.has(i.id)
-          );
-
-          state.items = [...state.items, ...newItems];
-        }
+        // ✅ PAGINATION MODE: always replace
+        state.items = items;
 
         state.page = page;
         state.limit = limit;
@@ -111,18 +106,15 @@ const slice = createSlice({
         state.totalPages = totalPages;
       })
 
-
       .addCase(fetchExcursions.rejected, (s, a) => {
         s.loading = false;
         s.error = a.payload || a.error.message;
       })
 
-      /* Create */
       .addCase(addExcursion.fulfilled, (s, a) => {
         s.items.unshift(a.payload);
       })
 
-      /* Update */
       .addCase(editExcursion.fulfilled, (s, a) => {
         const idx = s.items.findIndex((x) => x.id === a.payload.id);
         if (idx !== -1) s.items[idx] = a.payload;
@@ -130,5 +122,9 @@ const slice = createSlice({
   },
 });
 
-export const { setExcursionSearch } = slice.actions;
+export const {
+  setExcursionSearch,
+  setExcursionPage,
+} = slice.actions;
+
 export default slice.reducer;

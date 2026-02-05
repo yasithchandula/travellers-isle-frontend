@@ -18,9 +18,7 @@ export default function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`
-          px-2 py-1 rounded-lg border bg-white text-ti-forest
-          border-ti-mint outline-none transition
-          focus:ring-2 focus:ring-ti-teal
+border rounded px-2 py-1 text-sm
           ${error ? "border-red-400" : ""}
         `}
       >

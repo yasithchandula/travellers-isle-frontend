@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import RequireAuth from "./RequireAuth";
+
 import Layout from "../components/layout/Layout";
 import Dashboard from "../pages/dashboard/Dashboard";
 import UserManagement from "../pages/users/UserManagement";
@@ -17,137 +19,131 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* PUBLIC ROUTES */}
+        {/* PUBLIC */}
         <Route path="/login" element={<Login />} />
 
-        {/* PROTECTED ROUTES */}
-        {/* <Route
-          path="/"
-          element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          }
-        /> */}
+        {/* PROTECTED */}
+        <Route element={<RequireAuth />}>
+          <Route
+            path="/dashboard"
+            element={
+              <Layout>
+                <Dashboard />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/dashboard"
-          element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          }
-        />
+          <Route
+            path="/users"
+            element={
+              <Layout>
+                <UserManagement />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/users"
-          element={
-            <Layout>
-              <UserManagement />
-            </Layout>
-          }
-        />
+          <Route
+            path="/inquiries"
+            element={
+              <Layout>
+                <InquiryList />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/inquiries"
-          element={
-            <Layout>
-              <InquiryList />
-            </Layout>
-          }
-        />
+          <Route
+            path="/customers"
+            element={
+              <Layout>
+                <CustomerManager />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/customers"
-          element={
-            <Layout>
-              <CustomerManager />
-            </Layout>
-          }
-        />
+          <Route
+            path="/destinations"
+            element={
+              <Layout>
+                <DestinationManager />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/destinations"
-          element={
-            <Layout>
-              <DestinationManager />
-            </Layout>
-          }
-        />
+          <Route
+            path="/hotels"
+            element={
+              <Layout>
+                <HotelManager />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/hotels"
-          element={
-            <Layout>
-              <HotelManager />
-            </Layout>
-          }
-        />
+          <Route
+            path="/excursions"
+            element={
+              <Layout>
+                <ExcursionManager />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/excursions"
-          element={
-            <Layout>
-              <ExcursionManager />
-            </Layout>
-          }
-        />
+          <Route
+            path="/quotations"
+            element={
+              <Layout>
+                <QuotationList />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/quotations"
-          element={
-            <Layout>
-              <QuotationList />
-            </Layout>
-          }
-        />
+          <Route
+            path="/quotations/new"
+            element={
+              <Layout>
+                <QuotationFlow mode="new" />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/quotations/new"
-          element={
-            <Layout>
-              <QuotationFlow mode="new" />
-            </Layout>
-          }
-        />
+          <Route
+            path="/quotations/:id"
+            element={
+              <Layout>
+                <QuotationFlow mode="edit" />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/quotations/:id"
-          element={
-            <Layout>
-              <QuotationFlow mode="edit" />
-            </Layout>
-          }
-        />
+          <Route
+            path="/standard-descriptions"
+            element={
+              <Layout>
+                <StandardDescriptionList />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/standard-descriptions"
-          element={
-            <Layout>
-              <StandardDescriptionList />
-            </Layout>
-          }
-        />
+          <Route
+            path="/standard-descriptions/new"
+            element={
+              <Layout>
+                <StandardDescriptionEditor mode="new" />
+              </Layout>
+            }
+          />
 
-        <Route
-          path="/standard-descriptions/new"
-          element={
-            <Layout>
-              <StandardDescriptionEditor mode="new" />
-            </Layout>
-          }
-        />
+          <Route
+            path="/standard-descriptions/:id"
+            element={
+              <Layout>
+                <StandardDescriptionEditor mode="edit" />
+              </Layout>
+            }
+          />
+        </Route>
 
-        <Route
-          path="/standard-descriptions/:id"
-          element={
-            <Layout>
-              <StandardDescriptionEditor mode="edit" />
-            </Layout>
-          }
-        />
-
+        {/* FALLBACK */}
+        <Route path="*" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

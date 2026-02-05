@@ -1,36 +1,198 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getStandardDescriptions } from "../../api/mock/standardDescriptionMock";
+import {
+  getStandardDescriptions,
+  createStandardDescription,
+  updateStandardDescription,
+  deleteStandardDescription,
+  approveStandardDescription,
+} from "../../api/mock/standardDescriptionMock";
 
+/**
+ * Fetch list
+ */
 export const fetchStandardDescriptions = createAsyncThunk(
   "standardDescriptions/fetch",
-  async () => {
-    return await getStandardDescriptions();
+  async (
+    { search = "", status = "", page = 1, limit = 10 },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await getStandardDescriptions({
+        search,
+        status,
+        page,
+        limit,
+      });
+
+      return {
+        items: res.data.items,          // ✅ FIX
+        page: res.data.page,
+        limit: res.data.page_size,      // ✅ FIX
+        total: res.data.total,
+        totalPages: res.data.total_pages,
+      };
+    } catch (e) {
+      return rejectWithValue(e.response?.data || e.message);
+    }
   }
 );
 
-const standardDescriptionSlice = createSlice({
+/**
+ * Create
+ */
+export const addStandardDescription = createAsyncThunk(
+  "standardDescriptions/add",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await createStandardDescription(payload);
+    } catch (e) {
+      return rejectWithValue(
+        e.response?.data?.message || e.message
+      );
+    }
+  }
+);
+
+/**
+ * Update
+ */
+export const editStandardDescription = createAsyncThunk(
+  "standardDescriptions/edit",
+  async ({ id, payload }, { rejectWithValue }) => {
+    try {
+      return await updateStandardDescription(id, payload);
+    } catch (e) {
+      return rejectWithValue(
+        e.response?.data?.message || e.message
+      );
+    }
+  }
+);
+
+/**
+ * Delete
+ */
+export const removeStandardDescription = createAsyncThunk(
+  "standardDescriptions/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await deleteStandardDescription(id);
+      return id;
+    } catch (e) {
+      return rejectWithValue(
+        e.response?.data?.message || e.message
+      );
+    }
+  }
+);
+
+/**
+ * Approve
+ */
+export const approveStandardDescriptionById = createAsyncThunk(
+  "standardDescriptions/approve",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await approveStandardDescription(id);
+    } catch (e) {
+      return rejectWithValue(
+        e.response?.data?.message || e.message
+      );
+    }
+  }
+);
+
+const slice = createSlice({
   name: "standardDescriptions",
   initialState: {
     items: [],
     loading: false,
     error: null,
+    search: "",
+    status: "",
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
   },
-  reducers: {},
+
+  reducers: {
+    setStandardDescriptionSearch(state, action) {
+      state.search = action.payload;
+    },
+    setStandardDescriptionStatus(state, action) {
+      state.status = action.payload;
+    },
+  },
+
   extraReducers: (builder) => {
     builder
+      /* ================= FETCH ================= */
       .addCase(fetchStandardDescriptions.pending, (s) => {
         s.loading = true;
         s.error = null;
       })
-      .addCase(fetchStandardDescriptions.fulfilled, (s, a) => {
-        s.loading = false;
-        s.items = a.payload;
+      .addCase(fetchStandardDescriptions.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const {
+          items = [],
+          page,
+          limit,
+          total,
+          totalPages,
+        } = action.payload || {};
+
+        state.items = Array.isArray(items) ? items : [];
+        state.page = page;
+        state.limit = limit;
+        state.total = total;
+        state.totalPages = totalPages;
       })
+
       .addCase(fetchStandardDescriptions.rejected, (s, a) => {
         s.loading = false;
-        s.error = a.error.message;
-      });
-  },
+        s.error = a.payload || a.error.message;
+      })
+
+    /* ================= CREATE ================= */
+    .addCase(addStandardDescription.fulfilled, (s, a) => {
+      s.items.unshift(a.payload);
+    })
+
+    /* ================= UPDATE ================= */
+    .addCase(editStandardDescription.fulfilled, (s, a) => {
+      const idx = s.items.findIndex(
+        (x) => x.id === a.payload.id
+      );
+      if (idx !== -1) s.items[idx] = a.payload;
+    })
+
+    /* ================= DELETE ================= */
+    .addCase(removeStandardDescription.fulfilled, (s, a) => {
+      s.items = s.items.filter(
+        (i) => i.id !== a.payload
+      );
+    })
+
+    /* ================= APPROVE ================= */
+    .addCase(
+      approveStandardDescriptionById.fulfilled,
+      (s, a) => {
+        const idx = s.items.findIndex(
+          (x) => x.id === a.payload.id
+        );
+        if (idx !== -1) {
+          s.items[idx].status = "APPROVED";
+        }
+      }
+    );
+},
 });
 
-export default standardDescriptionSlice.reducer;
+export const {
+  setStandardDescriptionSearch,
+  setStandardDescriptionStatus,
+} = slice.actions;
+
+export default slice.reducer;

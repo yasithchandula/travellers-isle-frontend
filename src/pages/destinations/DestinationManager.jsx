@@ -264,7 +264,9 @@ export default function DestinationManager() {
 
       {/* Create / Edit City */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-xl bg-white">
+        <DialogContent className="max-w-xl bg-white"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               {editItem ? "Edit City" : "Add City"}
