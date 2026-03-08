@@ -163,7 +163,7 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 b-main-cont">
 
       {/* 🔐 TEMP PASSWORD ALERT */}
       {createSuccess && (
@@ -247,7 +247,7 @@ export default function UserManagement() {
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>
-              <InputGroupAddon align="inline-end">{visibleUsers.length} Results</InputGroupAddon>
+              <InputGroupAddon align="inline-end"><div className="color-black/20">{visibleUsers.length} Results</div></InputGroupAddon>
             </InputGroup>
 
             <div className="w-full md:w-44">

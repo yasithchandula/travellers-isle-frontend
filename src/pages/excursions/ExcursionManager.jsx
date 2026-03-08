@@ -157,7 +157,7 @@ export default function ExcursionManager() {
   }, [items]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 b-main-cont">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -213,7 +213,7 @@ export default function ExcursionManager() {
           )}
 
           {/* Table */}
-          <div className="overflow-auto max-h-[65vh]" onScroll={handleScroll}>
+          <div className="overflow-auto max-h-[60vh]" onScroll={handleScroll}>
             <table className="w-full border-collapse text-sm">
               <thead className="bg-gray-100 sticky top-0 z-10">
                 <tr className="text-left">
@@ -324,7 +324,7 @@ export default function ExcursionManager() {
           </div>
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center pt-4">
+            <div className="flex justify-end">
               <Pagination>
                 <PaginationContent>
 
@@ -400,9 +400,7 @@ export default function ExcursionManager() {
                         isActive={page === totalPages}
                         onClick={(e) => {
                           e.preventDefault();
-                          dispatch(
-                            fetchExcursions({ search, page: totalPages, limit })
-                          );
+                            dispatch(setExcursionPage(page + 1))
                         }}
                       >
                         {totalPages}

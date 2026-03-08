@@ -86,25 +86,32 @@ const slice = createSlice({
         s.error = null;
       })
 
-      .addCase(fetchExcursions.fulfilled, (state, action) => {
-        state.loading = false;
+.addCase(fetchExcursions.fulfilled, (state, action) => {
+  state.loading = false;
 
-        const {
-          items,
-          page,
-          limit,
-          total,
-          totalPages,
-        } = action.payload;
+  const {
+    items = [],
+    page,
+    limit,
+    total,
+    totalPages,
+  } = action.payload;
 
-        // ✅ PAGINATION MODE: always replace
-        state.items = items;
+  // ✅ REMOVE DUPLICATES BY ID
+  const uniqueMap = new Map();
 
-        state.page = page;
-        state.limit = limit;
-        state.total = total;
-        state.totalPages = totalPages;
-      })
+  items.forEach((e) => {
+    uniqueMap.set(e.id, e);
+  });
+
+  state.items = Array.from(uniqueMap.values());
+
+  state.page = page;
+  state.limit = limit;
+  state.total = total;
+  state.totalPages = totalPages;
+})
+
 
       .addCase(fetchExcursions.rejected, (s, a) => {
         s.loading = false;

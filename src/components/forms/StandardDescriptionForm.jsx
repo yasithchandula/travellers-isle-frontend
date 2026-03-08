@@ -6,6 +6,17 @@ import Select from "../common/Select";
 import Button from "../common/Button";
 import RichTextEditor from "../common/RichTextEditor";
 
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+
+import ExcursionSelector from "@/components/ui/excursion-selector";
+
+
+import { fetchExcursions } from "@/app/slices/excursionSlice";
+
 import { uploadFile } from "@/app/slices/uploadSlice";
 import { fetchCities } from "@/app/slices/citySlice";
 import { buildImageUrl } from "../../utils/urls";
@@ -29,6 +40,9 @@ export default function StandardDescriptionForm({
     "wildlife",
   ];
 
+  const excursions = useSelector((s) => s.excursions.items || []);
+  const [excursionSearch, setExcursionSearch] = useState("");
+  const [selectedExcursions, setSelectedExcursions] = useState([]);
 
 
   /* =====================
@@ -37,6 +51,12 @@ export default function StandardDescriptionForm({
   useEffect(() => {
     dispatch(fetchCities(""));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (excursionSearch.length < 2) return;
+    dispatch(fetchExcursions({ search: excursionSearch }));
+  }, [excursionSearch]);
+
 
   /* =====================
      FORM STATE
@@ -59,9 +79,13 @@ export default function StandardDescriptionForm({
   /* =====================
      EDIT MODE HYDRATION
   ===================== */
+  /* =====================
+     EDIT MODE HYDRATION
+  ===================== */
   useEffect(() => {
     if (!initial) {
       setForm(emptyForm);
+      setSelectedExcursions([]);
       setErrors({});
       return;
     }
@@ -72,8 +96,9 @@ export default function StandardDescriptionForm({
       start_city_id: String(initial.start_city_id || ""),
       end_city_id: String(initial.end_city_id || ""),
 
+      /* FIX: stops may come as objects or ids */
       stops: Array.isArray(initial.stops)
-        ? initial.stops.map(String)
+        ? initial.stops.map((s) => String(s?.id ?? s))
         : [],
 
       starting_paragraph: initial.starting_paragraph || "",
@@ -90,17 +115,25 @@ export default function StandardDescriptionForm({
         }))
         : [],
 
-
       featuredPreview: initial.featured_image
         ? buildImageUrl(initial.featured_image)
         : initial.gallery?.[0]
           ? buildImageUrl(initial.gallery[0])
           : null,
-
     });
+
+    /* FIX: hydrate excursions for edit mode */
+    if (Array.isArray(initial.excursions)) {
+      setSelectedExcursions(
+        initial.excursions.map((e) => e.excursion || e)
+      );
+    } else {
+      setSelectedExcursions([]);
+    }
 
     setErrors({});
   }, [initial]);
+
 
 
   function updateField(field, value) {
@@ -276,6 +309,13 @@ export default function StandardDescriptionForm({
       tags: form.tags,
       gallery: galleryUrls,
       featuredImage,
+      excursions: selectedExcursions.map((e) => ({
+        excursion_id: e.id,
+        is_optional: false,
+      })),
+      mileage: 0,
+      travel_time_minutes: 0
+
     };
 
     onSubmit(payload);
@@ -316,6 +356,16 @@ export default function StandardDescriptionForm({
       form.tags.filter((t) => t !== tag)
     );
   }
+
+  function addExcursion(e) {
+    if (selectedExcursions.find((x) => x.id === e.id)) return;
+    setSelectedExcursions((p) => [...p, e]);
+  }
+
+  function removeExcursion(id) {
+    setSelectedExcursions((p) => p.filter((x) => x.id !== id));
+  }
+
 
 
 
@@ -385,12 +435,13 @@ export default function StandardDescriptionForm({
       </div>
 
       {/* ================= ROUTE ================= */}
-      <div className="border rounded-md p-3 space-y-3">
-        <h3 className="text-sm font-semibold">Route</h3>
+      <div className="border rounded-xl p-4 space-y-4 bg-white shadow-sm">
+        <h3 className="text-sm font-semibold text-ti-forest">
+          Route
+        </h3>
 
-        {/* ONE ROW */}
-        <div className="grid grid-cols-3 gap-3 items-end">
-          {/* Starting City */}
+        {/* START + DESTINATION */}
+        <div className="grid grid-cols-2 gap-3">
           <Select
             label="Starting City"
             value={form.start_city_id}
@@ -405,7 +456,6 @@ export default function StandardDescriptionForm({
             ]}
           />
 
-          {/* Destination City */}
           <Select
             label="Destination City"
             value={form.end_city_id}
@@ -419,72 +469,86 @@ export default function StandardDescriptionForm({
               })),
             ]}
           />
+        </div>
 
-          {/* Stops selector */}
-          <div className="space-y-1">
-            <label className="block text-xs font-medium">
-              Add Stop
-            </label>
+        {/* STOPS */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium">Intermediate Stops</label>
 
-            <div className="flex gap-2">
-              <select
-                className="flex-1 border rounded px-2 py-1.5 text-sm"
-                value={stopSelect}
-                onChange={(e) => setStopSelect(e.target.value)}
-              >
-                <option value="">Select city</option>
-                {(cities || [])
-                  .filter((c) => c.is_stop)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.city}
-                    </option>
-                  ))}
-              </select>
+          {/* SELECTOR (auto add on select) */}
+          <select
+            className="w-full border rounded-md px-3 py-2 text-sm"
+            value={stopSelect}
+            onChange={(e) => {
+              const val = e.target.value;
+              setStopSelect("");
 
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={addStop}
-              >
-                Add
-              </Button>
-            </div>
+              if (!val) return;
+
+              if (!form.stops.includes(val)) {
+                updateField("stops", [...form.stops, val]);
+              }
+            }}
+          >
+            <option value="">Select city to add</option>
+            {(cities || [])
+              .filter((c) => c.is_stop)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.city}
+                </option>
+              ))}
+          </select>
+
+          {/* CHIPS */}
+          <div className="flex flex-wrap gap-2">
+            {form.stops.length ? (
+              form.stops.map((id) => {
+                const city = cities.find(
+                  (c) => String(c.id) === String(id)
+                );
+
+                return (
+                  <span
+                    key={id}
+                    className="px-3 py-1.5 rounded-full text-xs flex items-center gap-2 
+                         bg-ti-sky/20 text-ti-forest border border-ti-sky/40"
+                  >
+                    {city?.city || id}
+
+                    <button
+                      type="button"
+                      onClick={() => removeStop(id)}
+                      className="text-ti-red font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                No intermediate stops added
+              </span>
+            )}
           </div>
         </div>
-
-        {/* SELECTED STOPS (FULL WIDTH BELOW) */}
-        <div className="flex flex-wrap gap-2">
-          {form.stops.length ? (
-            form.stops.map((id) => {
-              const city = cities.find(
-                (c) => String(c.id) === String(id)
-              );
-
-              return (
-                <span
-                  key={id}
-                  className="px-2 py-1 border rounded text-xs flex items-center gap-1 bg-ti-sky/60"
-                >
-                  {city?.city || id}
-                  <button
-                    type="button"
-                    onClick={() => removeStop(id)}
-                    className="text-ti-red"
-                  >
-                    ×
-                  </button>
-                </span>
-              );
-            })
-          ) : (
-            <span className="text-xs text-gray-500">
-              No intermediate stops added
-            </span>
-          )}
-        </div>
       </div>
+
+
+
+      {/* ================= EXCURSIONS ================= */}
+      <div className="border rounded-md p-3 space-y-3">
+        <h3 className="text-sm font-semibold">Link Excursions</h3>
+        <ExcursionSelector
+          items={excursions}
+          selected={selectedExcursions}
+          setSelected={setSelectedExcursions}
+          onSearch={(val) => setExcursionSearch(val)}
+        />
+
+      </div>
+
 
 
       {/* ================= CONTENT ================= */}

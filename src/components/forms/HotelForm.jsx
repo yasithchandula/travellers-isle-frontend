@@ -51,8 +51,8 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     if (!cityId) e.cityId = "City is required";
     if (!phoneNumber.trim()) e.phoneNumber = "Phone number is required";
 
-    if (!contactName.trim()) e.contactName = "Contact name is required";
-    if (!contactPhone.trim()) e.contactPhone = "Contact phone is required";
+    // if (!contactName.trim()) e.contactName = "Contact name is required";
+    // if (!contactPhone.trim()) e.contactPhone = "Contact phone is required";
 
     if (!roomCategories.length) {
       e.roomCategories = "At least one room category is required";
@@ -198,12 +198,12 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
       {/* Registrations */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Input
-          label="VAT Number"
+          label="VAT Number (Optional)"
           value={vatNumber}
           onChange={setVatNumber}
         />
         <Input
-          label="SLTDA Registration"
+          label="SLTDA Registration (Optional)"
           value={sltdaReg}
           onChange={setSltdaReg}
         />
@@ -316,11 +316,10 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
           variant="outline"
           type="button"
           onClick={onCancel}
-          size="md"
         >
           Cancel
         </Button>
-        <Button type="submit" size="md">
+        <Button type="submit" >
           {initial ? "Save Changes" : "Add Hotel"}
         </Button>
       </div>

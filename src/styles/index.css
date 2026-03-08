@@ -26,3 +26,7 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+.b-main-cont {
+  max-height:calc(90vh - 4rem) !important
+}
+

@@ -48,7 +48,6 @@ export default function QuotationList() {
         <Button onClick={() => navigate("/quotations/new")}>+ New Quotation</Button>
       </div>
       <Card>
-        <QuotationFilters filters={filters} setFilters={setFilters} />
 
         <QuotationTable
           data={filtered}

@@ -170,12 +170,11 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
           variant="outline"
           type="button"
           onClick={onCancel}
-          size="md"
         >
           Cancel
         </Button>
 
-        <Button type="submit" size="md">
+        <Button type="submit">
           {initial ? "Save" : "Add City"}
         </Button>
       </div>
