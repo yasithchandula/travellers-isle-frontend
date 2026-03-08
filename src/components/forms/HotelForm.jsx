@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Input from "../common/Input";
 import Button from "../common/Button";
+import { Circle, CircleX, CircleXIcon, Delete, DeleteIcon, Trash } from "lucide-react";
 
 export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
@@ -111,6 +112,10 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     });
   }
 
+  function removeRoom(index) {
+    setRoomCategories(roomCategories.filter((_, i) => i !== index));
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Basic info */}
@@ -149,13 +154,12 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
       {/* City */}
       <div>
-        <label className="block mb-1 text-xs font-medium">
+        <label className="text-sm text-ti-forest">
           City (Destination)
         </label>
         <select
-          className={`w-full border rounded px-2 py-1.5 text-sm ${
-            errors.cityId ? "border-red-500" : ""
-          }`}
+          className={`w-full border rounded px-2 py-1.5 text-sm ${errors.cityId ? "border-red-500" : ""
+            }`}
           value={cityId}
           onChange={(e) => {
             setCityId(e.target.value);
@@ -252,12 +256,23 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
       <div className="p-3 border rounded space-y-2">
         <h3 className="text-sm font-semibold">Room Categories</h3>
 
-        {roomCategories.map((r, i) => (
+        <table>
+          {roomCategories.map((r, i) => (
+            <tr key={i} className="text-sm hover:bg-gray-50 transition">
+              <td className="pr-3"><CircleXIcon onClick={() => removeRoom(i)} className="w-4 h-4 mt-1 hover:text-red-400 text-gray-500 cursor-pointer" /></td>
+              <td>{r.name}</td>
+              <td className="pl-3">{r.pax} pax</td>
+            </tr>
+          ))}
+        </table>
+
+        {/* {roomCategories.map((r, i) => (
           <div key={i} className="flex gap-5 text-sm">
             <span>{r.name}</span>
             <span>{r.pax} pax</span>
+            <span><CircleXIcon onClick={() => removeRoom(i)} className="w-4 h-4 mt-1 hover:text-red-400 text-gray-500 cursor-pointer" /></span>
           </div>
-        ))}
+        ))} */}
 
         {errors.roomCategories && (
           <p className="text-xs text-red-500">

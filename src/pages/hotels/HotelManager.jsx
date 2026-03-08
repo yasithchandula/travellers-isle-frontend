@@ -46,7 +46,7 @@ import { toast } from "sonner";
 export default function HotelManager() {
   const dispatch = useDispatch();
 
-  const { items = [], loading, page, limit } = useSelector((s) => s.hotels);
+  const { items = [], loading } = useSelector((s) => s.hotels);
   const cities = useSelector((s) => s.cities.items || []);
 
   const [modalOpen, setModalOpen] = useState(false);
