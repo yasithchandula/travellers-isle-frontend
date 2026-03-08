@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import {
   InputGroup,
@@ -49,6 +50,7 @@ import { toast } from "sonner";
 export default function InquiryList() {
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const {
     items = [],
@@ -261,15 +263,14 @@ export default function InquiryList() {
                       <td className="p-3">
 
                         <span
-                          className={`px-2 py-1 rounded text-xs ${
-                            i.status === "NEW"
+                          className={`px-2 py-1 rounded text-xs ${i.status === "NEW"
                               ? "bg-blue-100 text-blue-700"
                               : i.status === "ASSIGNED"
-                              ? "bg-purple-100 text-purple-700"
-                              : i.status === "CONVERTED"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
+                                ? "bg-purple-100 text-purple-700"
+                                : i.status === "CONVERTED"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                            }`}
                         >
                           {i.status}
                         </span>
@@ -457,7 +458,13 @@ export default function InquiryList() {
                       { id: toastId }
                     );
 
-                  });
+                  })
+                  .finally(() => {
+
+                    // ALWAYS redirect
+                    navigate("/quotations/new");
+
+                  });;
 
               }}
 
