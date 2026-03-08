@@ -5,10 +5,16 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchExcursions } from "@/app/slices/excursionSlice";
 
-import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import {
+  fetchStandardDescriptions,
+  setStandardDescriptionSearch,
+} from "@/app/slices/standardDescriptionSlice";
 
 import ExcursionSelector from "@/components/ui/excursion-selector";
+import StandardDescriptionSelector from "@/components/ui/standard-description-selector";
+
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 import {
   Card,
@@ -40,10 +46,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
-/* =======================
+/* ======================
    MOCK CITY DATA
-======================= */
+====================== */
 
 const CITIES = [
   { id: "1", name: "Dambulla" },
@@ -53,10 +64,9 @@ const CITIES = [
   { id: "5", name: "Galle" },
 ];
 
-
-/* =======================
+/* ======================
    DATE HELPERS
-======================= */
+====================== */
 
 function toISODate(d) {
   const yyyy = d.getFullYear();
@@ -85,16 +95,14 @@ function formatNotes(days) {
     .join("\n");
 }
 
-
-/* =======================
+/* ======================
    STEPPER
-======================= */
+====================== */
 
 function ModernStepper({ steps, currentStep, onStepChange }) {
   return (
     <div className="sticky top-0 z-30 bg-background border-b">
       <div className="max-w-6xl mx-auto px-4 py-4 flex gap-4">
-
         {steps.map((step, index) => (
           <button
             key={step.id}
@@ -109,21 +117,17 @@ function ModernStepper({ steps, currentStep, onStepChange }) {
             <div className="h-6 w-6 flex items-center justify-center rounded-full bg-muted">
               {currentStep > index ? <Check size={14} /> : index + 1}
             </div>
-
             {step.label}
-
           </button>
         ))}
-
       </div>
     </div>
   );
 }
 
-
-/* =======================
+/* ======================
    MAIN PAGE
-======================= */
+====================== */
 
 export default function QuotationWizardModernPage() {
 
@@ -131,22 +135,27 @@ export default function QuotationWizardModernPage() {
 
   const excursions = useSelector((s) => s.excursions?.items || []);
 
+  const {
+    items: standardDescriptions = [],
+    search: descriptionSearch = "",
+  } = useSelector((s) => s.standardDescriptions || {});
+
   const [excursionSearch, setExcursionSearch] = useState("");
 
   const [step, setStep] = useState(0);
 
+  const [dayIndex, setDayIndex] = useState(0);
+
   const info = {
     startDate: "2026-02-01",
     daysCount: 5,
-    totalPax: 10,
-    adultCount: 5,
   };
 
   const [days, setDays] = useState([]);
 
-  /* =====================
-     LOAD EXCURSIONS
-  ===================== */
+  /* ======================
+     LOAD DATA
+  ====================== */
 
   useEffect(() => {
     dispatch(fetchExcursions());
@@ -155,35 +164,39 @@ export default function QuotationWizardModernPage() {
   useEffect(() => {
     if (excursionSearch.length < 2) return;
     dispatch(fetchExcursions({ search: excursionSearch }));
-  }, [excursionSearch, dispatch]);
-
-
-  /* =====================
-     INIT DAYS
-  ===================== */
+  }, [excursionSearch]);
 
   useEffect(() => {
-
-    const dates = generateTourDates(
-      info.startDate,
-      info.daysCount
+    dispatch(
+      fetchStandardDescriptions({
+        search: descriptionSearch,
+        page: 1,
+        limit: 20,
+      })
     );
+  }, [dispatch, descriptionSearch]);
+
+  /* ======================
+     INIT DAYS
+  ====================== */
+
+  useEffect(() => {
+    const dates = generateTourDates(info.startDate, info.daysCount);
 
     const built = dates.map((date, i) => ({
       date,
       city_id: i === 0 ? "1" : "",
       excursions: [],
+      standard_descriptions: [],
       note: "",
     }));
 
     setDays(built);
-
   }, []);
 
-
-  /* =====================
-     DAY UPDATE
-  ===================== */
+  /* ======================
+     UPDATE DAY
+  ====================== */
 
   function updateDay(idx, patch) {
     setDays((prev) =>
@@ -193,89 +206,61 @@ export default function QuotationWizardModernPage() {
     );
   }
 
-  function copyPrevCity(idx) {
-    if (idx === 0) return;
+  /* ======================
+     NAVIGATION
+  ====================== */
 
-    const prevCity = days[idx - 1]?.city_id;
-
-    updateDay(idx, { city_id: prevCity });
+  function nextStep() {
+    setStep((s) => Math.min(2, s + 1));
   }
 
+  function prevStep() {
+    setStep((s) => Math.max(0, s - 1));
+  }
 
-  /* =====================
-     STEP DATA
-  ===================== */
+  function nextDay() {
+    setDayIndex((d) => Math.min(days.length - 1, d + 1));
+  }
 
-  const scheduleRows = useMemo(() => {
-    return days.map((d) => {
+  function prevDay() {
+    setDayIndex((d) => Math.max(0, d - 1));
+  }
 
-      const cityName =
-        CITIES.find((c) => c.id === d.city_id)?.name || "";
+  const formattedNotes = useMemo(() => formatNotes(days), [days]);
 
-      const excNames = (d.excursions || [])
-        .map((x) => x.name)
-        .join(", ");
-
-      return { ...d, cityName, excNames };
-
-    });
-  }, [days]);
-
-
-  const formattedNotesText = useMemo(
-    () => formatNotes(days),
-    [days]
-  );
-
-
-  const stepMeta = [
+  const steps = [
     { id: "schedule", label: "Schedule" },
     { id: "itinerary", label: "Itinerary" },
     { id: "review", label: "Review" },
   ];
 
-
-  function next() {
-    setStep((s) => Math.min(2, s + 1));
-  }
-
-  function back() {
-    setStep((s) => Math.max(0, s - 1));
-  }
-
-
-  /* =====================
-     UI
-  ===================== */
+  const day = days[dayIndex];
 
   return (
     <div className="min-h-screen bg-background">
 
       <ModernStepper
-        steps={stepMeta}
+        steps={steps}
         currentStep={step}
         onStepChange={setStep}
       />
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
 
-
         <Card>
 
           <CardHeader>
-            <CardTitle>Quotation Preparation</CardTitle>
+            <CardTitle>Quotation Builder</CardTitle>
             <CardDescription>
-              {stepMeta[step].label}
+              {steps[step].label}
             </CardDescription>
           </CardHeader>
 
-
           <CardContent>
 
-
-            {/* =====================
+            {/* ======================
                 STEP 1
-            ===================== */}
+            ====================== */}
 
             {step === 0 && (
 
@@ -285,21 +270,18 @@ export default function QuotationWizardModernPage() {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>City</TableHead>
+                    <TableHead>Excursions</TableHead>
                     <TableHead>Note</TableHead>
-                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
 
-                  {scheduleRows.map((d, idx) => (
+                  {days.map((d, idx) => (
 
                     <TableRow key={d.date}>
 
-                      <TableCell>
-                        {d.date}
-                      </TableCell>
-
+                      <TableCell>{d.date}</TableCell>
 
                       <TableCell>
 
@@ -309,27 +291,38 @@ export default function QuotationWizardModernPage() {
                             updateDay(idx, { city_id: v })
                           }
                         >
-                          <SelectTrigger className="bg-white">
+                          <SelectTrigger>
                             <SelectValue placeholder="City" />
                           </SelectTrigger>
 
-                          <SelectContent className="bg-white">
-
+                          <SelectContent>
                             {CITIES.map((c) => (
-                              <SelectItem
-                                key={c.id}
-                                value={c.id}
-                              >
+                              <SelectItem key={c.id} value={c.id}>
                                 {c.name}
                               </SelectItem>
                             ))}
-
                           </SelectContent>
 
                         </Select>
 
                       </TableCell>
 
+                      <TableCell className="min-w-[300px]">
+
+                        <ExcursionSelector
+                          items={excursions}
+                          selected={d.excursions}
+                          setSelected={(list) =>
+                            updateDay(idx, {
+                              excursions: list,
+                            })
+                          }
+                          onSearch={(v) =>
+                            setExcursionSearch(v)
+                          }
+                        />
+
+                      </TableCell>
 
                       <TableCell>
 
@@ -344,19 +337,6 @@ export default function QuotationWizardModernPage() {
 
                       </TableCell>
 
-
-                      <TableCell>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyPrevCity(idx)}
-                        >
-                          Copy Prev
-                        </Button>
-
-                      </TableCell>
-
                     </TableRow>
 
                   ))}
@@ -367,128 +347,147 @@ export default function QuotationWizardModernPage() {
 
             )}
 
-
-            {/* =====================
+            {/* ======================
                 STEP 2
-            ===================== */}
+            ====================== */}
 
-            {step === 1 && (
+            {step === 1 && day && (
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
 
-                {days.map((d, idx) => (
+                <CardHeader>
+                  <CardTitle>Day {dayIndex + 1}</CardTitle>
+                  <CardDescription>{day.date}</CardDescription>
+                </CardHeader>
 
-                  <Card key={d.date}>
+                <CardContent className="space-y-4">
 
-                    <CardHeader>
-                      <CardTitle className="text-base">
-                        Day {idx + 1} — {d.date}
-                      </CardTitle>
-                    </CardHeader>
+                  {/* CITY */}
 
-                    <CardContent className="space-y-4">
+                  <div>
+                    <Label>City</Label>
 
+                    <Select
+                      value={day.city_id}
+                      onValueChange={(v) =>
+                        updateDay(dayIndex, { city_id: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="City" />
+                      </SelectTrigger>
 
-                      {/* CITY */}
+                      <SelectContent>
+                        {CITIES.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
 
-                      <div>
-                        <Label>City</Label>
+                    </Select>
+                  </div>
 
-                        <Select
-                          value={d.city_id}
-                          onValueChange={(v) =>
-                            updateDay(idx, { city_id: v })
-                          }
-                        >
+                  {/* STANDARD DESCRIPTIONS */}
 
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="City" />
-                          </SelectTrigger>
+                  <div className="space-y-2">
 
-                          <SelectContent className="bg-white">
+                    <Label>Standard Descriptions</Label>
 
-                            {CITIES.map((c) => (
-                              <SelectItem
-                                key={c.id}
-                                value={c.id}
-                              >
-                                {c.name}
-                              </SelectItem>
-                            ))}
+                    <Popover>
 
-                          </SelectContent>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start">
+                          Select Standard Descriptions
+                        </Button>
+                      </PopoverTrigger>
 
-                        </Select>
+                      <PopoverContent className="w-[500px] p-3 bg-white">
 
-                      </div>
-
-
-                      {/* EXCURSIONS */}
-
-                      <div>
-                        <Label>Excursions</Label>
-
-                        <ExcursionSelector
-                          items={excursions}
-                          selected={d.excursions}
+                        <StandardDescriptionSelector
+                          items={standardDescriptions}
+                          selected={day.standard_descriptions}
                           setSelected={(list) =>
-                            updateDay(idx, {
-                              excursions: list,
+                            updateDay(dayIndex, {
+                              standard_descriptions: list,
                             })
                           }
                           onSearch={(val) =>
-                            setExcursionSearch(val)
+                            dispatch(setStandardDescriptionSearch(val))
                           }
                         />
 
+                      </PopoverContent>
+
+                    </Popover>
+
+                    {/* Selected Preview */}
+
+                    {day.standard_descriptions?.length > 0 && (
+
+                      <div className="flex flex-wrap gap-2 pt-2">
+
+                        {day.standard_descriptions.map((d) => (
+
+                          <span
+                            key={d.id}
+                            className="px-2 py-1 text-xs bg-ti-mint/50 border rounded"
+                          >
+                            {d.title ||
+                              `${d.start_city?.name} → ${d.end_city?.name}`}
+                          </span>
+
+                        ))}
+
                       </div>
 
+                    )}
 
-                      {/* NOTE */}
+                  </div>
 
-                      <div>
-                        <Label>Note</Label>
+                </CardContent>
 
-                        <Textarea
-                          value={d.note}
-                          onChange={(e) =>
-                            updateDay(idx, {
-                              note: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                <div className="flex justify-between p-4 border-t">
 
-                    </CardContent>
+                  <Button
+                    variant="outline"
+                    onClick={prevDay}
+                    disabled={dayIndex === 0}
+                  >
+                    Prev Day
+                  </Button>
 
-                  </Card>
+                  <Button
+                    variant="outline"
+                    onClick={nextDay}
+                    disabled={dayIndex === days.length - 1}
+                  >
+                    Next Day
+                  </Button>
 
-                ))}
+                </div>
 
-              </div>
+              </Card>
 
             )}
 
-
-            {/* =====================
+            {/* ======================
                 STEP 3
-            ===================== */}
+            ====================== */}
 
             {step === 2 && (
 
               <Card>
 
                 <CardHeader>
-                  <CardTitle>
-                    Formatted Notes
-                  </CardTitle>
+                  <CardTitle>Notes Preview</CardTitle>
                 </CardHeader>
 
                 <CardContent>
 
                   <Textarea
+                    value={formattedNotes}
                     readOnly
-                    value={formattedNotesText}
                     className="min-h-[200px]"
                   />
 
@@ -498,30 +497,25 @@ export default function QuotationWizardModernPage() {
 
             )}
 
-
           </CardContent>
 
         </Card>
 
-
-        {/* =====================
-            NAVIGATION
-        ===================== */}
+        {/* STEP NAV */}
 
         <div className="flex justify-between">
 
           <Button
             variant="outline"
-            onClick={back}
+            onClick={prevStep}
             disabled={step === 0}
           >
             Back
           </Button>
 
-
           {step < 2 ? (
 
-            <Button onClick={next}>
+            <Button onClick={nextStep}>
               Continue
             </Button>
 
@@ -533,12 +527,12 @@ export default function QuotationWizardModernPage() {
                 const payload = {
                   info,
                   days,
-                  formattedNotes: formattedNotesText,
+                  formattedNotes,
                 };
 
                 console.log(payload);
 
-                alert("Saved. Check console.");
+                alert("Quotation Saved");
 
               }}
             >

@@ -1,360 +1,450 @@
-import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Search, Check, Trash2 } from "lucide-react";
+"use client";
 
-import Button from "../../components/common/Button";
-import StandardDescriptionForm from "@/components/forms/StandardDescriptionForm";
+import React, { useMemo, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+import { fetchExcursions } from "@/app/slices/excursionSlice";
 
 import {
   fetchStandardDescriptions,
-  addStandardDescription,
-  editStandardDescription,
-  removeStandardDescription,
-  approveStandardDescriptionById,
   setStandardDescriptionSearch,
-} from "../../app/slices/standardDescriptionSlice";
+} from "@/app/slices/standardDescriptionSlice";
+
+import ExcursionSelector from "@/components/ui/excursion-selector";
+import StandardDescriptionSelector from "@/components/ui/standard-description-selector";
+
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 import {
   Card,
   CardHeader,
   CardTitle,
+  CardDescription,
   CardContent,
 } from "@/components/ui/card";
 
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { toast } from "sonner";
+/* ======================
+   MOCK CITIES
+====================== */
 
-export default function StandardDescriptionManager() {
+const CITIES = [
+  { id: "1", name: "Dambulla" },
+  { id: "2", name: "Kandy" },
+  { id: "3", name: "Nuwara Eliya" },
+  { id: "4", name: "Ella" },
+  { id: "5", name: "Galle" },
+];
+
+/* ======================
+   DATE HELPERS
+====================== */
+
+function toISODate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function generateTourDates(startDateISO, daysCount) {
+  const dates = [];
+  const base = new Date(`${startDateISO}T00:00:00`);
+
+  for (let i = 0; i < daysCount; i++) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + i);
+    dates.push(toISODate(d));
+  }
+
+  return dates;
+}
+
+function formatNotes(days) {
+  return days
+    .filter((d) => d.note?.trim())
+    .map((d) => `${d.date}: ${d.note.trim()}`)
+    .join("\n");
+}
+
+/* ======================
+   STEPPER
+====================== */
+
+function ModernStepper({ steps, currentStep, onStepChange }) {
+  return (
+    <div className="sticky top-0 z-30 bg-background border-b">
+      <div className="max-w-6xl mx-auto px-4 py-4 flex gap-4">
+        {steps.map((step, index) => (
+          <button
+            key={step.id}
+            onClick={() => onStepChange(index)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm",
+              currentStep === index && "bg-ti-forest text-white",
+              currentStep > index && "bg-ti-forest/10 text-ti-forest",
+              currentStep < index && "text-muted-foreground"
+            )}
+          >
+            <div className="h-6 w-6 flex items-center justify-center rounded-full bg-muted">
+              {currentStep > index ? <Check size={14} /> : index + 1}
+            </div>
+            {step.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ======================
+   MAIN PAGE
+====================== */
+
+export default function QuotationWizardModernPage() {
   const dispatch = useDispatch();
 
+  const excursions = useSelector((s) => s.excursions?.items || []);
+
   const {
-    items = [],
-    loading,
-    search = "",
-    page = 1,
-    limit = 10,
+    items: standardDescriptions = [],
+    search: descriptionSearch = "",
   } = useSelector((s) => s.standardDescriptions || {});
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+  const [excursionSearch, setExcursionSearch] = useState("");
 
-  const [deleteItem, setDeleteItem] = useState(null);
-  const [approveItem, setApproveItem] = useState(null);
+  const [step, setStep] = useState(0);
 
+  const [dayIndex, setDayIndex] = useState(0);
+
+  const info = {
+    startDate: "2026-02-01",
+    daysCount: 5,
+  };
+
+  const [days, setDays] = useState([]);
+
+  /* ======================
+     LOAD DATA
+  ====================== */
 
   useEffect(() => {
-    dispatch(fetchStandardDescriptions({ search, page: 1, limit }));
-  }, [dispatch, search, limit]);
+    dispatch(fetchExcursions());
+  }, [dispatch]);
 
+  useEffect(() => {
+    if (excursionSearch.length < 2) return;
+    dispatch(fetchExcursions({ search: excursionSearch }));
+  }, [excursionSearch]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return items.filter(
-      (d) =>
-        d.start_city?.name?.toLowerCase().includes(q) ||
-        d.end_city?.name?.toLowerCase().includes(q) ||
-        d.title?.toLowerCase().includes(q)
+  useEffect(() => {
+    dispatch(
+      fetchStandardDescriptions({
+        search: descriptionSearch,
+        page: 1,
+        limit: 20,
+      })
     );
-  }, [items, search]);
+  }, [dispatch, descriptionSearch]);
 
+  /* ======================
+     INIT DAYS
+  ====================== */
 
-  async function handleSubmit(payload) {
-    const action = editItem
-      ? editStandardDescription({ id: editItem.id, payload })
-      : addStandardDescription(payload);
+  useEffect(() => {
+    const dates = generateTourDates(info.startDate, info.daysCount);
 
-    const toastId = toast.loading(
-      editItem ? "Saving changes..." : "Creating standard description..."
+    const built = dates.map((date, i) => ({
+      date,
+      city_id: i === 0 ? "1" : "",
+      excursions: [],
+      standard_descriptions: [],
+      note: "",
+    }));
+
+    setDays(built);
+  }, []);
+
+  /* ======================
+     UPDATE DAY
+  ====================== */
+
+  function updateDay(idx, patch) {
+    setDays((prev) =>
+      prev.map((d, i) => (i === idx ? { ...d, ...patch } : d))
     );
-
-    const res = await dispatch(action);
-
-    if (res.meta.requestStatus === "fulfilled") {
-      toast.success(
-        editItem
-          ? "Standard description updated"
-          : "Standard description created",
-        { id: toastId }
-      );
-
-      setModalOpen(false);
-      setEditItem(null);
-      dispatch(fetchStandardDescriptions({ search, page: 1, limit }));
-    } else {
-      toast.error(res.payload || "Something went wrong", { id: toastId });
-    }
   }
 
+  /* ======================
+     STEP NAV
+  ====================== */
 
-  async function confirmDelete() {
-    const toastId = toast.loading("Deleting standard description...");
-
-    const res = await dispatch(removeStandardDescription(deleteItem.id));
-
-    if (res.meta.requestStatus === "fulfilled") {
-      toast.success("Standard description deleted", { id: toastId });
-    } else {
-      toast.error(res.payload || "Delete failed", { id: toastId });
-    }
-
-    setDeleteItem(null);
+  function nextStep() {
+    setStep((s) => Math.min(2, s + 1));
   }
 
-
-  async function confirmApprove() {
-    const toastId = toast.loading("Approving standard description...");
-
-    const res = await dispatch(
-      approveStandardDescriptionById(approveItem.id)
-    );
-
-    if (res.meta.requestStatus === "fulfilled") {
-      toast.success("Standard description approved", { id: toastId });
-    } else {
-      toast.error(res.payload || "Approve failed", { id: toastId });
-    }
-
-    setApproveItem(null);
+  function prevStep() {
+    setStep((s) => Math.max(0, s - 1));
   }
+
+  /* ======================
+     DAY NAV
+  ====================== */
+
+  function nextDay() {
+    setDayIndex((d) => Math.min(days.length - 1, d + 1));
+  }
+
+  function prevDay() {
+    setDayIndex((d) => Math.max(0, d - 1));
+  }
+
+  const formattedNotes = useMemo(() => formatNotes(days), [days]);
+
+  const steps = [
+    { id: "schedule", label: "Schedule" },
+    { id: "itinerary", label: "Itinerary" },
+    { id: "review", label: "Review" },
+  ];
+
+  const day = days[dayIndex];
 
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center mb-6">
-            <CardTitle className="text-2xl font-semibold">
-              Standard Descriptions
-            </CardTitle>
+    <div className="min-h-screen bg-background">
+      <ModernStepper
+        steps={steps}
+        currentStep={step}
+        onStepChange={setStep}
+      />
+
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quotation Builder</CardTitle>
+            <CardDescription>{steps[step].label}</CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            {/* ======================
+                STEP 1
+            ====================== */}
+
+            {step === 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Excursions</TableHead>
+                    <TableHead>Note</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {days.map((d, idx) => (
+                    <TableRow key={d.date}>
+                      <TableCell>{d.date}</TableCell>
+
+                      <TableCell>
+                        <Select
+                          value={d.city_id}
+                          onValueChange={(v) =>
+                            updateDay(idx, { city_id: v })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="City" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            {CITIES.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+
+                      <TableCell className="min-w-[300px]">
+                        <ExcursionSelector
+                          items={excursions}
+                          selected={d.excursions}
+                          setSelected={(list) =>
+                            updateDay(idx, {
+                              excursions: list,
+                            })
+                          }
+                          onSearch={(v) => setExcursionSearch(v)}
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        <Input
+                          value={d.note}
+                          onChange={(e) =>
+                            updateDay(idx, {
+                              note: e.target.value,
+                            })
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+
+            {/* ======================
+                STEP 2
+            ====================== */}
+
+            {step === 1 && day && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Day {dayIndex + 1}</CardTitle>
+                  <CardDescription>{day.date}</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>City</Label>
+
+                    <Select
+                      value={day.city_id}
+                      onValueChange={(v) =>
+                        updateDay(dayIndex, { city_id: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="City" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {CITIES.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* STANDARD DESCRIPTIONS */}
+
+                  <div>
+                    <Label>Standard Descriptions</Label>
+
+                    <StandardDescriptionSelector
+                      items={standardDescriptions}
+                      selected={day.standard_descriptions}
+                      setSelected={(list) =>
+                        updateDay(dayIndex, {
+                          standard_descriptions: list,
+                        })
+                      }
+                      onSearch={(val) =>
+                        dispatch(setStandardDescriptionSearch(val))
+                      }
+                    />
+                  </div>
+                </CardContent>
+
+                <div className="flex justify-between p-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={prevDay}
+                    disabled={dayIndex === 0}
+                  >
+                    Prev Day
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={nextDay}
+                    disabled={dayIndex === days.length - 1}
+                  >
+                    Next Day
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* ======================
+                STEP 3
+            ====================== */}
+
+            {step === 2 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notes Preview</CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  <Textarea
+                    value={formattedNotes}
+                    readOnly
+                    className="min-h-[200px]"
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* NAVIGATION */}
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={step === 0}
+          >
+            Back
+          </Button>
+
+          {step < 2 ? (
+            <Button onClick={nextStep}>Continue</Button>
+          ) : (
             <Button
               onClick={() => {
-                setEditItem(null);
-                setModalOpen(true);
+                const payload = {
+                  info,
+                  days,
+                  formattedNotes,
+                };
+
+                console.log(payload);
+                alert("Quotation Saved");
               }}
             >
-              + New Description
+              Save Quotation
             </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {/* SEARCH */}
-          <div className="flex gap-3 mb-5">
-            <InputGroup>
-              <InputGroupInput
-                placeholder="Search by route or title..."
-                value={search}
-                onChange={(e) =>
-                  dispatch(setStandardDescriptionSearch(e.target.value))
-                }
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupAddon align="inline-end">
-                {filtered.length} Results
-              </InputGroupAddon>
-            </InputGroup>
-          </div>
-
-          {/* TABLE */}
-          <div className="overflow-auto rounded-md">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-100 sticky top-0">
-                <tr>
-                  <th className="p-3 border-b">Route</th>
-                  <th className="p-3 border-b">Stops</th>
-                  <th className="p-3 border-b">Tags</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b w-40">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filtered.map((d) => (
-                  <tr key={d.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="font-medium">
-                        {d.start_city?.name} → {d.end_city?.name}
-                      </div>
-                      {d.title && (
-                        <div className="text-xs text-gray-500">
-                          {d.title}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="p-3">
-                      {d.stops?.length
-                        ? d.stops.map((s, i) => (
-                          <span
-                            key={i}
-                            className="mr-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
-                          >
-                            {s.name || s}
-                          </span>
-                        ))
-                        : "-"}
-                    </td>
-
-                    <td className="p-3">
-                      {d.tags?.length
-                        ? d.tags.map((t, i) => (
-                          <span
-                            key={i}
-                            className="mr-1 px-2 py-1 bg-gray-200 rounded text-xs"
-                          >
-                            {t}
-                          </span>
-                        ))
-                        : "-"}
-                    </td>
-
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${d.status === "DRAFT"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                          }`}
-                      >
-                        {d.status}
-                      </span>
-                    </td>
-
-                    <td className="p-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          setEditItem(d);
-                          setModalOpen(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-
-                      {d.status === "DRAFT" && (
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => setApproveItem(d)}
-                        >
-                          Approve
-                        </Button>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => setDeleteItem(d)}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-
-                {!loading && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-6 text-center text-gray-500">
-                      No standard descriptions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* FORM MODAL */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col bg-white"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}>
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle>
-              {editItem ? "Edit Standard Description" : "Create Standard Description"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <StandardDescriptionForm
-              key={editItem?.id || "new"}
-              initial={editItem}
-              onSubmit={handleSubmit}
-              hideActions
-            />
-          </div>
-
-          <div className="px-6 py-4 border-t flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" form="standard-description-form">
-              {editItem ? "Save Changes" : "Add Description"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* DELETE MODAL */}
-      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-        <AlertDialogContent className="bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Description?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* APPROVE MODAL */}
-      <AlertDialog open={!!approveItem} onOpenChange={() => setApproveItem(null)}>
-        <AlertDialogContent className="bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Approve Description?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will make the description available for use.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmApprove}>
-              Approve
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
