@@ -79,9 +79,6 @@ export default function StandardDescriptionForm({
   /* =====================
      EDIT MODE HYDRATION
   ===================== */
-  /* =====================
-     EDIT MODE HYDRATION
-  ===================== */
   useEffect(() => {
     if (!initial) {
       setForm(emptyForm);
@@ -90,59 +87,43 @@ export default function StandardDescriptionForm({
       return;
     }
 
-    useEffect(() => {
-      // Always reset first
-      setForm(emptyForm);
-      setSelectedExcursions([]);
-      setErrors({});
+    const nextForm = {
+      title: initial.title || "",
+      start_city_id: String(initial.start_city_id || ""),
+      end_city_id: String(initial.end_city_id || ""),
 
-      if (!initial) return;
+      stops: Array.isArray(initial.stops)
+        ? initial.stops.map((s) => String(s?.id ?? s))
+        : [],
 
-      setForm({
-        title: initial.title || "",
-        start_city_id: String(initial.start_city_id || ""),
-        end_city_id: String(initial.end_city_id || ""),
+      starting_paragraph: initial.starting_paragraph || "[]",
+      description: initial.description || "",
 
-        stops: Array.isArray(initial.stops)
-          ? initial.stops.map((s) => String(s?.id ?? s))
-          : [],
+      tags: Array.isArray(initial.tags) ? initial.tags : [],
 
-        starting_paragraph: initial.starting_paragraph || "[]",
-        description: initial.description || "",
+      gallery: Array.isArray(initial.gallery)
+        ? initial.gallery.map((img) => ({
+          url: img,
+          preview: buildImageUrl(img),
+          file: null,
+          status: "done",
+        }))
+        : [],
 
-        tags: Array.isArray(initial.tags) ? initial.tags : [],
+      featuredPreview: initial.featured_image
+        ? buildImageUrl(initial.featured_image)
+        : initial.gallery?.[0]
+          ? buildImageUrl(initial.gallery[0])
+          : null,
+    };
 
-        gallery: Array.isArray(initial.gallery)
-          ? initial.gallery.map((img) => ({
-            url: img,
-            preview: buildImageUrl(img),
-            file: null,
-            status: "done",
-          }))
-          : [],
+    setForm(nextForm);
 
-        featuredPreview: initial.featured_image
-          ? buildImageUrl(initial.featured_image)
-          : initial.gallery?.[0]
-            ? buildImageUrl(initial.gallery[0])
-            : null,
-      });
-
-      if (Array.isArray(initial.excursions)) {
-        setSelectedExcursions(
-          initial.excursions.map((e) => e.excursion || e)
-        );
-      }
-    }, [initial]);
-
-    /* FIX: hydrate excursions for edit mode */
-    if (Array.isArray(initial.excursions)) {
-      setSelectedExcursions(
-        initial.excursions.map((e) => e.excursion || e)
-      );
-    } else {
-      setSelectedExcursions([]);
-    }
+    setSelectedExcursions(
+      Array.isArray(initial.excursions)
+        ? initial.excursions.map((e) => e.excursion || e)
+        : []
+    );
 
     setErrors({});
   }, [initial]);

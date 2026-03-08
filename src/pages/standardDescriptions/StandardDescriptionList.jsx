@@ -148,7 +148,12 @@ export default function StandardDescriptionManager() {
             <CardTitle className="text-2xl font-semibold">
               Standard Descriptions
             </CardTitle>
-            <Button onClick={() => setModalOpen(true)}>
+            <Button
+              onClick={() => {
+                setEditItem(null);
+                setModalOpen(true);
+              }}
+            >
               + New Description
             </Button>
           </div>
