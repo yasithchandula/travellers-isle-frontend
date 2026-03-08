@@ -1,116 +1,58 @@
-const LS_KEY = "ti_inquiries_mock";
+import api from "@/api/axios";
 
-const seed = [
-  {
-    id: 1,
-    name: "Michael Reed",
-    email: "michael@example.com",
-    phone: "+94 77 532 4422",
-    tourDate: "2025-03-22",
-    adults: 2,
-    children: 1,
-    message: "Need a 7-day tour around cultural triangle.",
-    source: "website",
-    label: "",
-    status: "new",   // new, assigned, converted, spam
-    assignedTo: null,
-    createdAt: "2025-02-10",
-  },
-  {
-    id: 2,
-    name: "Sarah Jones",
-    email: "sarah@gmail.com",
-    phone: "+1 345 223 9988",
-    tourDate: "",
-    adults: 4,
-    children: 0,
-    message: "Please share a quotation for a family trip.",
-    source: "manual",
-    label: "urgent",
-    status: "assigned",
-    assignedTo: 1, // user ID
-    createdAt: "2025-02-12",
-  }
-];
+/**
+ * POST /inquiries/all
+ */
+export async function getInquiries({
+  search = "",
+  status = "",
+  page = 1,
+  limit = 10,
+}) {
+  const { data } = await api.post("/inquiries/all", {
+    search,
+    status,
+    page,
+    limit,
+  });
 
-function ensureSeed() {
-  if (!localStorage.getItem(LS_KEY)) {
-    localStorage.setItem(LS_KEY, JSON.stringify(seed));
-  }
+  return data;
 }
 
-function read() {
-  ensureSeed();
-  return JSON.parse(localStorage.getItem(LS_KEY));
-}
-
-function write(data) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data));
-}
-
-function delay(result, ms = 300) {
-  return new Promise((resolve) => setTimeout(() => resolve(result), ms));
-}
-
-export async function getInquiries({ q = "", label = "" } = {}) {
-  const data = read();
-  const query = q.toLowerCase().trim();
-
-  let filtered = data;
-
-  if (query) {
-    filtered = filtered.filter(
-      (i) =>
-        i.name.toLowerCase().includes(query) ||
-        i.email.toLowerCase().includes(query) ||
-        i.phone.toLowerCase().includes(query)
-    );
-  }
-
-  if (label) {
-    filtered = filtered.filter((i) => i.label === label);
-  }
-
-  return delay(filtered);
-}
-
+/**
+ * POST /inquiries/create
+ */
 export async function createInquiry(payload) {
-  const data = read();
-  const id = data.length ? Math.max(...data.map((x) => x.id)) + 1 : 1;
-
-  const newInquiry = {
-    id,
-    status: "new",
-    label: "",
-    source: "manual",
-    assignedTo: null,
-    createdAt: new Date().toISOString().slice(0, 10),
-    ...payload,
-  };
-
-  data.push(newInquiry);
-  write(data);
-  return delay(newInquiry);
+  const { data } = await api.post("/inquiries/create", payload);
+  return data;
 }
 
-export async function updateInquiry(id, patch) {
-  const data = read();
-  const idx = data.findIndex((i) => i.id === id);
-  if (idx === -1) throw new Error("Inquiry not found");
+/**
+ * PATCH /inquiries/update-assign-to
+ */
+export async function updateAssignTo(inquiry_id, user_id) {
+  const { data } = await api.patch("/inquiries/update-assign-to", {
+    inquiry_id,
+    user_id,
+  });
 
-  data[idx] = { ...data[idx], ...patch };
-  write(data);
-  return delay(data[idx]);
+  return data;
 }
 
-export async function markSpam(id) {
-  return updateInquiry(id, { status: "spam" });
+/**
+ * PATCH /inquiries/spam/:id
+ * (If backend supports it)
+ */
+export async function markInquirySpam(id) {
+  const { data } = await api.patch(`/inquiries/spam/${id}`);
+  return data;
 }
 
-export async function assignInquiry(id, userId) {
-  return updateInquiry(id, { assignedTo: userId, status: "assigned" });
-}
-
-export async function convertInquiry(id) {
-  return updateInquiry(id, { status: "converted" });
+/**
+ * PATCH /inquiries/convert/:id
+ * (If backend supports it)
+ */
+export async function convertInquiryToTour(id) {
+  const { data } = await api.patch(`/inquiries/convert/${id}`);
+  return data;
 }
