@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchExcursions } from "@/app/slices/excursionSlice";
+
 import { cn } from "@/lib/utils";
-import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 import {
   Card,
@@ -11,11 +14,13 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+
 import {
   Table,
   TableHeader,
@@ -24,6 +29,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+
 import {
   Select,
   SelectTrigger,
@@ -31,18 +37,13 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+
 import {
   Command,
   CommandInput,
@@ -62,31 +63,6 @@ const CITIES = [
   { id: "3", name: "Nuwara Eliya" },
   { id: "4", name: "Ella" },
   { id: "5", name: "Galle" },
-];
-
-const EXCURSIONS = [
-  { id: "e1", name: "Sigiriya Rock Fortress" },
-  { id: "e2", name: "Dambulla Cave Temple" },
-  { id: "e3", name: "Village Tour" },
-  { id: "e4", name: "Kandy Temple of the Tooth" },
-  { id: "e5", name: "Tea Factory Visit" },
-  { id: "e6", name: "Train Ride Scenic" },
-  { id: "e7", name: "Whale Watching" },
-];
-
-const STANDARD_DESCRIPTIONS = [
-  {
-    id: "sd1",
-    title: "Classic Sri Lanka Highlights",
-    content:
-      "A balanced itinerary covering cultural triangle, hill country, and a beach stay.",
-  },
-  {
-    id: "sd2",
-    title: "Family Friendly Journey",
-    content:
-      "Easy-paced route with kid-friendly stops, shorter drives, and flexible activities.",
-  },
 ];
 
 /* =======================
@@ -153,6 +129,10 @@ function ModernStepper({ steps, currentStep, onStepChange }) {
 ======================= */
 
 export default function QuotationWizardModernPage() {
+  const dispatch = useDispatch();
+
+  const excursions = useSelector((s) => s.excursions?.items || []);
+
   const [step, setStep] = useState(0);
 
   const info = {
@@ -163,9 +143,10 @@ export default function QuotationWizardModernPage() {
   };
 
   const [days, setDays] = useState([]);
-  const [quotationCustomSD, setQuotationCustomSD] = useState(false);
 
-  /* generate days immediately */
+  useEffect(() => {
+    dispatch(fetchExcursions());
+  }, [dispatch]);
 
   useEffect(() => {
     const dates = generateTourDates(info.startDate, info.daysCount);
@@ -175,7 +156,6 @@ export default function QuotationWizardModernPage() {
       city_id: i === 0 ? "1" : "",
       excursions: [],
       note: "",
-      standard_description: null,
     }));
 
     setDays(built);
@@ -183,6 +163,28 @@ export default function QuotationWizardModernPage() {
 
   function updateDay(idx, patch) {
     setDays((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
+  }
+
+  function toggleExcursion(idx, excursion) {
+    setDays((prev) =>
+      prev.map((d, i) => {
+        if (i !== idx) return d;
+
+        const exists = d.excursions.find((x) => x.id === excursion.id);
+
+        if (exists) {
+          return {
+            ...d,
+            excursions: d.excursions.filter((x) => x.id !== excursion.id),
+          };
+        }
+
+        return {
+          ...d,
+          excursions: [...d.excursions, excursion],
+        };
+      })
+    );
   }
 
   function copyPrevCity(idx) {
@@ -234,7 +236,7 @@ export default function QuotationWizardModernPage() {
 
           <CardContent>
 
-            {/* STEP 1 : SCHEDULE */}
+            {/* STEP 1 */}
 
             {step === 0 && (
               <Table>
@@ -250,6 +252,7 @@ export default function QuotationWizardModernPage() {
                 <TableBody>
                   {scheduleRows.map((d, idx) => (
                     <TableRow key={d.date}>
+
                       <TableCell>{d.date}</TableCell>
 
                       <TableCell>
@@ -259,11 +262,11 @@ export default function QuotationWizardModernPage() {
                             updateDay(idx, { city_id: v })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white">
                             <SelectValue placeholder="City" />
                           </SelectTrigger>
 
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             {CITIES.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
                                 {c.name}
@@ -291,18 +294,20 @@ export default function QuotationWizardModernPage() {
                           Copy Prev
                         </Button>
                       </TableCell>
+
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             )}
 
-            {/* STEP 2 : ITINERARY */}
+            {/* STEP 2 */}
 
             {step === 1 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                 {days.map((d, idx) => (
+
                   <Card key={d.date}>
                     <CardHeader>
                       <CardTitle className="text-base">
@@ -311,6 +316,8 @@ export default function QuotationWizardModernPage() {
                     </CardHeader>
 
                     <CardContent className="space-y-4">
+
+                      {/* CITY */}
 
                       <div>
                         <Label>City</Label>
@@ -321,11 +328,11 @@ export default function QuotationWizardModernPage() {
                             updateDay(idx, { city_id: v })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white">
                             <SelectValue placeholder="City" />
                           </SelectTrigger>
 
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             {CITIES.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
                                 {c.name}
@@ -334,6 +341,78 @@ export default function QuotationWizardModernPage() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* EXCURSIONS */}
+
+                      <div>
+                        <Label>Excursions</Label>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start bg-white">
+                              Select Excursions
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="w-[300px] p-0 bg-white">
+
+                            <Command>
+
+                              <CommandInput placeholder="Search excursion..." />
+
+                              <CommandList>
+
+                                <CommandEmpty>No results</CommandEmpty>
+
+                                <CommandGroup>
+
+                                  {excursions.map((ex) => {
+                                    const selected = d.excursions.find(
+                                      (x) => x.id === ex.id
+                                    );
+
+                                    return (
+                                      <CommandItem
+                                        key={ex.id}
+                                        onSelect={() => toggleExcursion(idx, ex)}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selected ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+
+                                        {ex.name}
+                                      </CommandItem>
+                                    );
+                                  })}
+
+                                </CommandGroup>
+
+                              </CommandList>
+
+                            </Command>
+
+                          </PopoverContent>
+
+                        </Popover>
+
+                        {/* Preview */}
+
+                        <div className="flex flex-wrap gap-2 mt-2">
+
+                          {d.excursions.map((ex) => (
+                            <Badge key={ex.id} variant="secondary">
+                              {ex.name}
+                            </Badge>
+                          ))}
+
+                        </div>
+
+                      </div>
+
+                      {/* NOTE */}
 
                       <div>
                         <Label>Note</Label>
@@ -348,37 +427,36 @@ export default function QuotationWizardModernPage() {
 
                     </CardContent>
                   </Card>
+
                 ))}
 
               </div>
             )}
 
-            {/* STEP 3 : REVIEW */}
+            {/* STEP 3 */}
 
             {step === 2 && (
-              <div className="space-y-4">
+              <Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Formatted Notes</CardTitle>
-                  </CardHeader>
+                <CardHeader>
+                  <CardTitle>Formatted Notes</CardTitle>
+                </CardHeader>
 
-                  <CardContent>
-                    <Textarea
-                      readOnly
-                      value={formattedNotesText}
-                      className="min-h-[200px]"
-                    />
-                  </CardContent>
-                </Card>
+                <CardContent>
 
-              </div>
+                  <Textarea
+                    readOnly
+                    value={formattedNotesText}
+                    className="min-h-[200px]"
+                  />
+
+                </CardContent>
+
+              </Card>
             )}
 
           </CardContent>
         </Card>
-
-        {/* FOOTER NAV */}
 
         <div className="flex justify-between">
 
@@ -395,7 +473,6 @@ export default function QuotationWizardModernPage() {
                   info,
                   days,
                   formattedNotes: formattedNotesText,
-                  custom_sd: quotationCustomSD,
                 };
 
                 console.log(payload);
