@@ -66,7 +66,7 @@ export default function StandardDescriptionForm({
     start_city_id: "",
     end_city_id: "",
     stops: [],
-    starting_paragraph: "",
+    starting_paragraph: "[]",
     description: "",
     tags: [],
     gallery: [],
@@ -101,7 +101,7 @@ export default function StandardDescriptionForm({
         ? initial.stops.map((s) => String(s?.id ?? s))
         : [],
 
-      starting_paragraph: initial.starting_paragraph || "",
+      starting_paragraph: initial.starting_paragraph || "[]",
       description: initial.description || "",
 
       tags: Array.isArray(initial.tags) ? initial.tags : [],
@@ -168,9 +168,9 @@ export default function StandardDescriptionForm({
         "Starting city and destination city cannot be the same";
     }
 
-    if (!form.starting_paragraph.trim()) {
-      e.starting_paragraph = "Starting paragraph is required";
-    }
+    // if (!form.starting_paragraph.trim()) {
+    //   e.starting_paragraph = "Starting paragraph is required";
+    // }
 
     if (!form.description.trim()) {
       e.description = "Description is required";
@@ -553,17 +553,17 @@ export default function StandardDescriptionForm({
 
       {/* ================= CONTENT ================= */}
       <div className="border rounded-md p-3 space-y-2">
-        <h3 className="text-sm font-semibold">Content</h3>
-        <label className="block text-xs font-medium">
+        <h3 className="text-sm font-semibold">Description</h3>
+        {/* <label className="block text-xs font-medium">
           Starting Paragraph
-        </label>
+        </label> */}
 
-        <RichTextEditor
+        {/* <RichTextEditor
           value={form.starting_paragraph}
           onChange={(v) =>
             updateField("starting_paragraph", v)
           }
-        />
+        /> */}
         {errors.starting_paragraph && (
           <p className="text-xs text-ti-red">
             {errors.starting_paragraph}
@@ -571,9 +571,9 @@ export default function StandardDescriptionForm({
         )}
 
 
-        <label className="block text-xs font-medium pt-2">
+        {/* <label className="block text-xs font-medium pt-2">
           Description
-        </label>
+        </label> */}
 
         <RichTextEditor
           value={form.description}
