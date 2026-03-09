@@ -184,7 +184,6 @@ export default function DestinationManager() {
                 <tr className="text-left">
                   <th className="p-3 border-b">City</th>
                   <th className="p-3 border-b">Country</th>
-                  <th className="p-3 border-b">Region</th>
                   <th className="p-3 border-b">Type</th>
                   <th className="p-3 border-b">Status</th>
                   <th className="p-3 border-b">Actions</th>
@@ -202,7 +201,6 @@ export default function DestinationManager() {
                     </td>
 
                     <td className="p-3">{c.country}</td>
-                    <td className="p-3">{c.region}</td>
 
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">

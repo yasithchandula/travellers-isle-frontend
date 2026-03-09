@@ -217,7 +217,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Input
-            label="Contact Name"
+            label="Contact Name "
             value={contactName}
             onChange={(v) => {
               setContactName(v);
@@ -235,7 +235,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
         <div>
           <Input
-            label="Contact Phone"
+            label="Contact Phone (Optional)"
             value={contactPhone}
             onChange={(v) => {
               setContactPhone(v);
