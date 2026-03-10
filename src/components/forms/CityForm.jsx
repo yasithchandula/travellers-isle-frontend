@@ -6,7 +6,7 @@ import Button from "../common/Button";
 export default function CityForm({ initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.city || "");
   const [country, setCountry] = useState(initial?.country || "Sri Lanka");
-  // const [region] = useState(initial?.region || "");
+  const [code, setCode] = useState(initial?.code || "");
   const [isDestination, setIsDestination] = useState(
     initial?.isDestination ?? initial?.is_destination ?? 1
   );
@@ -38,11 +38,13 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
 
     const trimmedName = name.replace(/\s+/g, " ").trim();
     const trimmedCountry = country.trim();
+    const trimmedCode = code.trim();
     // const trimmedRegion = region.trim();
 
     if (!trimmedName) e.name = "City name is required";
     if (!trimmedCountry) e.country = "Country is required";
-    // if (!trimmedRegion) e.region = "Region is required
+    if (!trimmedCode) e.code = "Code is required";
+    // if (!trimmedRegion) e.region = "Region is required";
 
     if (!isDestination && !isStop) {
       e.cityType = "Select at least one city type";
@@ -63,7 +65,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
     onSubmit({
       name: name.replace(/\s+/g, " ").trim(),
       country: country.trim(),
-      region: "",
+      code: code.trim(),
       isDestination,
       isStop,
     });
@@ -101,6 +103,26 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
           />
           {errors.country && (
             <p className="text-xs text-red-500 mt-1">{errors.country}</p>
+          )}
+        </div>
+      </div>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <div>
+          <Input
+            label="Code"
+            value={code}
+            onChange={(v) => {
+              setCode(v);
+              if (errors.code)
+                setErrors((p) => ({ ...p, code: null }));
+            }}
+            className={errors.code ? "border-red-500" : ""}
+          />
+          {errors.code && (
+            <p className="text-xs text-red-500 mt-1">{errors.code}</p>
           )}
         </div>
       </div>

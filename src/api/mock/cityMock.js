@@ -56,6 +56,7 @@ export async function updateCity(id, payload) {
     region: payload.region,
     is_destination: payload.isDestination,
     is_stop: payload.isStop,
+    code: payload.code
   });
 
   const c = data.data;

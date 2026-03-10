@@ -321,16 +321,16 @@ export default function StandardDescriptionForm({
     onSubmit(payload);
   }
 
-  function addStop() {
-    if (!stopSelect) return;
+  // function addStop() {
+  //   if (!stopSelect) return;
 
-    if (form.stops.includes(stopSelect)) {
-      return; // prevent duplicates
-    }
+  //   if (form.stops.includes(stopSelect)) {
+  //     return; // prevent duplicates
+  //   }
 
-    updateField("stops", [...form.stops, stopSelect]);
-    setStopSelect("");
-  }
+  //   updateField("stops", [...form.stops, stopSelect]);
+  //   setStopSelect("");
+  // }
 
   function removeStop(id) {
     updateField(
@@ -357,14 +357,14 @@ export default function StandardDescriptionForm({
     );
   }
 
-  function addExcursion(e) {
-    if (selectedExcursions.find((x) => x.id === e.id)) return;
-    setSelectedExcursions((p) => [...p, e]);
-  }
+  // function addExcursion(e) {
+  //   if (selectedExcursions.find((x) => x.id === e.id)) return;
+  //   setSelectedExcursions((p) => [...p, e]);
+  // }
 
-  function removeExcursion(id) {
-    setSelectedExcursions((p) => p.filter((x) => x.id !== id));
-  }
+  // function removeExcursion(id) {
+  //   setSelectedExcursions((p) => p.filter((x) => x.id !== id));
+  // }
 
 
 

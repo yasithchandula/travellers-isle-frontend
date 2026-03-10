@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X } from "lucide-react";
+import { Circle, Trash, Trash2, X } from "lucide-react";
 import { buildImageUrl } from "@/utils/urls";
+import { Toggle } from "radix-ui";
 
 export default function ExcursionSelector({
   items = [],
@@ -33,8 +34,8 @@ export default function ExcursionSelector({
 
     setSelected([...selected, item]);
 
-    setOpen(false);     // close after add
-    setQuery("");       // optional clear search
+    setOpen(false);
+    setQuery("");
   }
 
   function removeItem(id) {
@@ -43,23 +44,6 @@ export default function ExcursionSelector({
 
   return (
     <div ref={wrapperRef} className="space-y-2 relative">
-      {/* Selected chips */}
-      <div className="flex flex-wrap gap-2">
-        {selected.map((item) => (
-          <span
-            key={item.id}
-            className="px-2 py-1 text-xs rounded bg-ti-mint/60 flex items-center gap-1"
-          >
-            {item.name}
-            <X
-              size={14}
-              className="cursor-pointer text-ti-red"
-              onClick={() => removeItem(item.id)}
-            />
-          </span>
-        ))}
-      </div>
-
       {/* Search input */}
       <input
         className="w-full border rounded px-3 py-2 text-sm"
@@ -72,6 +56,27 @@ export default function ExcursionSelector({
         }}
         onFocus={() => setOpen(true)}
       />
+
+      {/* Selected chips */}
+      <div className="flex flex-wrap gap-2">
+        {selected.map((item) => (
+          <span
+            key={item.id}
+            className="px-2 py-1 text-xs rounded bg-ti-mint/60 flex items-center gap-1"
+          >
+            {item.name}
+            <Toggle aria-label="Toggle bookmark" size="sm" variant="outline">
+              <Circle className="group-data-[state=on]/toggle:fill-foreground" />
+              Bookmark
+            </Toggle>
+            <Trash2
+              size={14}
+              className="cursor-pointer text-ti-red"
+              onClick={() => removeItem(item.id)}
+            />
+          </span>
+        ))}
+      </div>
 
       {/* Dropdown */}
       {open && (

@@ -35,7 +35,7 @@ import {
   InputGroupAddon,
 } from "@/components/ui/input-group";
 
-import { Search } from "lucide-react";
+import { Loader, Search } from "lucide-react";
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
@@ -183,6 +183,7 @@ export default function DestinationManager() {
               <thead className="bg-gray-100 sticky top-0 z-10">
                 <tr className="text-left">
                   <th className="p-3 border-b">City</th>
+                  <th className="p-3 border-b">Code</th>
                   <th className="p-3 border-b">Country</th>
                   <th className="p-3 border-b">Type</th>
                   <th className="p-3 border-b">Status</th>
@@ -198,6 +199,9 @@ export default function DestinationManager() {
                   >
                     <td className="p-3">
                       <div className="font-medium">{c.city}</div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium">{c.code}</div>
                     </td>
 
                     <td className="p-3">{c.country}</td>
@@ -247,10 +251,17 @@ export default function DestinationManager() {
                   </tr>
                 ))}
 
-                {items.length === 0 && (
+                {loading == false && items.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-6 text-center text-gray-500">
                       No cities found.
+                    </td>
+                  </tr>
+                )}
+                {loading == true && (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-gray-500">
+                      Loading <Loader className="animate-spin mx-auto" />
                     </td>
                   </tr>
                 )}
