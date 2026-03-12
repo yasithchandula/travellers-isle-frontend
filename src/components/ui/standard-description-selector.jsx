@@ -3,11 +3,9 @@
 import { useState, useId } from "react";
 import {
   CheckIcon,
-  ChevronsUpDownIcon,
-  XIcon
+  ChevronsUpDownIcon
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -27,148 +25,78 @@ import {
 
 export default function StandardDescriptionSelector({
   items = [],
-  selected = [],
+  selected = null,
   setSelected,
   onSearch
 }) {
+
   const id = useId();
-
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
-  function toggleSelection(item) {
-    const exists = selected.find((s) => s.id === item.id);
-
-    if (exists) {
-      setSelected(selected.filter((s) => s.id !== item.id));
-    } else {
-      setSelected([...selected, item]);
-    }
+  function selectItem(item) {
+    setSelected(item);
+    setOpen(false);
   }
-
-  function removeSelection(id) {
-    setSelected(selected.filter((s) => s.id !== id));
-  }
-
-  const maxShown = 3;
-  const visible = expanded ? selected : selected.slice(0, maxShown);
-  const hiddenCount = selected.length - visible.length;
 
   return (
-    <div className="w-full space-y-2">
+    <Popover open={open} onOpenChange={setOpen}>
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
 
-        <PopoverTrigger asChild>
-          <Button
-            id={id}
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="h-auto min-h-9 w-full justify-between"
-          >
+          {selected ? (
+            <>
+              {selected.start_city?.name} → {selected.end_city?.name}
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              Select standard description
+            </span>
+          )}
 
-            <div className="flex flex-wrap items-center gap-1 pr-2">
+          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 
-              {selected.length > 0 ? (
-                <>
-                  {visible.map((item) => (
-                    <Badge
-                      key={item.id}
-                      variant="outline"
-                      className="flex items-center gap-1 rounded-sm"
-                    >
-                      {item.start_city?.name} → {item.end_city?.name}
+        </Button>
+      </PopoverTrigger>
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-4"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeSelection(item.id);
-                        }}
-                        asChild
-                      >
-                        <span>
-                          <XIcon className="size-3" />
-                        </span>
-                      </Button>
+      <PopoverContent className="w-[450px] p-0">
 
-                    </Badge>
-                  ))}
+        <Command>
 
-                  {(hiddenCount > 0 || expanded) && (
-                    <Badge
-                      variant="outline"
-                      className="cursor-pointer rounded-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpanded((p) => !p);
-                      }}
-                    >
-                      {expanded ? "Show Less" : `+${hiddenCount} more`}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <span className="text-muted-foreground">
-                  Select standard descriptions
-                </span>
-              )}
+          <CommandInput
+            placeholder="Search descriptions..."
+            onValueChange={(v) => onSearch?.(v)}
+          />
 
-            </div>
+          <CommandList>
 
-            <ChevronsUpDownIcon className="text-muted-foreground shrink-0" />
+            <CommandEmpty>No descriptions found</CommandEmpty>
 
-          </Button>
-        </PopoverTrigger>
+            <CommandGroup>
 
+              {items.map((item) => {
 
-        <PopoverContent className="w-[420px] p-0">
+                const isSelected = selected?.id === item.id;
 
-          <Command>
+                return (
+                  <CommandItem
+                    key={item.id}
+                    value={`${item.start_city?.name} ${item.end_city?.name}`}
+                    onSelect={() => selectItem(item)}
+                  >
 
-            <CommandInput
-              placeholder="Search standard descriptions..."
-              onValueChange={(v) => onSearch?.(v)}
-            />
-
-            <CommandList>
-
-              <CommandEmpty>No descriptions found</CommandEmpty>
-
-              <CommandGroup>
-
-                {items.map((item) => {
-
-                  const isSelected = selected.find(
-                    (s) => s.id === item.id
-                  );
-
-                  return (
-                    <CommandItem
-                      key={item.id}
-                      value={`${item.start_city?.name} ${item.end_city?.name} ${item.title}`}
-                      onSelect={() => toggleSelection(item)}
-                      className="flex gap-3 items-start"
-                    >
+                    <div className="flex w-full items-start gap-2">
 
                       <div className="flex-1">
 
-                        <div className="flex items-center gap-2">
-
-                          <span className="font-medium text-sm">
-                            {item.start_city?.name} → {item.end_city?.name}
-                          </span>
-
-                          {isSelected && (
-                            <CheckIcon
-                              size={16}
-                              className="ml-auto"
-                            />
-                          )}
-
+                        <div className="font-medium text-sm">
+                          {item.start_city?.name} → {item.end_city?.name}
                         </div>
 
                         {item.title && (
@@ -179,20 +107,25 @@ export default function StandardDescriptionSelector({
 
                       </div>
 
-                    </CommandItem>
-                  );
-                })}
+                      {isSelected && (
+                        <CheckIcon className="h-4 w-4" />
+                      )}
 
-              </CommandGroup>
+                    </div>
 
-            </CommandList>
+                  </CommandItem>
+                );
+              })}
 
-          </Command>
+            </CommandGroup>
 
-        </PopoverContent>
+          </CommandList>
 
-      </Popover>
+        </Command>
 
-    </div>
+      </PopoverContent>
+
+    </Popover>
   );
 }
+

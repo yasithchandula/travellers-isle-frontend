@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, MapPinned, NotebookPen, Sparkles } from "lucide-react";
 
 import { fetchCities } from "../../app/slices/citySlice";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Card,
@@ -654,16 +655,72 @@ export default function QuotationWizardModernPage() {
 
                     <StandardDescriptionSelector
                       items={standardDescriptions}
-                      selected={day.standard_descriptions}
-                      setSelected={(list) =>
+                      selected={day.standard_description}
+                      setSelected={(item) =>
                         updateDay(dayIndex, {
-                          standard_descriptions: list,
+                          standard_description: item
                         })
                       }
                       onSearch={(val) =>
                         dispatch(setStandardDescriptionSearch(val))
                       }
                     />
+
+                    {day.standard_description && (
+
+                      <Card className="mt-4">
+                        <CardContent className="space-y-3 p-4">
+
+                          <div className="font-semibold">
+                            {day.standard_description.start_city?.name}
+                            {" → "}
+                            {day.standard_description.end_city?.name}
+                          </div>
+
+                          {day.standard_description.starting_paragraph && (
+                            <div
+                              className="text-sm text-muted-foreground"
+                              dangerouslySetInnerHTML={{
+                                __html: day.standard_description.starting_paragraph
+                              }}
+                            />
+                          )}
+
+                          {day.standard_description.description && (
+                            <div
+                              className="text-sm"
+                              dangerouslySetInnerHTML={{
+                                __html: day.standard_description.description
+                              }}
+                            />
+                          )}
+
+                          {day.standard_description.excursions?.length > 0 && (
+
+                            <div className="pt-2">
+
+                              <div className="text-xs font-semibold text-muted-foreground">
+                                Included Excursions
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 pt-1">
+
+                                {day.standard_description.excursions.map((e) => (
+                                  <Badge key={e.excursion_id}>
+                                    {e.name}
+                                  </Badge>
+                                ))}
+
+                              </div>
+
+                            </div>
+
+                          )}
+
+                        </CardContent>
+                      </Card>
+
+                    )}
                   </div>
                 </CardContent>
 
