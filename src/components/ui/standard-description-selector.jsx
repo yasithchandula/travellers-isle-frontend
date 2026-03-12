@@ -1,124 +1,197 @@
 "use client";
 
-import { useMemo } from "react";
-import { Search, Check, Trash2 } from "lucide-react";
+import { useState, useId } from "react";
+import {
+  CheckIcon,
+  ChevronsUpDownIcon,
+  XIcon
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 
 import {
-  Card,
-  CardContent
-} from "@/components/ui/card";
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
 
 export default function StandardDescriptionSelector({
   items = [],
   selected = [],
   setSelected,
-  onSearch,
+  onSearch
 }) {
+  const id = useId();
 
-  function addItem(item) {
-    if (selected.find((x) => x.id === item.id)) return;
-    setSelected([...selected, item]);
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  function toggleSelection(item) {
+    const exists = selected.find((s) => s.id === item.id);
+
+    if (exists) {
+      setSelected(selected.filter((s) => s.id !== item.id));
+    } else {
+      setSelected([...selected, item]);
+    }
   }
 
-  function removeItem(id) {
-    setSelected(selected.filter((x) => x.id !== id));
+  function removeSelection(id) {
+    setSelected(selected.filter((s) => s.id !== id));
   }
+
+  const maxShown = 3;
+  const visible = expanded ? selected : selected.slice(0, maxShown);
+  const hiddenCount = selected.length - visible.length;
 
   return (
-    <div className="space-y-3">
+    <div className="w-full space-y-2">
 
-      {/* SEARCH */}
+      <Popover open={open} onOpenChange={setOpen}>
 
-      <InputGroup>
-        <InputGroupInput
-          placeholder="Search standard descriptions..."
-          onChange={(e) => onSearch(e.target.value)}
-        />
-        <InputGroupAddon>
-          <Search size={16} />
-        </InputGroupAddon>
-      </InputGroup>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="h-auto min-h-9 w-full justify-between"
+          >
 
+            <div className="flex flex-wrap items-center gap-1 pr-2">
 
-      {/* LIST */}
+              {selected.length > 0 ? (
+                <>
+                  {visible.map((item) => (
+                    <Badge
+                      key={item.id}
+                      variant="outline"
+                      className="flex items-center gap-1 rounded-sm"
+                    >
+                      {item.start_city?.name} → {item.end_city?.name}
 
-      <div className="max-h-[200px] overflow-auto border rounded-md">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-4"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSelection(item.id);
+                        }}
+                        asChild
+                      >
+                        <span>
+                          <XIcon className="size-3" />
+                        </span>
+                      </Button>
 
-        {items.map((d) => {
+                    </Badge>
+                  ))}
 
-          const exists = selected.find((x) => x.id === d.id);
-
-          return (
-            <div
-              key={d.id}
-              onClick={() => addItem(d)}
-              className={`p-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 ${
-                exists ? "bg-green-50" : ""
-              }`}
-            >
-
-              <div className="text-sm">
-                <div className="font-medium">
-                  {d.start_city?.name} → {d.end_city?.name}
-                </div>
-
-                {d.title && (
-                  <div className="text-xs text-gray-500">
-                    {d.title}
-                  </div>
-                )}
-              </div>
-
-              {exists && (
-                <Check size={16} className="text-green-600" />
+                  {(hiddenCount > 0 || expanded) && (
+                    <Badge
+                      variant="outline"
+                      className="cursor-pointer rounded-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpanded((p) => !p);
+                      }}
+                    >
+                      {expanded ? "Show Less" : `+${hiddenCount} more`}
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Select standard descriptions
+                </span>
               )}
 
             </div>
-          );
-        })}
 
-      </div>
+            <ChevronsUpDownIcon className="text-muted-foreground shrink-0" />
+
+          </Button>
+        </PopoverTrigger>
 
 
-      {/* SELECTED */}
+        <PopoverContent className="w-[420px] p-0">
 
-      {selected.length > 0 && (
+          <Command>
 
-        <Card>
-          <CardContent className="p-3 space-y-2">
+            <CommandInput
+              placeholder="Search standard descriptions..."
+              onValueChange={(v) => onSearch?.(v)}
+            />
 
-            {selected.map((d) => (
+            <CommandList>
 
-              <div
-                key={d.id}
-                className="flex justify-between items-center text-sm border rounded px-2 py-1"
-              >
+              <CommandEmpty>No descriptions found</CommandEmpty>
 
-                <div>
-                  {d.start_city?.name} → {d.end_city?.name}
-                </div>
+              <CommandGroup>
 
-                <button
-                  onClick={() => removeItem(d.id)}
-                  className="text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {items.map((item) => {
 
-              </div>
+                  const isSelected = selected.find(
+                    (s) => s.id === item.id
+                  );
 
-            ))}
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      value={`${item.start_city?.name} ${item.end_city?.name} ${item.title}`}
+                      onSelect={() => toggleSelection(item)}
+                      className="flex gap-3 items-start"
+                    >
 
-          </CardContent>
-        </Card>
+                      <div className="flex-1">
 
-      )}
+                        <div className="flex items-center gap-2">
+
+                          <span className="font-medium text-sm">
+                            {item.start_city?.name} → {item.end_city?.name}
+                          </span>
+
+                          {isSelected && (
+                            <CheckIcon
+                              size={16}
+                              className="ml-auto"
+                            />
+                          )}
+
+                        </div>
+
+                        {item.title && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.title}
+                          </div>
+                        )}
+
+                      </div>
+
+                    </CommandItem>
+                  );
+                })}
+
+              </CommandGroup>
+
+            </CommandList>
+
+          </Command>
+
+        </PopoverContent>
+
+      </Popover>
 
     </div>
   );

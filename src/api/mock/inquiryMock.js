@@ -52,7 +52,17 @@ export async function markInquirySpam(id) {
  * PATCH /inquiries/convert/:id
  * (If backend supports it)
  */
-export async function convertInquiryToTour(id) {
-  const { data } = await api.patch(`/inquiries/convert/${id}`);
+export async function convertInquiryToTour(payload) {
+  const { data } = await api.patch(`/inquiries/convert`, payload);
   return data;
 }
+
+
+export const createQuotationFromInquiry = async (payload) => {
+  const response = await api.put(
+    "/quotations/create-from-inquiry",
+    payload
+  );
+
+  return response.data;
+};

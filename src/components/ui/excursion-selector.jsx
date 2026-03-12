@@ -1,132 +1,232 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Circle, Trash, Trash2, X } from "lucide-react";
+import { useState, useId } from "react";
+import {
+  CheckIcon,
+  ChevronsUpDownIcon,
+  XIcon
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
+
 import { buildImageUrl } from "@/utils/urls";
-import { Toggle } from "radix-ui";
 
 export default function ExcursionSelector({
   items = [],
   selected = [],
   setSelected,
-  onSearch,
+  onSearch
 }) {
-  const [query, setQuery] = useState("");
+  const id = useId();
+
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const wrapperRef = useRef(null);
+  function toggleSelection(item) {
+    const exists = selected.find((s) => s.id === item.id);
 
-  /* ================= CLOSE ON OUTSIDE CLICK ================= */
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (!wrapperRef.current?.contains(e.target)) {
-        setOpen(false);
-      }
+    if (exists) {
+      setSelected(selected.filter((s) => s.id !== item.id));
+    } else {
+      setSelected([...selected, item]);
     }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  function addItem(item) {
-    if (selected.find((s) => s.id === item.id)) return;
-
-    setSelected([...selected, item]);
-
-    setOpen(false);
-    setQuery("");
   }
 
-  function removeItem(id) {
+  function removeSelection(id) {
     setSelected(selected.filter((s) => s.id !== id));
   }
 
+  const maxShown = 3;
+  const visible = expanded ? selected : selected.slice(0, maxShown);
+  const hiddenCount = selected.length - visible.length;
+
   return (
-    <div ref={wrapperRef} className="space-y-2 relative">
-      {/* Search input */}
-      <input
-        className="w-full border rounded px-3 py-2 text-sm"
-        placeholder="Search excursions..."
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          onSearch(e.target.value);
-        }}
-        onFocus={() => setOpen(true)}
-      />
+    <div className="w-full space-y-2">
 
-      {/* Selected chips */}
-      <div className="flex flex-wrap gap-2">
-        {selected.map((item) => (
-          <span
-            key={item.id}
-            className="px-2 py-1 text-xs rounded bg-ti-mint/60 flex items-center gap-1"
+      <Popover open={open} onOpenChange={setOpen}>
+
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="h-auto min-h-9 w-full justify-between"
           >
-            {item.name}
-            <Toggle aria-label="Toggle bookmark" size="sm" variant="outline">
-              <Circle className="group-data-[state=on]/toggle:fill-foreground" />
-              Bookmark
-            </Toggle>
-            <Trash2
-              size={14}
-              className="cursor-pointer text-ti-red"
-              onClick={() => removeItem(item.id)}
-            />
-          </span>
-        ))}
-      </div>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow max-h-80 overflow-auto">
-          {items.length === 0 && (
-            <div className="p-3 text-sm text-gray-500">
-              No excursions found
-            </div>
-          )}
+            <div className="flex flex-wrap items-center gap-1 pr-2">
 
-          {items.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => addItem(item)}
-              className="flex gap-3 p-3 cursor-pointer hover:bg-ti-sky/10 border-b"
-            >
-              {item.gallery?.[0] && (
-                <img
-                  src={buildImageUrl(item.gallery[0])}
-                  className="w-14 h-14 rounded object-cover"
-                />
+              {selected.length > 0 ? (
+                <>
+                  {visible.map((item) => (
+                    <Badge
+                      key={item.id}
+                      variant="outline"
+                      className="flex items-center gap-1 rounded-sm"
+                    >
+                      {item.name}
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-4"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSelection(item.id);
+                        }}
+                        asChild
+                      >
+                        <span>
+                          <XIcon className="size-3" />
+                        </span>
+                      </Button>
+                    </Badge>
+                  ))}
+
+                  {(hiddenCount > 0 || expanded) && (
+                    <Badge
+                      variant="outline"
+                      className="cursor-pointer rounded-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpanded((p) => !p);
+                      }}
+                    >
+                      {expanded ? "Show Less" : `+${hiddenCount} more`}
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Select excursions
+                </span>
               )}
 
-              <div className="flex-1">
-                <div className="font-medium text-sm">{item.name}</div>
-
-                <div className="text-xs text-muted-foreground line-clamp-2">
-                  {item.description}
-                </div>
-
-                <div className="flex gap-2 pt-1 text-[10px]">
-                  <span className="px-2 py-0.5 rounded bg-ti-sky/30">
-                    {item.pricing_type}
-                  </span>
-
-                  <span className="px-2 py-0.5 rounded bg-ti-mint/40">
-                    {item.is_full_day ? "Full Day" : "Half Day"}
-                  </span>
-
-                  {item.allow_zero_at_quotation && (
-                    <span className="px-2 py-0.5 rounded bg-yellow-200">
-                      Zero Allowed
-                    </span>
-                  )}
-                </div>
-              </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <ChevronsUpDownIcon className="text-muted-foreground shrink-0" />
+
+          </Button>
+        </PopoverTrigger>
+
+
+        <PopoverContent className="w-[420px] p-0">
+
+          <Command>
+
+            <CommandInput
+              placeholder="Search excursions..."
+              onValueChange={(v) => onSearch?.(v)}
+            />
+
+            <CommandList>
+
+              <CommandEmpty>No excursions found</CommandEmpty>
+
+              <CommandGroup>
+
+                {items.map((item) => {
+
+                  const isSelected = selected.find(
+                    (s) => s.id === item.id
+                  );
+
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      value={item.name}
+                      onSelect={() => toggleSelection(item)}
+                      className="flex gap-3 items-start"
+                    >
+
+                      {/* Thumbnail */}
+
+                      {item.gallery?.[0] && (
+                        <img
+                          src={buildImageUrl(item.gallery[0])}
+                          className="w-10 h-10 rounded object-cover"
+                        />
+                      )}
+
+                      {/* Content */}
+
+                      <div className="flex-1">
+
+                        <div className="flex items-center gap-2">
+
+                          <span className="font-medium text-sm">
+                            {item.name}
+                          </span>
+
+                          {isSelected && (
+                            <CheckIcon
+                              size={16}
+                              className="ml-auto"
+                            />
+                          )}
+
+                        </div>
+
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground line-clamp-2">
+                            {item.description}
+                          </div>
+                        )}
+
+                        <div className="flex gap-1 pt-1 text-[10px]">
+
+                          {item.pricing_type && (
+                            <span className="px-2 py-0.5 rounded bg-ti-sky/30">
+                              {item.pricing_type}
+                            </span>
+                          )}
+
+                          {item.is_full_day !== undefined && (
+                            <span className="px-2 py-0.5 rounded bg-ti-mint/40">
+                              {item.is_full_day ? "Full Day" : "Half Day"}
+                            </span>
+                          )}
+
+                          {item.allow_zero_at_quotation && (
+                            <span className="px-2 py-0.5 rounded bg-yellow-200">
+                              Zero Allowed
+                            </span>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    </CommandItem>
+                  );
+                })}
+
+              </CommandGroup>
+
+            </CommandList>
+
+          </Command>
+
+        </PopoverContent>
+
+      </Popover>
+
     </div>
   );
 }
