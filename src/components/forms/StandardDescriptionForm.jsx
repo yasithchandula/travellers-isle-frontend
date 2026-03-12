@@ -22,6 +22,7 @@ import { fetchCities } from "@/app/slices/citySlice";
 import { buildImageUrl } from "../../utils/urls";
 
 import { toast } from "sonner";
+import { MapPin, Trash2, X } from "lucide-react";
 
 export default function StandardDescriptionForm({
   initial,
@@ -311,7 +312,7 @@ export default function StandardDescriptionForm({
       featuredImage,
       excursions: selectedExcursions.map((e) => ({
         excursion_id: e.id,
-        is_optional: false,
+        is_optional: e.is_optional,
       })),
       mileage: 0,
       travel_time_minutes: 0
@@ -501,35 +502,49 @@ export default function StandardDescriptionForm({
           </select>
 
           {/* CHIPS */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3 items-center">
             {form.stops.length ? (
-              form.stops.map((id) => {
-                const city = cities.find(
-                  (c) => String(c.id) === String(id)
-                );
+              form.stops.map((id, index) => {
+                const city = cities.find((c) => String(c.id) === String(id));
 
                 return (
-                  <span
-                    key={id}
-                    className="px-3 py-1.5 rounded-full text-xs flex items-center gap-2 
-                         bg-ti-sky/20 text-ti-forest border border-ti-sky/40"
-                  >
-                    {city?.city || id}
+                  <div key={id} className="flex items-center gap-2 group">
+                    {/* Optional: Add a connector arrow between stops, except for the first one */}
+                    {index > 0 && (
+                      <span className="text-ti-sky/40 font-bold text-xs">→</span>
+                    )}
 
-                    <button
-                      type="button"
-                      onClick={() => removeStop(id)}
-                      className="text-ti-red font-bold"
+                    <div
+                      className=" flex items-center pl-2 pr-1 py-1.5 rounded-xl text-xs gap-3 border transition-all duration-200 shadow-sm bg-ti-mint/5 border-ti-mint/20 hover:border-ti-mint/40"
                     >
-                      ×
-                    </button>
-                  </span>
+                      {/* The Icon */}
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-ti-sky/10">
+                        <MapPin size={14} strokeWidth={1} />
+                      </div>
+
+                      {/* City Label */}
+                      <span className="font-semibold tracking-tight">
+                        {city?.city || id}
+                      </span>
+
+                      {/* Improved Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeStop(id)}
+                        className="ml-1 p-1 rounded-full text-slate-300 hover:text-white hover:bg-ti-red transition-all border-l pl-2 ml-1"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
                 );
               })
             ) : (
-              <span className="text-xs text-muted-foreground">
-                No intermediate stops added
-              </span>
+              <div className="flex items-center gap-2 px-3 py-2 border-2 border-dashed border-slate-100 rounded-xl w-full">
+                <span className="text-xs text-slate-400 italic">
+                  No intermediate stops added yet
+                </span>
+              </div>
             )}
           </div>
         </div>

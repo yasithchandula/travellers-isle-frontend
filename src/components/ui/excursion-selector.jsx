@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Circle, Trash, Trash2, X } from "lucide-react";
+import { Badge, Circle, Trash, Trash2, X } from "lucide-react";
 import { buildImageUrl } from "@/utils/urls";
 import { Toggle } from "radix-ui";
+
 
 export default function ExcursionSelector({
   items = [],
@@ -30,9 +31,13 @@ export default function ExcursionSelector({
   }, []);
 
   function addItem(item) {
-    if (selected.find((s) => s.id === item.id)) return;
+    if (selected.find((s) => s.id === item.id)) {
+      setOpen(false);
+      return;
+    }
 
-    setSelected([...selected, item]);
+    const newItem = { ...item, is_optional: false };
+    setSelected([...selected, newItem]);
 
     setOpen(false);
     setQuery("");
@@ -40,6 +45,14 @@ export default function ExcursionSelector({
 
   function removeItem(id) {
     setSelected(selected.filter((s) => s.id !== id));
+  }
+
+  function toggleOptional(id) {
+    const updatedSelected = selected.map((item) => {
+      return item.id === id ? { ...item, is_optional: !item.is_optional } : item
+    }
+    );
+    setSelected(updatedSelected);
   }
 
   return (
@@ -56,27 +69,6 @@ export default function ExcursionSelector({
         }}
         onFocus={() => setOpen(true)}
       />
-
-      {/* Selected chips */}
-      <div className="flex flex-wrap gap-2">
-        {selected.map((item) => (
-          <span
-            key={item.id}
-            className="px-2 py-1 text-xs rounded bg-ti-mint/60 flex items-center gap-1"
-          >
-            {item.name}
-            <Toggle aria-label="Toggle bookmark" size="sm" variant="outline">
-              <Circle className="group-data-[state=on]/toggle:fill-foreground" />
-              Bookmark
-            </Toggle>
-            <Trash2
-              size={14}
-              className="cursor-pointer text-ti-red"
-              onClick={() => removeItem(item.id)}
-            />
-          </span>
-        ))}
-      </div>
 
       {/* Dropdown */}
       {open && (
@@ -127,6 +119,55 @@ export default function ExcursionSelector({
           ))}
         </div>
       )}
+
+      {/* Selected chips */}
+      <div className="flex flex-wrap gap-3">
+        {selected.map((item) => (
+          <div
+            key={item.id}
+            className={`group relative flex items-center gap-3 pl-3 pr-2 py-2 rounded-xl border transition-all duration-200 shadow-sm ${item.is_optional
+              ? "bg-white border-orange-200 hover:border-orange-300"
+              : "bg-ti-mint/5 border-ti-mint/20 hover:border-ti-mint/40"
+              }`}
+          >
+
+            <div className="flex flex-col min-w-[100px]">
+              <span className="text-[11px] font-semibold text-gray-800 leading-tight">
+                {item.name}
+              </span>
+              <span className={`text-[9px] font-semibold uppercase tracking-wider ${item.is_optional ? "text-orange-500" : "text-ti-mint"
+                }`}>
+                {item.is_optional ? "Optional" : "Included"}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1 ml-2 border-l pl-2">
+              {/* Toggle Button */}
+              <button
+                type="button"
+                onClick={() => toggleOptional(item.id)}
+                title={item.is_optional ? "Change to Included" : "Change to Optional"}
+                className={`p-1.5 rounded-lg border transition-colors  ${item.is_optional
+                  ? "bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100"
+                  : "bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100"
+                  }`}
+              >
+                <Circle size={14} fill={item.is_optional ? "currentColor" : "none"} />
+              </button>
+
+              {/* Remove Button */}
+              <button
+                type="button"
+                onClick={() => removeItem(item.id)}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

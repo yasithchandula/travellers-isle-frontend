@@ -54,7 +54,6 @@ export default function StandardDescriptionManager() {
     items = [],
     loading,
     search = "",
-    page = 1,
     limit = 10,
   } = useSelector((s) => s.standardDescriptions || {});
 
