@@ -56,6 +56,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 
+import { buildImageUrl } from "@/utils/urls";
+
 /* ======================
    DATE HELPERS
 ====================== */
@@ -667,59 +669,80 @@ export default function QuotationWizardModernPage() {
                     />
 
                     {day.standard_description && (
-
-                      <Card className="mt-4">
-                        <CardContent className="space-y-3 p-4">
-
+                      <Card className="mt-4 overflow-hidden">
+                        <CardContent className="space-y-4 p-4">
                           <div className="font-semibold">
                             {day.standard_description.start_city?.name}
                             {" → "}
                             {day.standard_description.end_city?.name}
                           </div>
 
+                          {day.standard_description.title && (
+                            <div className="text-sm font-medium text-muted-foreground">
+                              {day.standard_description.title}
+                            </div>
+                          )}
+
+                          {/* image preview */}
+                          {(day.standard_description.featured_image ||
+                            day.standard_description.gallery?.length > 0) && (
+                              <div className="space-y-2">
+                                {day.standard_description.featured_image && (
+                                  <img
+                                    src={buildImageUrl(day.standard_description.featured_image)}
+                                    alt={day.standard_description.title || "Standard description"}
+                                    className="h-48 w-full rounded-lg object-cover border"
+                                  />
+                                )}
+
+                                {day.standard_description.gallery?.length > 0 && (
+                                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                                    {day.standard_description.gallery.map((img, index) => (
+                                      <img
+                                        key={`${img}-${index}`}
+                                        src={buildImageUrl(img)}
+                                        alt={`Gallery ${index + 1}`}
+                                        className="h-24 w-full rounded-md object-cover border"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                           {day.standard_description.starting_paragraph && (
                             <div
-                              className="text-sm text-muted-foreground"
+                              className="text-sm text-muted-foreground prose prose-sm max-w-none"
                               dangerouslySetInnerHTML={{
-                                __html: day.standard_description.starting_paragraph
+                                __html: day.standard_description.starting_paragraph,
                               }}
                             />
                           )}
 
                           {day.standard_description.description && (
                             <div
-                              className="text-sm"
+                              className="text-sm prose prose-sm max-w-none"
                               dangerouslySetInnerHTML={{
-                                __html: day.standard_description.description
+                                __html: day.standard_description.description,
                               }}
                             />
                           )}
 
                           {day.standard_description.excursions?.length > 0 && (
-
                             <div className="pt-2">
-
                               <div className="text-xs font-semibold text-muted-foreground">
                                 Included Excursions
                               </div>
 
                               <div className="flex flex-wrap gap-2 pt-1">
-
                                 {day.standard_description.excursions.map((e) => (
-                                  <Badge key={e.excursion_id}>
-                                    {e.name}
-                                  </Badge>
+                                  <Badge key={e.excursion_id}>{e.name}</Badge>
                                 ))}
-
                               </div>
-
                             </div>
-
                           )}
-
                         </CardContent>
                       </Card>
-
                     )}
                   </div>
                 </CardContent>
