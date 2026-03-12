@@ -1,125 +1,131 @@
 "use client";
 
-import { useMemo } from "react";
-import { Search, Check, Trash2 } from "lucide-react";
+import { useState, useId } from "react";
+import {
+  CheckIcon,
+  ChevronsUpDownIcon
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 
 import {
-  Card,
-  CardContent
-} from "@/components/ui/card";
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
 
 export default function StandardDescriptionSelector({
   items = [],
-  selected = [],
+  selected = null,
   setSelected,
-  onSearch,
+  onSearch
 }) {
 
-  function addItem(item) {
-    if (selected.find((x) => x.id === item.id)) return;
-    setSelected([...selected, item]);
-  }
+  const id = useId();
+  const [open, setOpen] = useState(false);
 
-  function removeItem(id) {
-    setSelected(selected.filter((x) => x.id !== id));
+  function selectItem(item) {
+    setSelected(item);
+    setOpen(false);
   }
 
   return (
-    <div className="space-y-3">
+    <Popover open={open} onOpenChange={setOpen}>
 
-      {/* SEARCH */}
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
 
-      <InputGroup>
-        <InputGroupInput
-          placeholder="Search standard descriptions..."
-          onChange={(e) => onSearch(e.target.value)}
-        />
-        <InputGroupAddon>
-          <Search size={16} />
-        </InputGroupAddon>
-      </InputGroup>
+          {selected ? (
+            <>
+              {selected.start_city?.name} → {selected.end_city?.name}
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              Select standard description
+            </span>
+          )}
 
+          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 
-      {/* LIST */}
+        </Button>
+      </PopoverTrigger>
 
-      <div className="max-h-[200px] overflow-auto border rounded-md">
+      <PopoverContent className="w-[450px] p-0">
 
-        {items.map((d) => {
+        <Command>
 
-          const exists = selected.find((x) => x.id === d.id);
+          <CommandInput
+            placeholder="Search descriptions..."
+            onValueChange={(v) => onSearch?.(v)}
+          />
 
-          return (
-            <div
-              key={d.id}
-              onClick={() => addItem(d)}
-              className={`p-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 ${
-                exists ? "bg-green-50" : ""
-              }`}
-            >
+          <CommandList>
 
-              <div className="text-sm">
-                <div className="font-medium">
-                  {d.start_city?.name} → {d.end_city?.name}
-                </div>
+            <CommandEmpty>No descriptions found</CommandEmpty>
 
-                {d.title && (
-                  <div className="text-xs text-gray-500">
-                    {d.title}
-                  </div>
-                )}
-              </div>
+            <CommandGroup>
 
-              {exists && (
-                <Check size={16} className="text-green-600" />
-              )}
+              {items.map((item) => {
 
-            </div>
-          );
-        })}
+                const isSelected = selected?.id === item.id;
 
-      </div>
+                return (
+                  <CommandItem
+                    key={item.id}
+                    value={`${item.start_city?.name} ${item.end_city?.name}`}
+                    onSelect={() => selectItem(item)}
+                  >
 
+                    <div className="flex w-full items-start gap-2">
 
-      {/* SELECTED */}
+                      <div className="flex-1">
 
-      {selected.length > 0 && (
+                        <div className="font-medium text-sm">
+                          {item.start_city?.name} → {item.end_city?.name}
+                        </div>
 
-        <Card>
-          <CardContent className="p-3 space-y-2">
+                        {item.title && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.title}
+                          </div>
+                        )}
 
-            {selected.map((d) => (
+                      </div>
 
-              <div
-                key={d.id}
-                className="flex justify-between items-center text-sm border rounded px-2 py-1"
-              >
+                      {isSelected && (
+                        <CheckIcon className="h-4 w-4" />
+                      )}
 
-                <div>
-                  {d.start_city?.name} → {d.end_city?.name}
-                </div>
+                    </div>
 
-                <button
-                  onClick={() => removeItem(d.id)}
-                  className="text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                  </CommandItem>
+                );
+              })}
 
-              </div>
+            </CommandGroup>
 
-            ))}
+          </CommandList>
 
-          </CardContent>
-        </Card>
+        </Command>
 
-      )}
+      </PopoverContent>
 
-    </div>
+    </Popover>
   );
 }
+

@@ -45,6 +45,8 @@ import {
   convertToTour
 } from "../../app/slices/inquirySlice";
 
+import { createQuotationFromInquiry } from "../../app/slices/quotationSlice";
+
 import { toast } from "sonner";
 
 export default function InquiryList() {
@@ -434,7 +436,7 @@ export default function InquiryList() {
 
                 toast.loading("Creating quotation...", { id: toastId });
 
-                dispatch(convertToTour(payload))
+                dispatch(createQuotationFromInquiry(payload))
                   .unwrap()
                   .then(() => {
 
@@ -450,6 +452,8 @@ export default function InquiryList() {
                       label: labelFilter
                     }));
 
+                    navigate("/quotations/new");
+
                   })
                   .catch((err) => {
 
@@ -462,7 +466,7 @@ export default function InquiryList() {
                   .finally(() => {
 
                     // ALWAYS redirect
-                    navigate("/quotations/new");
+                    //navigate("/quotations/new");
 
                   });;
 

@@ -86,9 +86,9 @@ export const spamInquiry = createAsyncThunk(
 
 export const convertToTour = createAsyncThunk(
   "inquiries/convert",
-  async (id, { rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      return await convertInquiryToTour(id);
+      return await convertInquiryToTour(payload);
     } catch (e) {
       return rejectWithValue(
         e.response?.data?.message || e.message
@@ -96,6 +96,21 @@ export const convertToTour = createAsyncThunk(
     }
   }
 );
+
+
+// export const createQuotation = createAsyncThunk(
+//   "quotations/createFromInquiry",
+//   async (payload, { rejectWithValue }) => {
+//     try {
+//       const res = await createQuotationFromInquiry(payload);
+//       return res;
+//     } catch (err) {
+//       return rejectWithValue(
+//         err.response?.data || { message: "Failed to create quotation" }
+//       );
+//     }
+//   }
+// );
 
 const slice = createSlice({
   name: "inquiries",
@@ -197,6 +212,7 @@ const slice = createSlice({
           s.items[idx].status = "converted";
         }
       });
+
   },
 });
 

@@ -6,7 +6,7 @@ import Button from "../../components/common/Button";
 import QuotationFilters from "./components/QuotationFilters";
 import QuotationTable from "./components/QuotationTable";
 import { quotationApi } from "../../api/quotationApi";
-import { setQuotations, duplicateIntoDraft } from "../../app/slices/quotationSlice";
+//import { setQuotations, duplicateIntoDraft } from "../../app/slices/quotationSlice";
 
 export default function QuotationList() {
   const dispatch = useDispatch();
@@ -18,27 +18,27 @@ export default function QuotationList() {
     tourType: "", paxMin: "", paxMax: ""
   });
 
-  useEffect(() => {
-    (async () => {
-      const list = await quotationApi.getAll();
-      dispatch(setQuotations(list));
-    })();
-  }, [dispatch]);
+  // useEffect(() => {
+  //   (async () => {
+  //     const list = await quotationApi.getAll();
+  //     dispatch(setQuotations(list));
+  //   })();
+  // }, [dispatch]);
 
-  const filtered = useMemo(() => {
-    const q = filters.search.toLowerCase();
-    return quotations.filter((qt) => {
-      if (filters.status && qt.status !== filters.status) return false;
-      if (filters.month && !qt.tourStart?.startsWith(filters.month)) return false;
-      if (filters.executive && qt.executiveId !== filters.executive) return false;
-      if (filters.tourType && qt.tourType !== filters.tourType) return false;
-      const pax = (qt.adults || 0) + (qt.children?.length || 0);
-      if (filters.paxMin && pax < Number(filters.paxMin)) return false;
-      if (filters.paxMax && pax > Number(filters.paxMax)) return false;
-      if (q && !(`${qt.guestName || ""} ${qt.tourNumber || ""}`.toLowerCase().includes(q))) return false;
-      return true;
-    });
-  }, [quotations, filters]);
+  // const filtered = useMemo(() => {
+  //   const q = filters.search.toLowerCase();
+  //   return quotations.filter((qt) => {
+  //     if (filters.status && qt.status !== filters.status) return false;
+  //     if (filters.month && !qt.tourStart?.startsWith(filters.month)) return false;
+  //     if (filters.executive && qt.executiveId !== filters.executive) return false;
+  //     if (filters.tourType && qt.tourType !== filters.tourType) return false;
+  //     const pax = (qt.adults || 0) + (qt.children?.length || 0);
+  //     if (filters.paxMin && pax < Number(filters.paxMin)) return false;
+  //     if (filters.paxMax && pax > Number(filters.paxMax)) return false;
+  //     if (q && !(`${qt.guestName || ""} ${qt.tourNumber || ""}`.toLowerCase().includes(q))) return false;
+  //     return true;
+  //   });
+  // }, [quotations, filters]);
 
   return (
     <div className=" max-w-6xl mx-auto">
@@ -49,14 +49,14 @@ export default function QuotationList() {
       </div>
       <Card>
 
-        <QuotationTable
-          data={filtered}
-          openQuotation={(q) => navigate(`/quotations/${q.id}`)}
-          duplicateQuotation={(q) => {
-            dispatch(duplicateIntoDraft(q));
-            navigate("/quotations/new");
-          }}
-        />
+        {/* <QuotationTable
+          // data={filtered}
+          // openQuotation={(q) => navigate(`/quotations/${q.id}`)}
+          // duplicateQuotation={(q) => {
+          //   // dispatch(duplicateIntoDraft(q));
+          //   navigate("/quotations/new");
+          // }}
+        /> */}
       </Card>
     </div>
   );

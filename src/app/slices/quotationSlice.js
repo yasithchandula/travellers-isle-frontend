@@ -1,86 +1,128 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { nanoid } from "nanoid";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createQuotationFromInquiryApi,
+  updateQuotationDayApi,
+} from "../../api/mock/quotationApi";
+
+import { loadState, saveState, removeState } from "../../lib/storage";
+
+const STORAGE_KEY = "quotation_shell";
+
+/* ===============================
+   ASYNC ACTIONS
+================================ */
+
+export const createQuotationFromInquiry = createAsyncThunk(
+  "quotations/createFromInquiry",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await createQuotationFromInquiryApi(payload);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const updateQuotationDay = createAsyncThunk(
+  "quotations/updateDay",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await updateQuotationDayApi(payload);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+/* ===============================
+   INITIAL STATE
+================================ */
+
+const persisted = loadState(STORAGE_KEY);
 
 const initialState = {
-  items: [],            // all quotations (mock-persisted in localStorage)
-  currentDraft: null,   // quotation being edited
+  quotationShell: persisted || null,
+  loading: false,
+  error: null,
 };
 
-const slice = createSlice({
+/* ===============================
+   SLICE
+================================ */
+
+const quotationSlice = createSlice({
   name: "quotations",
   initialState,
+
   reducers: {
-    setQuotations: (s, a) => { s.items = a.payload; },
-    startNewQuotation: (s) => {
-      s.currentDraft = {
-        id: nanoid(),
-        createdAt: new Date().toISOString(),
-        tourNumber: `TI-${Date.now().toString().slice(-6)}`,
-        status: "Pending",
-
-        // Step 1
-        tourEntry: {
-          guestName: "",
-          email: "",
-          tourStart: "",
-          tourEnd: "",
-          adults: 0,
-          children: [],          // store ages here
-          tourType: "",
-          exchangeRate: 320,
-        },
-
-        // Step 2
-        itinerary: { days: [] },
-
-        // Step 3
-        costing: {
-          hotels: [],
-          transport: null,
-          excursions: { days: [], total: 0 },
-          misc: { misc: 15, margin: 25, bankCharge: 3.2, tt: false },
-          grandTotal: 0,
-        },
-
-        // Step 4
-        finalDoc: {
-          title: "Your Sri Lanka Holiday",
-          subtitle: "Crafted by Travellers Isle",
-          coverImage: "",
-          gallery: [],
-          highlightText: "",
-          dayDescriptions: [],
-          supplements: [],
-          offers: { enabled: false, offerPrice: 0, isB2B: false },
-        },
-      };
+    setQuotationShell: (state, action) => {
+      state.quotationShell = action.payload;
+      saveState(STORAGE_KEY, action.payload);
     },
-    loadQuotation: (s, a) => { s.currentDraft = a.payload || null; },
-    saveDraftStep: (s, a) => { s.currentDraft = { ...s.currentDraft, ...a.payload }; },
-    saveCompletedQuotation: (s) => {
-      const idx = s.items.findIndex(q => q.id === s.currentDraft.id);
-      if (idx >= 0) s.items[idx] = s.currentDraft; else s.items.push(s.currentDraft);
+
+    clearQuotationShell: (state) => {
+      state.quotationShell = null;
+      removeState(STORAGE_KEY);
     },
-    duplicateIntoDraft: (s, a) => {
-      const q = a.payload;
-      s.currentDraft = {
-        ...q,
-        id: nanoid(),
-        tourNumber: `${q.tourNumber}-COPY`,
-        createdAt: new Date().toISOString(),
-        status: "Pending",
-      };
-    },
+  },
+
+  extraReducers: (builder) => {
+    builder
+
+      /* CREATE QUOTATION */
+
+      .addCase(createQuotationFromInquiry.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(createQuotationFromInquiry.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const apiData = action.payload.data;
+
+        const shell = {
+          quotation_id: apiData.quotation_id,
+          days: apiData.days,
+          start_date: action.meta.arg.start_date,
+          days_count: action.meta.arg.days_count,
+        };
+
+        state.quotationShell = shell;
+
+        saveState(STORAGE_KEY, shell);
+      })
+
+      .addCase(createQuotationFromInquiry.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* UPDATE DAY */
+
+      .addCase(updateQuotationDay.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(updateQuotationDay.fulfilled, (state) => {
+        state.loading = false;
+
+        // API does not return updated day
+        // so we only persist current state
+        if (state.quotationShell) {
+          saveState(STORAGE_KEY, state.quotationShell);
+        }
+      })
+
+      .addCase(updateQuotationDay.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
-export const {
-  setQuotations,
-  startNewQuotation,
-  loadQuotation,
-  saveDraftStep,
-  saveCompletedQuotation,
-  duplicateIntoDraft,
-} = slice.actions;
+export const { setQuotationShell, clearQuotationShell } =
+  quotationSlice.actions;
 
-export default slice.reducer;
+export default quotationSlice.reducer;

@@ -64,7 +64,6 @@ const slice = createSlice({
       .addCase(fetchHotels.fulfilled, (state, action) => {
         state.loading = false;
 
-        // ✅ correct path
         const res = action.payload;
 
         state.items = Array.isArray(res?.data?.items)

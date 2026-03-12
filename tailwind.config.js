@@ -28,6 +28,9 @@ export default {
         card: "hsl(var(--card))",
         "card-foreground": "hsl(var(--card-foreground))",
 
+        popover: "hsl(var(--popover))",
+        "popover-foreground": "hsl(var(--popover-foreground))",
+
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
