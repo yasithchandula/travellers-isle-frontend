@@ -1,24 +1,44 @@
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search } from "lucide-react";
-
 import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
+  MapPinned,
+  Sparkles,
+  Eye,
+  MoreHorizontal,
+  Plus,
+  Clock3,
+  Sailboat,
+  CarFront,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import Button from "../../components/common/Button";
-import ExcursionForm from "../../components/forms/ExcursionForm";
+import ExcursionForm from "@/components/forms/ExcursionForm";
 
 import {
   fetchExcursions,
-  setExcursionSearch,
-  setExcursionPage,
   addExcursion,
   editExcursion,
-} from "../../app/slices/excursionSlice";
+  setExcursionSearch,
+} from "@/app/slices/excursionSlice";
+
 import { fetchCities } from "../../app/slices/citySlice";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+import {
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 import {
   Dialog,
@@ -27,497 +47,561 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent
-} from "@/components/ui/card";
+import EntityHeroHeader from "@/components/common/EntityHeroHeader";
+import StatCard from "@/components/common/StatCard";
+import ManagerToolbar from "@/components/common/ManagerToolbar";
+import CardGrid from "@/components/common/CardGrid";
+import EntityTable from "@/components/common/EntityTable";
+import PaginationBar from "@/components/common/PaginationBar";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+const formatCurrency = (value, currency = "USD") => {
+  const numericValue = Number(value || 0);
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(numericValue);
+  } catch {
+    return `${currency} ${numericValue}`;
+  }
+};
 
+const getPricingLabel = (type) => {
+  switch (type) {
+    case "PER_PERSON":
+      return "Per Person";
+    case "BOAT":
+      return "Boat Experience";
+    case "SAFARI":
+      return "Safari";
+    case "CUSTOM":
+      return "Custom";
+    case "FREE":
+      return "Free";
+    default:
+      return type || "Standard";
+  }
+};
 
+const getPricingIcon = (type) => {
+  switch (type) {
+    case "BOAT":
+      return Sailboat;
+    case "SAFARI":
+      return CarFront;
+    case "PER_PERSON":
+      return Users;
+    default:
+      return Clock3;
+  }
+};
 
-import { toast } from "sonner";
+const getPrimaryPrice = (item) => {
+  switch (item.pricing_type) {
+    case "PER_PERSON":
+      return item.adult_price || 0;
+    case "BOAT":
+      return item.boat_price || 0;
+    case "SAFARI":
+      return item.jeep_rent_price || 0;
+    case "CUSTOM":
+      return item.optional_supplement_price || 0;
+    case "FREE":
+      return 0;
+    default:
+      return item.adult_price || 0;
+  }
+};
 
 export default function ExcursionManager() {
   const dispatch = useDispatch();
 
-  const { items, loading, search, page, limit, totalPages } = useSelector(
-    (s) => s.excursions
-  );
-  const cities = useSelector((s) => s.cities.items);
+  const {
+    items = [],
+    loading = false,
+    search = "",
+    total = 0,
+    totalPages = 1,
+  } = useSelector((s) => s.excursions || {});
+
+  const [view, setView] = useState("card");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(9);
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [confirmId, setConfirmId] = useState(null);
 
-  // 🔹 NEW: local filter
-  const [typeFilter, setTypeFilter] = useState("ALL");
+  const { items: cities = [] } = useSelector((s) => s.cities || {});
+
+  useEffect(() => {
+    dispatch(fetchCities({ limit: 100 }));
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchExcursions({ search, page, limit }));
-    dispatch(fetchCities(""));
   }, [dispatch, search, page, limit]);
 
   useEffect(() => {
-    if (loading) {
-      toast.loading("Loading more excursions...", {
-        id: "excursion-pagination",
-      });
-    } else {
-      toast.dismiss("excursion-pagination");
-    }
-  }, [loading, page]);
+    setPage(1);
+  }, [search, limit]);
 
-  useEffect(() => {
-    dispatch(setExcursionPage(1));
-  }, [typeFilter, dispatch]);
+  const normalizedItems = useMemo(() => {
+    return items.map((item) => {
+      const derivedTags = [
+        getPricingLabel(item.pricing_type),
+        item.is_full_day ? "Full Day" : "Half Day",
+        item.enable_reminder ? "Reminder" : null,
+        item.allow_zero_at_quotation ? "Zero Allowed" : null,
+      ].filter(Boolean);
 
-
-
-  function openCreate() {
-    setEditItem(null);
-    setModalOpen(true);
-  }
-
-  function openEdit(item) {
-    setEditItem(item);
-    setModalOpen(true);
-  }
-
-  async function handleSubmit(form) {
-    const toastId = "excursion-save";
-
-    try {
-      toast.loading(
-        editItem ? "Updating excursion..." : "Creating excursion...",
-        { id: toastId }
-      );
-
-      if (editItem) {
-        await dispatch(
-          editExcursion({ id: editItem.id, payload: form })
-        ).unwrap();
-      } else {
-        await dispatch(addExcursion(form)).unwrap();
-      }
-
-      toast.success(
-        editItem
-          ? "Excursion updated successfully"
-          : "Excursion added successfully",
-        { id: toastId }
-      );
-      await dispatch(fetchExcursions({ search, page, limit }));
-      setModalOpen(false);
-    } catch (err) {
-      toast.error(
-        err?.message || "Failed to save excursion. Please try again.",
-        { id: toastId }
-      );
-    }
-  }
-
-  function handleScroll(e) {
-    // const { scrollTop, scrollHeight, clientHeight } = e.target;
-
-    // const nearBottom = scrollTop + clientHeight >= scrollHeight - 50;
-
-    // if (nearBottom && !loading && page < totalPages) {
-    //   dispatch(fetchExcursions({ search, page: page + 1, limit }));
-    // }
-  }
-
-
-  const filteredItems = useMemo(() => {
-    if (typeFilter === "ALL") return items;
-    return items.filter((e) => e.pricing_type === typeFilter);
-  }, [items, typeFilter]);
-
-  const pricingTypes = useMemo(() => {
-    return Array.from(
-      new Set(items.map((e) => e.pricing_type).filter(Boolean))
-    );
+      return {
+        id: item.id,
+        title: item.name || "Untitled",
+        description: item.description || "",
+        status: item.is_active ? "PUBLISHED" : "DRAFT",
+        tags: derivedTags,
+        pricingType: item.pricing_type,
+        price: getPrimaryPrice(item),
+        currency: item.currency || "USD",
+        featuredImage: null,
+        isFeatured: false,
+        enableReminder: !!item.enable_reminder,
+        isFullDay: !!item.is_full_day,
+        adultPrice: item.adult_price || 0,
+        childPrice: item.child_price || 0,
+        infantPrice: item.infant_price || 0,
+        boatCapacity: item.boat_capacity || 0,
+        jeepCapacity: item.jeep_capacity || 0,
+        raw: item,
+      };
+    });
   }, [items]);
 
+  const allTags = useMemo(() => {
+    const set = new Set();
+    normalizedItems.forEach((item) => {
+      (item.tags || []).forEach((tag) => set.add(tag));
+    });
+    return Array.from(set);
+  }, [normalizedItems]);
+
+  const filtered = useMemo(() => {
+    return normalizedItems.filter((item) => {
+      const matchStatus =
+        statusFilter === "all"
+          ? true
+          : item.status.toLowerCase() === statusFilter.toLowerCase();
+
+      const matchTag =
+        tagFilter === "all"
+          ? true
+          : (item.tags || []).some((t) => t === tagFilter);
+
+      return matchStatus && matchTag;
+    });
+  }, [normalizedItems, statusFilter, tagFilter]);
+
+  const publishedCount = normalizedItems.filter(
+    (item) => item.status === "PUBLISHED"
+  ).length;
+
+  const featuredCount = normalizedItems.filter(
+    (item) => item.isFeatured
+  ).length;
+
+  const boatCount = normalizedItems.filter(
+    (item) => item.pricingType === "BOAT"
+  ).length;
+
+  async function handleSubmit(payload) {
+    const action = editItem
+      ? editExcursion({ id: editItem.id, payload })
+      : addExcursion(payload);
+
+    const toastId = toast.loading(
+      editItem ? "Updating excursion..." : "Saving excursion..."
+    );
+
+    const res = await dispatch(action);
+
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success(
+        editItem ? "Excursion updated successfully" : "Excursion created successfully",
+        { id: toastId }
+      );
+      setModalOpen(false);
+      setEditItem(null);
+      setPage(1);
+      dispatch(fetchExcursions({ search, page: 1, limit }));
+    } else {
+      toast.error(res.payload || "Failed to save excursion", { id: toastId });
+    }
+  }
+
+  const handleDuplicate = async (item) => {
+    const payload = {
+      ...item,
+      name: `${item.name} (Copy)`,
+    };
+
+    delete payload.id;
+
+    const toastId = toast.loading("Duplicating excursion...");
+
+    const res = await dispatch(addExcursion(payload));
+
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success("Excursion duplicated successfully", { id: toastId });
+      setPage(1);
+      dispatch(fetchExcursions({ search, page: 1, limit }));
+    } else {
+      toast.error("Failed to duplicate excursion", { id: toastId });
+    }
+  };
+
   return (
-    <div className="space-y-4 b-main-cont">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Excursion Management</h2>
-            <Button onClick={openCreate}>+ Add Excursion</Button>
-          </div>
-        </CardHeader>
+    <div className="space-y-6">
+      <EntityHeroHeader
+        title="Excursion Manager"
+        description="Manage experiences, pricing models, and bookable travel activities from one place."
+        buttonText="New Excursion"
+        onCreate={() => {
+          setEditItem(null);
+          setModalOpen(true);
+        }}
+      />
 
-        <CardContent className="space-y-4">
-          {/* Toolbar */}
-          <div className="flex flex-col md:flex-row gap-3 md:items-center mb-4">
-            <div className="relative flex-1">
-              <InputGroup className="border-black/20 focus:ring-2 focus:ring-black/20">
-                <InputGroupInput
-                  placeholder="Search name, description, tags..."
-                  value={search}
-                  onChange={(e) =>
-                    dispatch(setExcursionSearch(e.target.value))
-                  }
-                />
-                <InputGroupAddon>
-                  <Search />
-                </InputGroupAddon>
-                <InputGroupAddon align="inline-end">
-                  {filteredItems.length} results
-                </InputGroupAddon>
-              </InputGroup>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Total Excursions" value={total || normalizedItems.length} icon={MapPinned} />
+        <StatCard title="Published" value={publishedCount} icon={Eye} />
+        <StatCard title="Featured" value={featuredCount} icon={Sparkles} />
+        <StatCard title="Boat Tours" value={boatCount} icon={Sailboat} />
+      </div>
+
+      <ManagerToolbar
+        title="Browse excursions"
+        description="Search, filter, and switch between a premium card layout and a clean table view."
+        search={search}
+        onSearchChange={(value) => dispatch(setExcursionSearch(value))}
+        tagFilter={tagFilter}
+        onTagChange={setTagFilter}
+        tags={allTags}
+        extraFilters={[
+          {
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: ["all", "draft", "published"],
+          },
+        ]}
+        limit={limit}
+        onLimitChange={(value) => {
+          setLimit(value);
+          setPage(1);
+        }}
+        view={view}
+        setView={setView}
+        loading={loading}
+        resultCount={total || filtered.length}
+      />
+
+      {view === "card" ? (
+        !loading && filtered.length === 0 ? (
+          <div className="rounded-3xl border border-dashed bg-background py-20">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="mb-4 rounded-2xl bg-muted p-4">
+                <MapPinned className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold">No excursions found</h3>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Try changing your search term or filters, or create a new excursion to get started.
+              </p>
+              <Button
+                className="mt-5"
+                onClick={() => {
+                  setEditItem(null);
+                  setModalOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Excursion
+              </Button>
             </div>
-
-            {/* Excursion Filter */}
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px] border-black/20 focus:ring-2 focus:ring-black/20">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-
-              <SelectContent className="bg-white">
-                <SelectItem value="ALL">All Types</SelectItem>
-
-                {pricingTypes.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
           </div>
+        ) : (
+          <CardGrid>
+            {filtered.map((item) => {
+              const PricingIcon = getPricingIcon(item.pricingType);
 
-          {loading && (
-            <div className="text-sm text-gray-600 mb-3">
-              Loading excursions...
-            </div>
-          )}
-
-          {/* Table */}
-          <div className="overflow-auto max-h-[60vh]" onScroll={handleScroll}>
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-100 sticky top-0 z-10">
-                <tr className="text-left">
-                  <th className="p-3 border-b">Name</th>
-                  <th className="p-3 border-b">Type</th>
-                  {/* <th className="p-3 border-b">Tags</th> */}
-                  <th className="p-3 border-b">Optional</th>
-                  <th className="p-3 border-b">Reminder</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredItems.map((e) => (
-                  <tr
-                    key={`excursion-${e.id}`}
-                    className="border-b hover:bg-gray-50 transition animate-excursion-row"
-                  >
-
-                    <td className="p-3">
-                      <div className="font-medium">{e.name}</div>
-                      <div className="text-xs text-gray-500 line-clamp-1">
-                        {e.description || "-"}
+              return (
+                <div
+                  key={item.id}
+                  className="group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/50">
+                    {item.featuredImage ? (
+                      <img
+                        src={item.featuredImage}
+                        alt={item.title}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <div className="flex flex-col items-center gap-3 text-center">
+                          <div className="rounded-2xl bg-background/70 p-4 backdrop-blur">
+                            <PricingIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                            {getPricingLabel(item.pricingType)}
+                          </span>
+                        </div>
                       </div>
-                    </td>
+                    )}
 
-                    <td className="p-3">{e.pricing_type}</td>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
 
-                    {/* <td className="p-3">
-                      <div className="flex flex-wrap gap-1">
-                        {e.tags ? (
-                          e.tags.split(",").filter(Boolean).map((t) => (
-                            <span
-                              key={`${e.id}-tag-${t.trim()}`}
-                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                            >
-                              {t.trim()}
-                            </span>
-                          ))
-                        ) : (
-                          "-"
-                        )}
+                    <div className="absolute left-3 top-3">
+                      <div className="rounded-2xl bg-background/90 px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur">
+                        {formatCurrency(item.price, item.currency)}
                       </div>
-                    </td> */}
+                    </div>
 
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${e.is_optional_supplement
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-600"
-                          }`}
+                    <div className="absolute right-3 top-3 flex items-center gap-2">
+                      <Badge
+                        variant={item.status === "PUBLISHED" ? "default" : "outline"}
+                        className="backdrop-blur"
                       >
-                        {e.is_optional_supplement ? "Yes" : "No"}
-                      </span>
-                    </td>
+                        {item.status}
+                      </Badge>
 
-                    <td className="p-3">
-                      {e.enable_reminder ? (
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-                          Enabled
-                        </span>
-                      ) : (
-                        "-"
+                      {item.isFeatured && (
+                        <Badge variant="secondary">Featured</Badge>
                       )}
-                    </td>
+                    </div>
 
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${e.is_active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
-                          }`}
-                      >
-                        {e.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                    <div className="absolute bottom-3 right-3 opacity-100 md:opacity-0 md:transition md:group-hover:opacity-100">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="secondary" className="rounded-xl shadow-sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
 
-                    <td className="p-3 flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => openEdit(e)}
-                      >
-                        Edit
-                      </Button>
-                      {/* <Button
-                        className="hidden"
-                        variant="danger"
-                        size="sm"
-                        onClick={() => setConfirmId(e.id)}
-                      >
-                        Disable
-                      </Button> */}
-                    </td>
-                  </tr>
-                ))}
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditItem(item.raw);
+                              setModalOpen(true);
+                            }}
+                          >
+                            Edit
+                          </DropdownMenuItem>
 
-                {!loading && filteredItems.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-6 text-center text-gray-500">
-                      No excursions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-end">
-              <Pagination>
-                <PaginationContent>
+                          <DropdownMenuItem onClick={() => handleDuplicate(item.raw)}>
+                            Duplicate
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
-                  {/* Previous */}
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page > 1) {
-                          dispatch(fetchExcursions({ search, page: page - 1, limit }));
-                        }
-                      }}
-                    />
-                  </PaginationItem>
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 text-white">
+                      <div className="rounded-xl bg-black/25 p-2 backdrop-blur">
+                        <PricingIcon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-white/75">
+                          Pricing Model
+                        </p>
+                        <p className="text-sm font-semibold">
+                          {getPricingLabel(item.pricingType)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                  {/* First page */}
-                  <PaginationItem>
-                    <PaginationLink
-                      href="#"
-                      isActive={page === 1}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        dispatch(fetchExcursions({ search, page: 1, limit }));
+                  <div className="space-y-4 p-5">
+                    <div className="space-y-2">
+                      <h3 className="line-clamp-1 text-lg font-semibold">
+                        {item.title}
+                      </h3>
+
+                      <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {item.description || "No description available for this excursion yet."}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {(item.tags || []).map((tag) => (
+                        <Badge
+                          key={`${item.id}-${tag}`}
+                          variant="secondary"
+                          className="rounded-full"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3">
+                      <div className="rounded-xl bg-background p-3 shadow-sm">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Base Price
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatCurrency(item.price, item.currency)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-background p-3 shadow-sm">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Child Price
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatCurrency(item.childPrice, item.currency)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Clock3 className="h-4 w-4" />
+                        <span>{item.isFullDay ? "Full Day" : "Half Day"}</span>
+                      </div>
+
+                      <div className="font-medium text-foreground">
+                        {item.currency} • {item.pricingType}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardGrid>
+        )
+      ) : (
+        <EntityTable
+          header={
+            <TableRow>
+              <TableHead>Excursion</TableHead>
+              <TableHead>Pricing Type</TableHead>
+              <TableHead>Base Price</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          }
+          body={filtered.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <div className="space-y-1">
+                  <div className="font-medium">{item.title}</div>
+                  <div className="line-clamp-1 text-sm text-muted-foreground">
+                    {item.description || "No description"}
+                  </div>
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <Badge variant="secondary">{getPricingLabel(item.pricingType)}</Badge>
+              </TableCell>
+
+              <TableCell>{formatCurrency(item.price, item.currency)}</TableCell>
+
+              <TableCell>
+                <div className="flex flex-wrap gap-2">
+                  {(item.tags || []).slice(0, 3).map((tag) => (
+                    <Badge key={`${item.id}-${tag}`} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <Badge variant={item.status === "PUBLISHED" ? "default" : "outline"}>
+                  {item.status}
+                </Badge>
+              </TableCell>
+
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditItem(item.raw);
+                        setModalOpen(true);
                       }}
                     >
-                      1
-                    </PaginationLink>
-                  </PaginationItem>
+                      Edit
+                    </DropdownMenuItem>
 
-                  {/* Left Ellipsis */}
-                  {page > 3 && (
-                    <PaginationItem>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )}
+                    <DropdownMenuItem onClick={() => handleDuplicate(item.raw)}>
+                      Duplicate
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        />
+      )}
 
-                  {/* Middle Pages */}
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const p = i + 1;
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={setPage}
+      />
 
-                    if (p === 1 || p === totalPages) return null;
-                    if (p < page - 1 || p > page + 1) return null;
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditItem(null);
+        }}
+      >
+        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col">
 
-                    return (
-                      <PaginationItem key={`page-${p}`}>
-                        <PaginationLink
-                          href="#"
-                          isActive={p === page}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            dispatch(fetchExcursions({ search, page: p, limit }));
-                          }}
-                        >
-                          {p}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-
-                  {/* Right Ellipsis */}
-                  {page < totalPages - 2 && (
-                    <PaginationItem>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )}
-
-                  {/* Last page */}
-                  {totalPages > 1 && (
-                    <PaginationItem>
-                      <PaginationLink
-                        href="#"
-                        isActive={page === totalPages}
-                        onClick={(e) => {
-                          e.preventDefault();
-                            dispatch(setExcursionPage(page + 1))
-                        }}
-                      >
-                        {totalPages}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )}
-
-                  {/* Next */}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page < totalPages) {
-                          dispatch(fetchExcursions({ search, page: page + 1, limit }));
-                        }
-                      }}
-                    />
-                  </PaginationItem>
-
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </CardContent>
-
-      </Card>
-
-      {/* Create / Edit */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent
-          className="
-      max-w-4xl
-      h-[90vh]
-      bg-white
-      p-0
-      flex flex-col
-      overflow-hidden
-    "
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          {/* ===== HEADER (STICKY) ===== */}
-          <DialogHeader
-            className="
-        px-6 py-4 pb-2
-
-        sticky top-0
-        z-20
-        bg-white
-      "
-          >
-            <DialogTitle>
-              {editItem ? "Edit Excursion" : "Add Excursion"}
+          {/* HEADER (STICKY) */}
+          <div className="px-6 py-4 border-b bg-background sticky top-0 z-10">
+            <DialogTitle className="text-lg font-semibold">
+              {editItem ? "Edit Excursion" : "Create Excursion"}
             </DialogTitle>
-          </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Configure excursion details, pricing, and settings
+            </p>
+          </div>
 
-          {/* ===== SCROLL AREA (ONLY THIS SCROLLS) ===== */}
+          {/* BODY (SCROLLABLE) */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <ExcursionForm
               initial={editItem}
               cities={cities}
               onSubmit={handleSubmit}
-              hideActions
+              hideActions // 🔥 important
             />
           </div>
 
-          {/* ===== FOOTER (STICKY) ===== */}
-          <div
-            className="
-        px-6 py-4
-        border-t
-        sticky bottom-0
-        z-20
-        bg-white
-        flex justify-end gap-2
-      "
-          >
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => setModalOpen(false)}
-            >
+          {/* FOOTER (STICKY ACTION BAR) */}
+          <div className="px-6 py-4 border-t bg-background sticky bottom-0 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-
-            <Button
-              type="submit"
-              form="excursion-form"
-            >
-              {editItem ? "Save Changes" : "Add Excursion"}
+            <Button type="submit" form="excursion-form">
+              {editItem ? "Save Changes" : "Create Excursion"}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
 
-
-      {/* Disable */}
-      <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
-        <DialogContent className="max-w-lg bg-white">
-          <DialogHeader>
-            <DialogTitle>Disable Excursion</DialogTitle>
-          </DialogHeader>
-
-          <p className="text-sm text-muted-foreground mb-4">
-            Disable functionality is not available via API yet.
-          </p>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setConfirmId(null)}
-            >
-              Close
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,35 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search } from "lucide-react";
+import { MoreHorizontal, Users, CheckCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 import Button from "../../components/common/Button";
 import InquiryForm from "../../components/forms/InquiryForm";
@@ -42,12 +15,39 @@ import {
   setInquiryLabel,
   addInquiry,
   assignToExecutive,
-  convertToTour
 } from "../../app/slices/inquirySlice";
 
 import { createQuotationFromInquiry } from "../../app/slices/quotationSlice";
 
-import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import {
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
+import { Badge } from "@/components/ui/badge";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+
+/* reusable */
+import EntityHeroHeader from "@/components/common/EntityHeroHeader";
+import StatCard from "@/components/common/StatCard";
+import ManagerToolbar from "@/components/common/ManagerToolbar";
+import CardGrid from "@/components/common/CardGrid";
+import EntityTable from "@/components/common/EntityTable";
+import PaginationBar from "@/components/common/PaginationBar";
 
 export default function InquiryList() {
 
@@ -67,18 +67,34 @@ export default function InquiryList() {
   const [assignModal, setAssignModal] = useState(null);
   const [convertModal, setConvertModal] = useState(null);
 
+  const [view, setView] = useState("table");
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
 
-  /* ================= LOAD ================= */
+  /* LOAD */
 
   useEffect(() => {
-    dispatch(fetchInquiries({
-      q: query,
-      label: labelFilter
-    }));
+    dispatch(fetchInquiries({ q: query, label: labelFilter }));
   }, [dispatch, query, labelFilter]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [query, labelFilter, limit]);
 
-  /* ================= CREATE ================= */
+  /* FILTER */
+
+  const filtered = useMemo(() => items, [items]);
+
+  /* PAGINATION */
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filtered.slice(start, start + limit);
+  }, [filtered, page, limit]);
+
+  /* CREATE */
 
   function handleCreate(form) {
 
@@ -90,7 +106,7 @@ export default function InquiryList() {
       .unwrap()
       .then(() => {
 
-        toast.success("Inquiry created successfully", { id: toastId });
+        toast.success("Inquiry created", { id: toastId });
 
         setModalOpen(false);
 
@@ -101,248 +117,201 @@ export default function InquiryList() {
 
       })
       .catch((err) => {
-
-        toast.error(
-          err?.message || "Failed to create inquiry",
-          { id: toastId }
-        );
-
+        toast.error(err?.message || "Create failed", { id: toastId });
       });
   }
 
-
-  /* ================= FILTER ================= */
-
-  function applyLabelFilter(label) {
-    dispatch(setInquiryLabel(label));
+  function getAssignedName(id) {
+    return users.find((u) => u.id === id)?.name || "-";
   }
-
-
-  /* ================= ASSIGN ================= */
-
-  function startAssign(id) {
-    setAssignModal(id);
-  }
-
-
-  /* ================= UI ================= */
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
 
-      <Card>
+      {/* HERO */}
+      <EntityHeroHeader
+        title="Inquiry Management"
+        description="Manage customer inquiries and conversions."
+        buttonText="New Inquiry"
+        onCreate={() => setModalOpen(true)}
+      />
 
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      {/* STATS */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-            <CardTitle className="text-2xl font-semibold">
-              Inquiry Management
-            </CardTitle>
+        <StatCard
+          title="Total"
+          value={items.length}
+          icon={FileText}
+        />
 
-            <Button onClick={() => setModalOpen(true)}>
-              + New Inquiry
-            </Button>
+        <StatCard
+          title="Assigned"
+          value={items.filter(i => i.status === "ASSIGNED").length}
+          icon={Users}
+        />
 
-          </div>
-        </CardHeader>
+        <StatCard
+          title="Converted"
+          value={items.filter(i => i.status === "CONVERTED").length}
+          icon={CheckCircle}
+        />
 
+      </div>
 
-        <CardContent className="space-y-4">
+      {/* TOOLBAR */}
+      <ManagerToolbar
+        title="Browse inquiries"
+        description="Search and filter inquiries."
 
-          {/* SEARCH + FILTER */}
-          <div className="flex flex-col md:flex-row gap-3 md:items-center">
+        search={query}
+        onSearchChange={(v) => dispatch(setInquiryQuery(v))}
 
-            <div className="relative flex-1">
+        tagFilter={labelFilter || "all"}
+        onTagChange={(v) => dispatch(setInquiryLabel(v === "all" ? "" : v))}
+        tags={["NEW", "ASSIGNED", "CONVERTED", "SPAM"]}
 
-              <InputGroup>
+        limit={limit}
+        onLimitChange={setLimit}
 
-                <InputGroupInput
-                  placeholder="Search name, email or phone..."
-                  value={query}
-                  onChange={(e) =>
-                    dispatch(setInquiryQuery(e.target.value))
-                  }
-                />
+        view={view}
+        setView={setView}
 
-                <InputGroupAddon>
-                  <Search />
-                </InputGroupAddon>
+        loading={loading}
+        resultCount={filtered.length}
+      />
 
-                <InputGroupAddon align="inline-end">
-                  {items.length} results
-                </InputGroupAddon>
+      {/* VIEW */}
 
-              </InputGroup>
+      {view === "card" ? (
+
+        <CardGrid>
+
+          {paginated.map((i) => (
+
+            <div key={i.id} className="border rounded-xl p-4 shadow-sm">
+
+              <div className="font-medium">
+                {i.first_name} {i.last_name}
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                {i.email}
+              </div>
+
+              <div className="mt-2 flex gap-2">
+
+                <Badge>{i.source}</Badge>
+
+                <Badge variant="outline">
+                  {i.status}
+                </Badge>
+
+              </div>
+
+              <div className="mt-3 text-sm">
+                Assigned: {getAssignedName(i.assigned_to)}
+              </div>
 
             </div>
 
+          ))}
 
-            <Select
-              value={labelFilter || "ALL"}
-              onValueChange={(v) =>
-                applyLabelFilter(v === "ALL" ? "" : v)
-              }
-            >
+        </CardGrid>
 
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
+      ) : (
 
-              <SelectContent className="bg-white">
+        <EntityTable
 
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="NEW">New</SelectItem>
-                <SelectItem value="ASSIGNED">Assigned</SelectItem>
-                <SelectItem value="CONVERTED">Converted</SelectItem>
-                <SelectItem value="SPAM">Spam</SelectItem>
+          header={
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Assigned</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          }
 
-              </SelectContent>
+          body={
 
-            </Select>
+            paginated.map((i) => (
 
-          </div>
+              <TableRow key={i.id}>
 
+                <TableCell className="font-medium">
+                  {i.first_name} {i.last_name}
+                </TableCell>
 
-          {loading && (
-            <div className="text-sm text-gray-600">
-              Loading inquiries...
-            </div>
-          )}
+                <TableCell>{i.email || "-"}</TableCell>
 
+                <TableCell>{i.phone || "-"}</TableCell>
 
-          {/* TABLE */}
-          <div className="overflow-auto border rounded-md">
+                <TableCell>
+                  <Badge>{i.source}</Badge>
+                </TableCell>
 
-            <table className="w-full border-collapse text-sm">
+                <TableCell>
+                  <Badge variant="outline">{i.status}</Badge>
+                </TableCell>
 
-              <thead className="bg-gray-100 sticky top-0 z-10">
-                <tr className="text-left">
+                <TableCell>
+                  {getAssignedName(i.assigned_to)}
+                </TableCell>
 
-                  <th className="p-3 border-b">Name</th>
-                  <th className="p-3 border-b">Email</th>
-                  <th className="p-3 border-b">Phone</th>
-                  <th className="p-3 border-b">Source</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b">Assigned</th>
-                  <th className="p-3 border-b w-64">Actions</th>
+                <TableCell className="text-right">
 
-                </tr>
-              </thead>
+                  <DropdownMenu>
 
-              <tbody>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-                {items.map((i) => {
+                    <DropdownMenuContent align="end">
 
-                  const assignedUser =
-                    users.find((u) => u.id === i.assigned_to);
+                      <DropdownMenuItem
+                        onClick={() => setAssignModal(i.id)}
+                      >
+                        Assign
+                      </DropdownMenuItem>
 
-                  return (
+                      <DropdownMenuItem
+                        onClick={() => setConvertModal(i)}
+                      >
+                        Convert
+                      </DropdownMenuItem>
 
-                    <tr
-                      key={i.id}
-                      className="border-b hover:bg-gray-50 transition"
-                    >
+                    </DropdownMenuContent>
 
-                      <td className="p-3 font-medium">
-                        {i.first_name} {i.last_name}
-                      </td>
+                  </DropdownMenu>
 
-                      <td className="p-3">
-                        {i.email || "-"}
-                      </td>
+                </TableCell>
 
-                      <td className="p-3">
-                        {i.phone || "-"}
-                      </td>
+              </TableRow>
 
-                      <td className="p-3">
-                        <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">
-                          {i.source}
-                        </span>
-                      </td>
+            ))
 
+          }
 
-                      <td className="p-3">
+        />
 
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${i.status === "NEW"
-                              ? "bg-blue-100 text-blue-700"
-                              : i.status === "ASSIGNED"
-                                ? "bg-purple-100 text-purple-700"
-                                : i.status === "CONVERTED"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
-                        >
-                          {i.status}
-                        </span>
+      )}
 
-                      </td>
+      {/* PAGINATION */}
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={setPage}
+      />
 
-
-                      <td className="p-3">
-                        {assignedUser
-                          ? assignedUser.name
-                          : "-"}
-                      </td>
-
-
-                      <td className="p-3 flex gap-2">
-
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => startAssign(i.id)}
-                        >
-                          Assign
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setConvertModal(i)}
-                        >
-                          Convert
-                        </Button>
-
-                      </td>
-
-                    </tr>
-
-                  );
-                })}
-
-
-                {items.length === 0 && !loading && (
-
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="text-center text-gray-500 p-6"
-                    >
-                      No inquiries found
-                    </td>
-                  </tr>
-
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </CardContent>
-
-      </Card>
-
-
-      {/* CREATE INQUIRY */}
-
+      {/* CREATE */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-
         <DialogContent className="max-w-xl bg-white">
-
           <DialogHeader>
             <DialogTitle>Create Inquiry</DialogTitle>
           </DialogHeader>
@@ -351,18 +320,12 @@ export default function InquiryList() {
             onSubmit={handleCreate}
             onCancel={() => setModalOpen(false)}
           />
-
         </DialogContent>
-
       </Dialog>
 
-
-      {/* ASSIGN EXECUTIVE */}
-
+      {/* ASSIGN */}
       <Dialog open={!!assignModal} onOpenChange={() => setAssignModal(null)}>
-
         <DialogContent className="max-w-md bg-white">
-
           <DialogHeader>
             <DialogTitle>Assign Executive</DialogTitle>
           </DialogHeader>
@@ -371,114 +334,43 @@ export default function InquiryList() {
             inquiryId={assignModal}
             onSubmit={({ inquiry_id, user_id }) => {
 
-              const toastId = "assign-inquiry";
-
-              toast.loading("Assigning executive...", { id: toastId });
-
-              dispatch(
-                assignToExecutive({
-                  id: inquiry_id,
-                  userId: user_id,
-                })
-              )
-                .unwrap()
-                .then(() => {
-
-                  toast.success("Executive assigned", {
-                    id: toastId
-                  });
-
-                  dispatch(fetchInquiries({
-                    q: query,
-                    label: labelFilter
-                  }));
-
-                })
-                .catch((err) => {
-
-                  toast.error(
-                    err?.message || "Assign failed",
-                    { id: toastId }
-                  );
-
-                });
+              dispatch(assignToExecutive({
+                id: inquiry_id,
+                userId: user_id,
+              }));
 
               setAssignModal(null);
-
             }}
-
             onCancel={() => setAssignModal(null)}
           />
-
         </DialogContent>
-
       </Dialog>
 
-
-      {/* CONVERT INQUIRY */}
-
+      {/* CONVERT */}
       <Dialog open={!!convertModal} onOpenChange={() => setConvertModal(null)}>
-
         <DialogContent className="max-w-lg bg-white">
-
           <DialogHeader>
             <DialogTitle>Create Quotation</DialogTitle>
           </DialogHeader>
 
           {convertModal && (
-
             <ConvertInquiryForm
               inquiry={convertModal}
-
               onSubmit={(payload) => {
-
-                const toastId = "convert-inquiry";
-
-                toast.loading("Creating quotation...", { id: toastId });
 
                 dispatch(createQuotationFromInquiry(payload))
                   .unwrap()
                   .then(() => {
-
-                    toast.success(
-                      "Quotation created successfully",
-                      { id: toastId }
-                    );
-
                     setConvertModal(null);
-
-                    dispatch(fetchInquiries({
-                      q: query,
-                      label: labelFilter
-                    }));
-
                     navigate("/quotations/new");
-
-                  })
-                  .catch((err) => {
-
-                    toast.error(
-                      err?.message || "Failed to create quotation",
-                      { id: toastId }
-                    );
-
-                  })
-                  .finally(() => {
-
-                    // ALWAYS redirect
-                    //navigate("/quotations/new");
-
-                  });;
+                  });
 
               }}
-
               onCancel={() => setConvertModal(null)}
             />
-
           )}
 
         </DialogContent>
-
       </Dialog>
 
     </div>

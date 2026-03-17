@@ -30,7 +30,8 @@ export default function StandardDescriptionForm({
   hideActions = false,
 }) {
   const dispatch = useDispatch();
-  const cities = useSelector((s) => s.cities.items || []);
+  const [cities, setCities] = useState([]);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [stopSelect, setStopSelect] = useState("");
   const [tagSelect, setTagSelect] = useState("");
   const tagOptions = [
@@ -50,7 +51,49 @@ export default function StandardDescriptionForm({
      LOAD CITIES
   ===================== */
   useEffect(() => {
-    dispatch(fetchCities(""));
+    const loadAllCities = async () => {
+      try {
+        setIsLoadingCities(true);
+
+        let page = 1;
+        const limit = 50;
+        let allCities = [];
+        let totalPages = 1;
+
+        do {
+          const res = await dispatch(
+            fetchCities({ search: "", page, limit })
+          ).unwrap();
+
+          const data = res?.data || res;
+
+          if (!data?.items) {
+            throw new Error("Invalid city response");
+          }
+
+          allCities = [...allCities, ...data.items];
+          totalPages = data.total_pages || 1;
+
+          page++;
+        } while (page <= totalPages);
+
+        const formatted = allCities.map((c) => ({
+          id: String(c.id),
+          city: c.city,
+          is_stop: c.is_stop,
+          is_destination: c.is_destination,
+        }));
+
+        setCities(formatted);
+      } catch (err) {
+        console.error("Failed to load cities:", err);
+        toast.error("Failed to load cities");
+      } finally {
+        setIsLoadingCities(false);
+      }
+    };
+
+    loadAllCities();
   }, [dispatch]);
 
   useEffect(() => {
@@ -58,7 +101,7 @@ export default function StandardDescriptionForm({
     dispatch(fetchExcursions({ search: excursionSearch }));
   }, [excursionSearch]);
 
-
+  console.log("cities", cities);
   /* =====================
      FORM STATE
   ===================== */
@@ -450,7 +493,7 @@ export default function StandardDescriptionForm({
             onChange={(v) => updateField("start_city_id", v)}
             options={[
               { value: "", label: "Select city" },
-              ...destinationCities.map((c) => ({
+              ...cities.map((c) => ({
                 value: String(c.id),
                 label: c.city,
               })),
@@ -464,7 +507,7 @@ export default function StandardDescriptionForm({
             onChange={(v) => updateField("end_city_id", v)}
             options={[
               { value: "", label: "Select city" },
-              ...destinationCities.map((c) => ({
+              ...cities.map((c) => ({
                 value: String(c.id),
                 label: c.city,
               })),

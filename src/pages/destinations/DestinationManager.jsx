@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { MapPinned, CheckCircle, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
+import { Button } from "../../components/ui/button";
 import Modal from "../../components/common/Modal";
 import CityForm from "../../components/forms/CityForm";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "../../components/ui/card";
 
 import {
   fetchCities,
@@ -30,30 +25,74 @@ import {
 } from "@/components/ui/dialog";
 
 import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
-import { Loader, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
+/* reusable */
+import EntityHeroHeader from "@/components/common/EntityHeroHeader";
+import StatCard from "@/components/common/StatCard";
+import ManagerToolbar from "@/components/common/ManagerToolbar";
+import CardGrid from "@/components/common/CardGrid";
+import EntityTable from "@/components/common/EntityTable";
+import PaginationBar from "@/components/common/PaginationBar";
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
-  const { items, loading, search, page, limit } = useSelector(
-    (s) => s.cities
+
+  const { items = [], loading, search = "" } = useSelector(
+    (s) => s.cities || {}
   );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
 
+  const [view, setView] = useState("table");
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
+
+  /* ================= LOAD ================= */
+
   useEffect(() => {
-    dispatch(fetchCities({ search, page, limit }))
-      .unwrap()
-      .catch(() => {
-        toast.error("Failed to load cities");
-      });
-  }, [dispatch, search, page, limit]);
+    dispatch(fetchCities({ search, page: 1, limit })).catch(() =>
+      toast.error("Failed to load cities")
+    );
+  }, [dispatch, search, limit]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, limit]);
+
+  /* ================= FILTER ================= */
+
+  const filtered = useMemo(() => {
+    return items.filter((c) =>
+      c.city?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [items, search]);
+
+  /* ================= PAGINATION ================= */
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filtered.slice(start, start + limit);
+  }, [filtered, page, limit]);
+
+  /* ================= ACTIONS ================= */
 
   function openCreate() {
     setEditItem(null);
@@ -65,9 +104,6 @@ export default function DestinationManager() {
     setModalOpen(true);
   }
 
-  /* =========================
-     ADD / EDIT CITY
-  ========================== */
   async function handleSubmit(form) {
     const toastId = "city-save";
 
@@ -79,203 +115,279 @@ export default function DestinationManager() {
 
       if (editItem) {
         await dispatch(
-          editCity({
-            id: editItem.id,
-            payload: form,
-          })
+          editCity({ id: editItem.id, payload: form })
         ).unwrap();
-
       } else {
         await dispatch(addCity(form)).unwrap();
       }
-      dispatch(fetchCities({ search, page, limit }))
-        .unwrap()
-        .catch(() => {
-          toast.error("Failed to load cities");
-        });
+
+      dispatch(fetchCities({ search, page: 1, limit }));
+
       toast.success(
-        editItem
-          ? "City updated successfully"
-          : "City added successfully",
+        editItem ? "City updated" : "City added",
         { id: toastId }
       );
 
       setModalOpen(false);
     } catch (err) {
-      console.log(err.message);
-      toast.error(
-        err?.message || "Failed to save city. Please try again.",
-        { id: toastId }
-      );
+      toast.error("Failed to save city", { id: toastId });
     }
   }
 
-  /* =========================
-     DEACTIVATE CITY
-  ========================== */
   async function handleDeactivate(id) {
-    const toastId = "city-deactivate";
+    const toastId = "city-disable";
 
     try {
       toast.loading("Disabling city...", { id: toastId });
 
       await dispatch(deactivate(id)).unwrap();
 
-      toast.success("City disabled successfully", { id: toastId });
+      toast.success("City disabled", { id: toastId });
+
       setConfirmId(null);
-    } catch (err) {
-      toast.error(
-        err?.message || "Failed to disable city",
-        { id: toastId }
-      );
+    } catch {
+      toast.error("Failed to disable city", { id: toastId });
     }
   }
 
+  /* ================= UI ================= */
+
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Destinations & Stops</h2>
-            <Button onClick={openCreate}>+ Add City</Button>
-          </div>
-          <div className="flex gap-3 mb-3 items-end">
-            {/* <Input
-            label="Search"
-            value={search}
-            onChange={(v) => dispatch(setCitySearch(v))}
-            placeholder="City or region..."
-          /> */}
+    <div className="space-y-6">
 
-            <InputGroup>
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder="Search city name..."
-                value={search}
-                onChange={(e) => dispatch(setCitySearch(e.target.value))}
-              />
-              <InputGroupAddon align="inline-end">
-                {items.length} results
-              </InputGroupAddon>
-            </InputGroup>
+      {/* HERO */}
+      <EntityHeroHeader
+        title="Destinations & Stops"
+        description="Manage cities, destinations and stops."
+        buttonText="Add City"
+        onCreate={openCreate}
+      />
 
-            {/* <Button
-            variant="outline"
-            onClick={() =>
-              dispatch(
-                fetchCities({
-                  search,
-                  page: 1,
-                  limit,
-                })
-              )
-            }
-          >
-            Refresh
-          </Button> */}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-auto rounded-md">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-100 sticky top-0 z-10">
-                <tr className="text-left">
-                  <th className="p-3 border-b">City</th>
-                  <th className="p-3 border-b">Code</th>
-                  <th className="p-3 border-b">Country</th>
-                  <th className="p-3 border-b">Type</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b">Actions</th>
-                </tr>
-              </thead>
+      {/* STATS */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-              <tbody>
-                {items.filter(Boolean).map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-b hover:bg-gray-50 transition"
+        <StatCard
+          title="Total Cities"
+          value={items.length}
+          icon={MapPinned}
+        />
+
+        <StatCard
+          title="Active"
+          value={items.filter((c) => c.status).length}
+          icon={CheckCircle}
+        />
+
+        <StatCard
+          title="Destinations"
+          value={items.filter((c) => c.isDestination).length}
+          icon={MapPinned}
+        />
+
+      </div>
+
+      {/* TOOLBAR */}
+      <ManagerToolbar
+        title="Browse Cities"
+        description="Search and manage cities."
+
+        search={search}
+        onSearchChange={(v) => dispatch(setCitySearch(v))}
+
+        limit={limit}
+        onLimitChange={setLimit}
+
+        view={view}
+        setView={setView}
+
+        loading={loading}
+        resultCount={filtered.length}
+      />
+
+      {/* VIEW SWITCH */}
+
+      {view === "card" ? (
+        <CardGrid>
+          {paginated.map((c, index) => (
+            <div
+              key={c.id}
+              className={cn(
+                "group rounded-3xl border bg-background p-5 shadow-sm transition-all duration-300",
+                "hover:-translate-y-1 hover:shadow-lg",
+                "animate-in fade-in-0 slide-in-from-bottom-2"
+              )}
+              style={{ animationDelay: `${index * 40}ms` }}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold tracking-tight">
+                    {c.city}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {c.country}
+                  </p>
+                </div>
+
+                {/* Status */}
+                <Badge
+                  className={cn(
+                    "rounded-full",
+                    c.status
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-600"
+                  )}
+                >
+                  {c.status ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+
+              {/* Tags */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {c.isDestination === 1 && (
+                  <Badge className="rounded-full bg-blue-100 text-blue-700">
+                    🌍 Destination
+                  </Badge>
+                )}
+
+                {c.isStop === 1 && (
+                  <Badge
+                    variant="secondary"
+                    className="rounded-full"
                   >
-                    <td className="p-3">
-                      <div className="font-medium">{c.city}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="font-medium">{c.code}</div>
-                    </td>
+                    📍 Stop
+                  </Badge>
+                )}
 
-                    <td className="p-3">{c.country}</td>
+                {c.isDestination !== 1 && c.isStop !== 1 && (
+                  <span className="text-xs text-muted-foreground">
+                    No roles assigned
+                  </span>
+                )}
+              </div>
 
-                    <td className="p-3">
-                      <div className="flex flex-wrap gap-1">
-                        {c.isDestination === 1 && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                            Destination
-                          </span>
-                        )}
-                        {c.isStop === 1 && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
-                            Stop
-                          </span>
-                        )}
-                      </div>
-                    </td>
+              {/* Footer */}
+              <div className="mt-5 flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">
+                  ID: {c.id}
+                </span>
 
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs capitalize ${c.status
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
-                          }`}
-                      >
-                        {c.status ? "active" : "inactive"}
-                      </span>
-                    </td>
+                <Button
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => openEdit(c)}
+                >
+                  Edit
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardGrid>
 
-                    <td className="p-3 flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
+      ) : (
+
+        <EntityTable
+
+          header={
+            <TableRow>
+              <TableHead>City</TableHead>
+              <TableHead>Code</TableHead>
+              <TableHead>Country</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">
+                Actions
+              </TableHead>
+            </TableRow>
+          }
+
+          body={
+
+            loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-10">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : paginated.map((c) => (
+
+              <TableRow key={c.id}>
+
+                <TableCell className="font-medium">
+                  {c.city}
+                </TableCell>
+
+                <TableCell>{c.code}</TableCell>
+
+                <TableCell>{c.country}</TableCell>
+
+                <TableCell>
+                  {c.isDestination && <Badge>Destination</Badge>}
+                  {c.isStop && <Badge variant="secondary">Stop</Badge>}
+                </TableCell>
+
+                <TableCell>
+                  <Badge variant={c.status ? "default" : "outline"}>
+                    {c.status ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+
+                <TableCell className="text-right">
+
+                  <DropdownMenu>
+
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+
+                      <DropdownMenuItem
                         onClick={() => openEdit(c)}
                       >
                         Edit
-                      </Button>
-                      {/* <Button
-                        variant="danger"
-                        size="sm"
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        className="text-red-600"
                         onClick={() => setConfirmId(c.id)}
                       >
                         Disable
-                      </Button> */}
-                    </td>
-                  </tr>
-                ))}
+                      </DropdownMenuItem>
 
-                {loading == false && items.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-500">
-                      No cities found.
-                    </td>
-                  </tr>
-                )}
-                {loading == true && (
-                  <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-500">
-                      Loading <Loader className="animate-spin mx-auto" />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                    </DropdownMenuContent>
 
-      {/* Create / Edit City */}
+                  </DropdownMenu>
+
+                </TableCell>
+
+              </TableRow>
+
+            ))
+
+          }
+
+        />
+
+      )}
+
+      {/* PAGINATION */}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={setPage}
+      />
+
+      {/* MODAL */}
+
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-xl bg-white"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogContent className="max-w-xl bg-white">
           <DialogHeader>
             <DialogTitle>
               {editItem ? "Edit City" : "Add City"}
@@ -290,7 +402,8 @@ export default function DestinationManager() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Deactivate */}
+      {/* CONFIRM */}
+
       <Modal
         open={!!confirmId}
         onClose={() => setConfirmId(null)}
@@ -299,10 +412,12 @@ export default function DestinationManager() {
         <p className="mb-4">
           Are you sure you want to disable this city?
         </p>
+
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setConfirmId(null)}>
             Cancel
           </Button>
+
           <Button
             variant="danger"
             onClick={() => handleDeactivate(confirmId)}
@@ -311,6 +426,7 @@ export default function DestinationManager() {
           </Button>
         </div>
       </Modal>
+
     </div>
   );
 }

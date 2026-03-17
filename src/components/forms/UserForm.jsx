@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
-import Input from "../common/Input";
-import Button from "../common/Button";
-import { ROLES, USER_STATUSES } from "../../utils/constants";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+
+import { ROLES, USER_STATUSES } from "../../utils/constants";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
+import { Label } from "@/components/ui/label";
 
 export default function UserForm({
   initial,
@@ -30,21 +40,16 @@ export default function UserForm({
   function validate() {
     const e = {};
 
-    if (!name.trim())
-      e.name = "Display name is required";
+    if (!name.trim()) e.name = "Display name is required";
     else if (name.trim().length < 3)
       e.name = "Display name must be at least 3 characters";
 
-    if (!email.trim())
-      e.email = "Email is required";
+    if (!email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       e.email = "Invalid email address";
 
-    if (!role)
-      e.role = "Role is required";
-
-    if (!status)
-      e.status = "Status is required";
+    if (!role) e.role = "Role is required";
+    if (!status) e.status = "Status is required";
 
     setErrors(e);
 
@@ -70,77 +75,85 @@ export default function UserForm({
     });
   }
 
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* Display Name */}
-      <Input
-        label="Display Name"
-        value={name}
-        onChange={setName}
-        placeholder="Jane Doe"
-        error={errors.name}
-      />
+      <div className="space-y-2">
+        <Label>Display Name</Label>
+        <Input
+          placeholder="Jane Doe"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className={errors.name ? "border-red-500" : ""}
+        />
+        {errors.name && (
+          <p className="text-xs text-red-500">{errors.name}</p>
+        )}
+      </div>
 
       {/* Email */}
-      <Input
-        label="Email"
-        type="email"
-        value={email}
-        onChange={setEmail}
-        placeholder="jane@company.com"
-        error={errors.email}
-      />
+      <div className="space-y-2">
+        <Label>Email</Label>
+        <Input
+          type="email"
+          placeholder="jane@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={errors.email ? "border-red-500" : ""}
+        />
+        {errors.email && (
+          <p className="text-xs text-red-500">{errors.email}</p>
+        )}
+      </div>
 
       {/* Role */}
-      <div>
-        <label className="block mb-1 text-xs font-medium">
-          Role
-        </label>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className={`w-full border rounded px-2 py-1.5 text-sm ${errors.role ? "border-red-500" : ""
-            }`}
-        >
-          <option value="" disabled>
-            Select role
-          </option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2">
+        <Label>Role</Label>
+        <Select value={role} onValueChange={setRole}>
+          <SelectTrigger className={errors.role ? "border-red-500" : ""}>
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+
+          <SelectContent>
+            {ROLES.map((r) => (
+              <SelectItem key={r} value={r}>
+                {r}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {errors.role && (
-          <p className="text-xs text-red-500 mt-1">
-            {errors.role}
-          </p>
+          <p className="text-xs text-red-500">{errors.role}</p>
         )}
       </div>
 
       {/* Status */}
-      <div>
-        <label className="block mb-1 text-xs font-medium">
-          Status
-        </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className={`w-full border rounded px-2 py-1.5 text-sm ${errors.status ? "border-red-500" : ""
-            }`}
-        >
-          {USER_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2">
+        <Label>Status</Label>
+
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className={errors.status ? "border-red-500" : ""}>
+            <SelectValue />
+          </SelectTrigger>
+
+          <SelectContent>
+            {USER_STATUSES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {errors.status && (
+          <p className="text-xs text-red-500">{errors.status}</p>
+        )}
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-3 border-t">
+      <div className="flex justify-end gap-3 border-t pt-5">
         <Button
           type="button"
           variant="outline"
@@ -149,12 +162,13 @@ export default function UserForm({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={submitting}>
+
+        <Button disabled={submitting}>
           {submitting
             ? "Please wait..."
             : isEdit
-              ? "Save Changes"
-              : "Create User"}
+            ? "Save Changes"
+            : "Create User"}
         </Button>
       </div>
     </form>

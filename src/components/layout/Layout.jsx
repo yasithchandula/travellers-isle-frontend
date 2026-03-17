@@ -6,7 +6,7 @@ export default function Layout({ children }) {
     <div className="flex">
       <Sidebar />
       <div className="w-full">
-        <Topbar />
+        {/* <Topbar /> */}
         <div className="pt-4 p-6">
           {children}
         </div>

@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, Check, Trash2 } from "lucide-react";
-
-import Button from "../../components/common/Button";
+import {
+  MapPinned,
+  CheckCircle,
+  FileText,
+  MoreHorizontal,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import StandardDescriptionForm from "@/components/forms/StandardDescriptionForm";
 
 import {
@@ -13,19 +17,6 @@ import {
   approveStandardDescriptionById,
   setStandardDescriptionSearch,
 } from "../../app/slices/standardDescriptionSlice";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
 
 import {
   Dialog,
@@ -45,9 +36,39 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+import {
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
+import { Badge } from "@/components/ui/badge";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+
+/* reusable */
+
+import EntityHeroHeader from "@/components/common/EntityHeroHeader";
+import StatCard from "@/components/common/StatCard";
+import ManagerToolbar from "@/components/common/ManagerToolbar";
+import CardGrid from "@/components/common/CardGrid";
+import EntityTable from "@/components/common/EntityTable";
+import PaginationBar from "@/components/common/PaginationBar";
+import { buildImageUrl } from "../../utils/urls";
+
 
 export default function StandardDescriptionManager() {
+
   const dispatch = useDispatch();
 
   const {
@@ -63,24 +84,48 @@ export default function StandardDescriptionManager() {
   const [deleteItem, setDeleteItem] = useState(null);
   const [approveItem, setApproveItem] = useState(null);
 
+  const [view, setView] = useState("table");
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     dispatch(fetchStandardDescriptions({ search, page: 1, limit }));
   }, [dispatch, search, limit]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, limit]);
+
+  /* filter */
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+
     return items.filter(
       (d) =>
         d.start_city?.name?.toLowerCase().includes(q) ||
         d.end_city?.name?.toLowerCase().includes(q) ||
         d.title?.toLowerCase().includes(q)
     );
+
   }, [items, search]);
 
+  /* pagination */
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / limit)
+  );
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filtered.slice(start, start + limit);
+  }, [filtered, page, limit]);
+
+  /* submit */
 
   async function handleSubmit(payload) {
+
     const action = editItem
       ? editStandardDescription({ id: editItem.id, payload })
       : addStandardDescription(payload);
@@ -92,6 +137,7 @@ export default function StandardDescriptionManager() {
     const res = await dispatch(action);
 
     if (res.meta.requestStatus === "fulfilled") {
+
       toast.success(
         editItem
           ? "Standard description updated"
@@ -101,14 +147,16 @@ export default function StandardDescriptionManager() {
 
       setModalOpen(false);
       setEditItem(null);
+
       dispatch(fetchStandardDescriptions({ search, page: 1, limit }));
+
     } else {
       toast.error(res.payload || "Something went wrong", { id: toastId });
     }
   }
 
-
   async function confirmDelete() {
+
     const toastId = toast.loading("Deleting standard description...");
 
     const res = await dispatch(removeStandardDescription(deleteItem.id));
@@ -122,8 +170,8 @@ export default function StandardDescriptionManager() {
     setDeleteItem(null);
   }
 
-
   async function confirmApprove() {
+
     const toastId = toast.loading("Approving standard description...");
 
     const res = await dispatch(
@@ -140,220 +188,460 @@ export default function StandardDescriptionManager() {
   }
 
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center mb-6">
-            <CardTitle className="text-2xl font-semibold">
-              Standard Descriptions
-            </CardTitle>
-            <Button
-              onClick={() => {
-                setEditItem(null);
-                setModalOpen(true);
-              }}
-            >
-              + New Description
-            </Button>
-          </div>
-        </CardHeader>
+    <div className="space-y-6">
 
-        <CardContent>
-          {/* SEARCH */}
-          <div className="flex gap-3 mb-5">
-            <InputGroup>
-              <InputGroupInput
-                placeholder="Search by route or title..."
-                value={search}
-                onChange={(e) =>
-                  dispatch(setStandardDescriptionSearch(e.target.value))
-                }
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupAddon align="inline-end">
-                {filtered.length} Results
-              </InputGroupAddon>
-            </InputGroup>
-          </div>
+      {/* HERO */}
 
-          {/* TABLE */}
-          <div className="overflow-auto rounded-md">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-100 sticky top-0">
-                <tr>
-                  <th className="p-3 border-b">Route</th>
-                  <th className="p-3 border-b">Stops</th>
-                  <th className="p-3 border-b">Tags</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b w-40">Actions</th>
-                </tr>
-              </thead>
+      <EntityHeroHeader
+        title="Standard Descriptions"
+        description="Manage itinerary route descriptions."
+        buttonText="New Description"
+        onCreate={() => {
+          setEditItem(null);
+          setModalOpen(true);
+        }}
+      />
 
-              <tbody>
-                {filtered.map((d) => (
-                  <tr key={d.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="font-medium">
-                        {d.start_city?.name} → {d.end_city?.name}
-                      </div>
-                      {d.title && (
-                        <div className="text-xs text-gray-500">
-                          {d.title}
-                        </div>
+      {/* STATS */}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+        <StatCard
+          title="Total"
+          value={items.length}
+          icon={FileText}
+        />
+
+        <StatCard
+          title="Approved"
+          value={items.filter((i) => i.status === "APPROVED").length}
+          icon={CheckCircle}
+        />
+
+        <StatCard
+          title="Routes"
+          value={items.length}
+          icon={MapPinned}
+        />
+
+      </div>
+
+      {/* TOOLBAR */}
+
+      <ManagerToolbar
+        title="Browse descriptions"
+        description="Search and manage route descriptions."
+
+        search={search}
+        onSearchChange={(v) =>
+          dispatch(setStandardDescriptionSearch(v))
+        }
+
+        limit={limit}
+        onLimitChange={setLimit}
+
+        view={view}
+        setView={setView}
+
+        loading={loading}
+        resultCount={filtered.length}
+      />
+
+      {/* VIEW */}
+
+      {view === "card" ? (
+        <CardGrid>
+          {paginated.map((d, index) => {
+            const image =
+              d.featured_image || d.gallery?.[0] || "/placeholder.jpg";
+
+            return (
+              <Card
+                key={d.id}
+                className={cn(
+                  "group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300",
+                  "hover:-translate-y-1 hover:shadow-xl",
+                  "animate-in fade-in-0 slide-in-from-bottom-2"
+                )}
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
+                {/* Image */}
+                <div className="relative h-40 w-full overflow-hidden">
+                  <img
+                    src={buildImageUrl(image)}
+                    alt={d.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+                  {/* Route on image */}
+                  <div className="absolute bottom-3 left-4 right-4 text-white">
+                    <h3 className="text-sm font-semibold">
+                      {d.start_city?.name || "Start"} →{" "}
+                      {d.end_city?.name || "End"}
+                    </h3>
+
+                    {d.title && (
+                      <p className="text-xs opacity-80 line-clamp-1">
+                        {d.title}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Status */}
+                  <div className="absolute top-3 right-3">
+                    <Badge
+                      className={cn(
+                        "rounded-full px-2 py-1 text-xs",
+                        d.status === "DRAFT"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
                       )}
-                    </td>
+                    >
+                      {d.status}
+                    </Badge>
+                  </div>
+                </div>
 
-                    <td className="p-3">
-                      {d.stops?.length
-                        ? d.stops.map((s, i) => (
-                          <span
-                            key={i}
-                            className="mr-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
-                          >
-                            {s.name || s}
-                          </span>
-                        ))
-                        : "-"}
-                    </td>
+                {/* Content */}
+                <CardContent className="space-y-4 p-5">
+                  {/* Distance + Time */}
+                  {(d.mileage || d.travel_time_minutes) && (
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      {d.mileage ? <span>🚗 {d.mileage} km</span> : null}
+                      {d.travel_time_minutes ? (
+                        <span>⏱ {d.travel_time_minutes} mins</span>
+                      ) : null}
+                    </div>
+                  )}
 
-                    <td className="p-3">
-                      {d.tags?.length
-                        ? d.tags.map((t, i) => (
-                          <span
-                            key={i}
-                            className="mr-1 px-2 py-1 bg-gray-200 rounded text-xs"
-                          >
-                            {t}
-                          </span>
-                        ))
-                        : "-"}
-                    </td>
+                  {/* Stops */}
+                  {d.stops?.length > 0 && (
+                    <div className="text-xs text-muted-foreground line-clamp-1">
+                      Stops:{" "}
+                      {d.stops.map((s) => s.name).join(" • ")}
+                    </div>
+                  )}
 
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${d.status === "DRAFT"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                          }`}
-                      >
-                        {d.status}
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {d.tags?.length ? (
+                      d.tags.slice(0, 3).map((t, i) => (
+                        <Badge
+                          key={i}
+                          variant="secondary"
+                          className="rounded-full text-xs"
+                        >
+                          #{t}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        No tags
                       </span>
-                    </td>
+                    )}
+                  </div>
 
-                    <td className="p-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
+                  {/* Excursions */}
+                  {d.excursions?.length > 0 && (
+                    <div className="text-xs text-muted-foreground line-clamp-1">
+                      ✨ {d.excursions[0].name}
+                      {d.excursions.length > 1 &&
+                        ` +${d.excursions.length - 1} more`}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      className="flex-1 rounded-xl"
+                      onClick={() => {
+                        setEditItem(d);
+                        setModalOpen(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={() => {
+                        setViewItem(d); // not implemnted yet - ******
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </CardGrid>
+
+      ) : (
+
+        <EntityTable
+
+          header={
+            <TableRow>
+              <TableHead>Route</TableHead>
+              <TableHead>Stops</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">
+                Actions
+              </TableHead>
+            </TableRow>
+          }
+
+          body={
+
+            paginated.map((d) => (
+
+              <TableRow key={d.id}>
+
+                <TableCell>
+
+                  <div className="font-medium">
+                    {d.start_city?.name} → {d.end_city?.name}
+                  </div>
+
+                  {d.title && (
+                    <div className="text-xs text-muted-foreground">
+                      {d.title}
+                    </div>
+                  )}
+
+                </TableCell>
+
+                <TableCell>
+
+                  {d.stops?.length
+                    ? d.stops.map((s, i) => (
+                      <Badge key={i} variant="secondary">
+                        {s.name || s}
+                      </Badge>
+                    ))
+                    : "-"}
+
+                </TableCell>
+
+                <TableCell>
+
+                  {d.tags?.length
+                    ? d.tags.map((t, i) => (
+                      <Badge key={i} variant="outline">
+                        {t}
+                      </Badge>
+                    ))
+                    : "-"}
+
+                </TableCell>
+
+                <TableCell>
+
+                  <Badge
+                    variant={
+                      d.status === "DRAFT"
+                        ? "outline"
+                        : "default"
+                    }
+                  >
+                    {d.status}
+                  </Badge>
+
+                </TableCell>
+
+                <TableCell className="text-right">
+
+                  <DropdownMenu>
+
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+
+                      <DropdownMenuItem
                         onClick={() => {
                           setEditItem(d);
                           setModalOpen(true);
                         }}
                       >
                         Edit
-                      </Button>
+                      </DropdownMenuItem>
 
                       {d.status === "DRAFT" && (
-                        <Button
-                          size="sm"
-                          variant="primary"
+                        <DropdownMenuItem
                           onClick={() => setApproveItem(d)}
                         >
                           Approve
-                        </Button>
+                        </DropdownMenuItem>
                       )}
 
-                      <Button
-                        size="sm"
-                        variant="danger"
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        className="text-red-600"
                         onClick={() => setDeleteItem(d)}
                       >
                         Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </DropdownMenuItem>
 
-                {!loading && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-6 text-center text-gray-500">
-                      No standard descriptions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                    </DropdownMenuContent>
+
+                  </DropdownMenu>
+
+                </TableCell>
+
+              </TableRow>
+
+            ))
+
+          }
+
+        />
+
+      )}
+
+      {/* PAGINATION */}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={setPage}
+      />
 
       {/* FORM MODAL */}
+
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col bg-white"
+
+        <DialogContent
+          className="max-w-6xl h-[90vh] p-0 flex flex-col bg-white"
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}>
+        >
+
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>
-              {editItem ? "Edit Standard Description" : "Create Standard Description"}
+              {editItem
+                ? "Edit Standard Description"
+                : "Create Standard Description"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4">
+
             <StandardDescriptionForm
               key={editItem?.id || "new"}
               initial={editItem}
               onSubmit={handleSubmit}
               hideActions
             />
+
           </div>
 
           <div className="px-6 py-4 border-t flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+
+            <Button
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" form="standard-description-form">
+
+            <Button
+              type="submit"
+              form="standard-description-form"
+            >
               {editItem ? "Save Changes" : "Add Description"}
             </Button>
+
           </div>
+
         </DialogContent>
+
       </Dialog>
 
-      {/* DELETE MODAL */}
-      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
+      {/* DELETE */}
+
+      <AlertDialog
+        open={!!deleteItem}
+        onOpenChange={() => setDeleteItem(null)}
+      >
+
         <AlertDialogContent className="bg-white">
+
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Description?</AlertDialogTitle>
+
+            <AlertDialogTitle>
+              Delete Description?
+            </AlertDialogTitle>
+
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>
+
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+            <AlertDialogCancel>
+              Cancel
+            </AlertDialogCancel>
+
             <AlertDialogAction onClick={confirmDelete}>
               Delete
             </AlertDialogAction>
+
           </AlertDialogFooter>
+
         </AlertDialogContent>
+
       </AlertDialog>
 
-      {/* APPROVE MODAL */}
-      <AlertDialog open={!!approveItem} onOpenChange={() => setApproveItem(null)}>
+      {/* APPROVE */}
+
+      <AlertDialog
+        open={!!approveItem}
+        onOpenChange={() => setApproveItem(null)}
+      >
+
         <AlertDialogContent className="bg-white">
+
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Description?</AlertDialogTitle>
+
+            <AlertDialogTitle>
+              Approve Description?
+            </AlertDialogTitle>
+
             <AlertDialogDescription>
-              This will make the description available for use.
+              This will make it available for use.
             </AlertDialogDescription>
+
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+            <AlertDialogCancel>
+              Cancel
+            </AlertDialogCancel>
+
             <AlertDialogAction onClick={confirmApprove}>
               Approve
             </AlertDialogAction>
+
           </AlertDialogFooter>
+
         </AlertDialogContent>
+
       </AlertDialog>
+
     </div>
   );
 }

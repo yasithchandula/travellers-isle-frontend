@@ -1,4 +1,4 @@
-:root {
+/* :root {
   --primary: #1A73E8;
   --primary-dark: #1558b0;
   --secondary: #FFB400;
@@ -15,9 +15,9 @@
 }
 
 /* Utility */
-.ts-card {
+/* .ts-card {
   background: #fff;
   border-radius: var(--radius);
   padding: 1rem;
   box-shadow: var(--shadow);
-}
+} */ 

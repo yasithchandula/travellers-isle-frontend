@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  UserPlus,
-  Search,
-  Loader2,
-  MoreHorizontalIcon,
-} from "lucide-react";
-
+import { Loader2, MoreHorizontal, Users, Shield, Briefcase } from "lucide-react";
 import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
 
 import UserForm from "../../components/forms/UserForm";
 
@@ -21,36 +13,13 @@ import {
   removeUser,
 } from "../../app/slices/userSlice";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-
-import {
-  Table,
-  TableBody,
+  TableRow,
   TableCell,
   TableHead,
-  TableHeader,
-  TableRow,
 } from "@/components/ui/table";
 
 import {
@@ -62,46 +31,58 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "../../components/ui/card";
+
+/* REUSABLE COMPONENTS */
+
+import EntityHeroHeader from "@/components/common/EntityHeroHeader";
+import ManagerToolbar from "@/components/common/ManagerToolbar";
+import EntityTable from "@/components/common/EntityTable";
+import PaginationBar from "@/components/common/PaginationBar";
+import CardGrid from "@/components/common/CardGrid";
+import StatCard from "@/components/common/StatCard";
+
+/* ------------------------------------------------ */
 
 export default function UserManagement() {
   const dispatch = useDispatch();
-  const { items, loading, error, query } = useSelector((s) => s.users);
+
+  const { items = [], loading, error, query } = useSelector((s) => s.users);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
-  const [roleFilter, setRoleFilter] = useState("ALL");
   const [createSuccess, setCreateSuccess] = useState(null);
 
+  const [tagFilter, setTagFilter] = useState("all");
+  const [view, setView] = useState("table");
+  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
-  const limit = 10;
+
+  const tags = ["ADMIN", "FRONT_DESK", "EXECUTIVE"];
 
   useEffect(() => {
-    dispatch(fetchUsers({ page: 1, limit: 10 }));
+    dispatch(fetchUsers({ page: 1, limit }));
   }, [dispatch]);
 
-  /* ------------------ FILTER ------------------ */
+  /* ---------------- FILTER ---------------- */
 
   const visibleUsers = useMemo(() => {
     let list = items;
 
     if (query) {
       const q = query.toLowerCase();
+
       list = list.filter(
         (u) =>
           u.display_name?.toLowerCase().includes(q) ||
@@ -110,23 +91,27 @@ export default function UserManagement() {
       );
     }
 
-    if (roleFilter !== "ALL") {
-      list = list.filter((u) => u.role === roleFilter);
+    if (tagFilter !== "all") {
+      list = list.filter((u) => u.role === tagFilter);
     }
 
     return list;
-  }, [items, query, roleFilter]);
+  }, [items, query, tagFilter]);
 
-  /* ------------------ PAGINATION ------------------ */
+  useEffect(() => {
+    setPage(1);
+  }, [query, tagFilter]);
 
-  const totalPages = Math.ceil(visibleUsers.length / limit);
+  /* ---------------- PAGINATION ---------------- */
+
+  const totalPages = Math.max(1, Math.ceil(visibleUsers.length / limit));
 
   const paginatedUsers = useMemo(() => {
     const start = (page - 1) * limit;
     return visibleUsers.slice(start, start + limit);
-  }, [visibleUsers, page]);
+  }, [visibleUsers, page, limit]);
 
-  /* ------------------ MODAL ------------------ */
+  /* ---------------- MODALS ---------------- */
 
   function startCreate() {
     setEditing(null);
@@ -143,7 +128,7 @@ export default function UserManagement() {
     setEditing(null);
   }
 
-  /* ------------------ CLIPBOARD ------------------ */
+  /* ---------------- CLIPBOARD ---------------- */
 
   function copyToClipboard(text) {
     navigator.clipboard
@@ -152,7 +137,7 @@ export default function UserManagement() {
       .catch(() => toast.error("Failed to copy password"));
   }
 
-  /* ------------------ CREATE / EDIT ------------------ */
+  /* ---------------- CREATE / EDIT ---------------- */
 
   async function handleSubmit(form) {
     const loadingToast = toast.loading(
@@ -162,31 +147,22 @@ export default function UserManagement() {
     try {
       if (editing) {
         await dispatch(editUser({ id: editing.id, ...form })).unwrap();
-
-        toast.success("User updated successfully", {
-          id: loadingToast,
-        });
+        toast.success("User updated successfully", { id: loadingToast });
       } else {
         const res = await dispatch(addUser(form)).unwrap();
         setCreateSuccess(res?.temp_password || null);
-
-        toast.success("User created successfully", {
-          id: loadingToast,
-        });
+        toast.success("User created successfully", { id: loadingToast });
       }
 
-      await dispatch(fetchUsers({ page: 1, limit: 10 })).unwrap();
+      await dispatch(fetchUsers({ page: 1, limit })).unwrap();
+
       closeModal();
     } catch (e) {
-      toast.error(
-        e?.message || "Action failed. Please try again.",
-        { id: loadingToast }
-      );
-      throw e;
+      toast.error(e?.message || "Action failed", { id: loadingToast });
     }
   }
 
-  /* ------------------ DELETE ------------------ */
+  /* ---------------- DELETE ---------------- */
 
   async function handleDelete(id) {
     const loadingToast = toast.loading("Deleting user...");
@@ -199,37 +175,72 @@ export default function UserManagement() {
       });
 
       setConfirmId(null);
-      await dispatch(fetchUsers({ page: 1, limit: 10 }));
+
+      await dispatch(fetchUsers({ page: 1, limit }));
     } catch (e) {
-      toast.error(
-        e?.message || "Failed to delete user",
-        { id: loadingToast }
-      );
+      toast.error("Failed to delete user", { id: loadingToast });
     }
   }
 
   return (
-    <div className="space-y-4 b-main-cont">
+    <div className="space-y-6 b-main-cont">
 
-      {/* TEMP PASSWORD ALERT */}
+      {/* HERO HEADER */}
+
+      <EntityHeroHeader
+        title="User Management"
+        description="Create and manage system users."
+        buttonText="New User"
+        onCreate={startCreate}
+      />
+
+      {/* STATS */}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total Users"
+          value={items.length}
+          icon={Users}
+        />
+
+        <StatCard
+          title="Admins"
+          value={items.filter((u) => u.role === "ADMIN").length}
+          icon={Shield}
+        />
+
+        <StatCard
+          title="Front Desk"
+          value={items.filter((u) => u.role === "FRONT_DESK").length}
+          icon={Users}
+        />
+
+        <StatCard
+          title="Executives"
+          value={items.filter((u) => u.role === "EXECUTIVE").length}
+          icon={Briefcase}
+        />
+      </div>
+
+      {/* PASSWORD ALERT */}
 
       {createSuccess && (
         <Alert className="border-blue-200 bg-blue-50 text-blue-900">
           <AlertTitle>User Created</AlertTitle>
 
-          <AlertDescription className="mt-2 space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Temporary password (copy and share securely):
+          <AlertDescription className="space-y-2">
+            <p className="text-sm">
+              Temporary password (copy and share securely)
             </p>
 
-            <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 rounded bg-muted font-mono text-sm select-all">
+            <div className="flex gap-2">
+              <code className="flex-1 rounded bg-muted px-3 py-2 font-mono text-sm select-all">
                 {createSuccess}
               </code>
 
               <Button
                 size="sm"
-                variant="primary"
+                variant="outline"
                 onClick={() => copyToClipboard(createSuccess)}
               >
                 Copy
@@ -247,255 +258,186 @@ export default function UserManagement() {
         </Alert>
       )}
 
-      {/* TABLE CARD */}
+      {/* TOOLBAR */}
 
-      <Card>
-        <CardHeader>
+      <ManagerToolbar
+        title="Browse users"
+        description="Search, filter and manage users."
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">User Management</h2>
+        search={query}
+        onSearchChange={(v) => dispatch(setQuery(v))}
 
-            <Button variant="outline" onClick={startCreate} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating…
-                </>
-              ) : (
-                <>
-                  <UserPlus size={20} />
-                  New User
-                </>
+        tagFilter={tagFilter}
+        onTagChange={setTagFilter}
+        tags={tags}
+
+        limit={limit}
+        onLimitChange={setLimit}
+
+        view={view}
+        setView={setView}
+
+        loading={loading}
+        resultCount={visibleUsers.length}
+      />
+
+      {/* VIEW SWITCH */}
+
+      {view === "card" ? (
+        <CardGrid>
+          {paginatedUsers.map((u, index) => (
+            <Card
+              key={u.id}
+              className={cn(
+                "group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300",
+                "hover:-translate-y-1 hover:shadow-lg",
+                "animate-in fade-in-0 slide-in-from-bottom-2"
               )}
-            </Button>
-          </div>
-
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-
-          {/* TOOLBAR */}
-
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-
-            <InputGroup className="border-black/20">
-              <InputGroupInput
-                onChange={(e) => dispatch(setQuery(e.target.value))}
-                placeholder="Search by name, email, or role..."
-              />
-
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-
-              <InputGroupAddon align="inline-end">
-                {visibleUsers.length} Results
-              </InputGroupAddon>
-
-            </InputGroup>
-
-            <div className="w-full md:w-44">
-
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  <SelectItem value="ALL">All Roles</SelectItem>
-                  <SelectItem value="ADMIN">ADMIN</SelectItem>
-                  <SelectItem value="FRONT_DESK">FRONT_DESK</SelectItem>
-                  <SelectItem value="EXECUTIVE">EXECUTIVE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-
-          {/* TABLE */}
-
-          <div className="overflow-auto rounded-md">
-
-            <Table>
-
-              <TableHeader>
-
-                <TableRow>
-
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-
-                </TableRow>
-
-              </TableHeader>
-
-              <TableBody>
-
-                {paginatedUsers
-                  .slice()
-                  .sort((a, b) => a.id - b.id)
-                  .map((u) => (
-
-                    <TableRow
-                      key={u.id}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
-
-                      <TableCell>{u.id}</TableCell>
-
-                      <TableCell className="font-medium">
-                        {u.display_name}
-                      </TableCell>
-
-                      <TableCell>{u.email}</TableCell>
-
-                      <TableCell>{u.role}</TableCell>
-
-                      <TableCell>
-
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${u.status === "ACTIVE"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-200 text-gray-700"
-                            }`}
-                        >
-                          {u.status}
-                        </span>
-
-                      </TableCell>
-
-                      <TableCell className="text-right">
-
-                        <DropdownMenu>
-
-                          <DropdownMenuTrigger asChild>
-
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                            >
-                              <MoreHorizontalIcon />
-                            </Button>
-
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent align="end">
-
-                            <DropdownMenuItem
-                              onClick={() => startEdit(u)}
-                            >
-                              Edit
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => setConfirmId(u.id)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-
-                          </DropdownMenuContent>
-
-                        </DropdownMenu>
-
-                      </TableCell>
-
-                    </TableRow>
-                  ))}
-
-                {!loading && visibleUsers.length === 0 && (
-
-                  <TableRow>
-
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-6 text-gray-500"
-                    >
-                      No users found.
-                    </TableCell>
-
-                  </TableRow>
-
-                )}
-
-              </TableBody>
-
-            </Table>
-
-          </div>
-
-          {/* PAGINATION */}
-
-          {totalPages > 1 && (
-
-            <Pagination className="pt-4">
-
-              <PaginationContent>
-
-                <PaginationItem>
-
-                  <PaginationPrevious
-                    onClick={() =>
-                      setPage((p) => Math.max(p - 1, 1))
-                    }
-                  />
-
-                </PaginationItem>
-
-                {Array.from({ length: totalPages }).map((_, i) => (
-
-                  <PaginationItem key={i}>
-
-                    <PaginationLink
-                      isActive={page === i + 1}
-                      onClick={() => setPage(i + 1)}
-                    >
-                      {i + 1}
-                    </PaginationLink>
-
-                  </PaginationItem>
-
-                ))}
-
-                <PaginationItem>
-
-                  <PaginationNext
-                    onClick={() =>
-                      setPage((p) =>
-                        Math.min(p + 1, totalPages)
-                      )
-                    }
-                  />
-
-                </PaginationItem>
-
-              </PaginationContent>
-
-            </Pagination>
-
-          )}
-
-        </CardContent>
-
-      </Card>
+              style={{ animationDelay: `${index * 40}ms` }}
+            >
+              {/* Header / Avatar Section */}
+              <div className="relative flex items-center gap-4 p-5 pb-3">
+                {/* Avatar */}
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-lg font-semibold">
+                  {u.display_name?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+
+                {/* Name + Email */}
+                <div className="flex-1">
+                  <h3 className="line-clamp-1 text-base font-semibold">
+                    {u.display_name || "Unnamed User"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    {u.email}
+                  </p>
+                </div>
+
+                {/* Status badge (top right feel) */}
+                <Badge
+                  className={cn(
+                    "rounded-full",
+                    u.status === "ACTIVE"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-700"
+                  )}
+                >
+                  {u.status}
+                </Badge>
+              </div>
+
+              {/* Content */}
+              <CardContent className="space-y-4 p-5 pt-2">
+                {/* Role */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="rounded-full">
+                    {u.role}
+                  </Badge>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    className="flex-1 rounded-xl"
+                    onClick={() => startEdit(u)}
+                  >
+                    Edit
+                  </Button>
+
+                  {/* Future ready */}
+                  {/*
+          <Button variant="outline" className="rounded-xl">
+            View
+          </Button>
+          */}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </CardGrid>
+      ) : (
+        <EntityTable
+          header={
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          }
+          body={
+            loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center">
+                  <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                </TableCell>
+              </TableRow>
+            ) : paginatedUsers.map((u) => (
+              <TableRow key={u.id}>
+                <TableCell>{u.id}</TableCell>
+
+                <TableCell className="font-medium">
+                  {u.display_name}
+                </TableCell>
+
+                <TableCell>{u.email}</TableCell>
+
+                <TableCell>
+                  <Badge>{u.role}</Badge>
+                </TableCell>
+
+                <TableCell>
+                  <Badge
+                    variant={u.status === "ACTIVE" ? "default" : "outline"}
+                  >
+                    {u.status}
+                  </Badge>
+                </TableCell>
+
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => startEdit(u)}>
+                        Edit
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => setConfirmId(u.id)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          }
+        />
+      )}
+
+      {/* PAGINATION */}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={setPage}
+      />
 
       {/* CREATE / EDIT MODAL */}
 
       <Dialog open={open} onOpenChange={setOpen}>
-
-        <DialogContent
-          className="sm:max-w-lg bg-white"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-
+        <DialogContent className="sm:max-w-lg bg-white">
           <DialogHeader>
             <DialogTitle>
               {editing ? "Edit User" : "Create User"}
@@ -509,21 +451,13 @@ export default function UserManagement() {
             submitting={loading}
             error={error}
           />
-
         </DialogContent>
-
       </Dialog>
 
       {/* DELETE CONFIRM */}
 
       <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
-
-        <DialogContent
-          className="bg-white"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>
@@ -531,25 +465,18 @@ export default function UserManagement() {
           <p>Are you sure you want to delete this user?</p>
 
           <DialogFooter>
-
-            <Button
-              variant="outline"
-              onClick={() => setConfirmId(null)}
-            >
+            <Button variant="outline" onClick={() => setConfirmId(null)}>
               Cancel
             </Button>
 
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={() => handleDelete(confirmId)}
             >
               Delete
             </Button>
-
           </DialogFooter>
-
         </DialogContent>
-
       </Dialog>
 
     </div>

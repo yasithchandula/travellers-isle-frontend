@@ -19,6 +19,7 @@ import { Check, Loader2, MapPinned, NotebookPen, Sparkles } from "lucide-react";
 
 import { fetchCities } from "../../app/slices/citySlice";
 import { Badge } from "@/components/ui/badge";
+import { buildImageUrl } from "../../utils/urls";
 
 import {
   Card,
@@ -56,7 +57,25 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 
-import { buildImageUrl } from "@/utils/urls";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import StandardDescriptionForm from "../../components/forms/StandardDescriptionForm";
+
+import { createStandardDescription } from "../../api/mock/standardDescriptionMock";
 
 /* ======================
    DATE HELPERS
@@ -174,6 +193,9 @@ export default function QuotationWizardModernPage() {
   const [isSavingDay, setIsSavingDay] = useState(false);
   const [isSavingQuotation, setIsSavingQuotation] = useState(false);
 
+  const [editingDescription, setEditingDescription] = useState(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+
   useEffect(() => {
     const loadAllCities = async () => {
       try {
@@ -268,9 +290,13 @@ export default function QuotationWizardModernPage() {
       id: quotationShell.days?.[i]?.id ?? null,
       day_number: quotationShell.days?.[i]?.day_number ?? i + 1,
       date,
-      city_id: i === 0 ? "1" : "",
+
+      starting_city_id: i === 0 ? "1" : "",
+      destination_city_id: "",
+      stop_ids: [],
+
       excursions: [],
-      standard_descriptions: [],
+      standard_description: null,
       note: "",
     }));
 
@@ -282,7 +308,21 @@ export default function QuotationWizardModernPage() {
   ====================== */
 
   function updateDay(idx, patch) {
-    setDays((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
+    setDays((prev) => {
+      const updated = [...prev];
+
+      updated[idx] = { ...updated[idx], ...patch };
+
+      // if destination city changes → next day's starting city
+      if (patch.destination_city_id && updated[idx + 1]) {
+        updated[idx + 1] = {
+          ...updated[idx + 1],
+          starting_city_id: patch.destination_city_id,
+        };
+      }
+
+      return updated;
+    });
   }
 
   /* ======================
@@ -294,11 +334,23 @@ export default function QuotationWizardModernPage() {
 
     const payload = {
       id: dayData.id,
-      start_city_id: Number(dayData.city_id) || 0,
-      end_city_id: Number(dayData.city_id) || 0,
-      staying_city_id: Number(dayData.city_id) || 0,
-      stop_ids: dayData.excursions?.map((e) => Number(e.id)) || [],
-      standard_description_id: dayData.standard_descriptions?.[0]?.id || null,
+
+      start_city_id: dayData.starting_city_id
+        ? Number(dayData.starting_city_id)
+        : null,
+
+      end_city_id: dayData.destination_city_id
+        ? Number(dayData.destination_city_id)
+        : null,
+
+      staying_city_id: dayData.destination_city_id
+        ? Number(dayData.destination_city_id)
+        : null,
+
+      stop_ids: (dayData.stop_ids || []).map((id) => Number(id)),
+
+      standard_description_id: dayData.standard_description?.id || null,
+
       note: dayData.note || "",
     };
 
@@ -388,6 +440,42 @@ export default function QuotationWizardModernPage() {
       toast.error("Failed to save quotation");
     } finally {
       setIsSavingQuotation(false);
+    }
+  }
+
+  async function handleCreateFromEdit(payload) {
+    try {
+
+      const res = await dispatch(createStandardDescription(payload)).unwrap();
+
+      const newDescription = res?.data || res;
+
+      if (!newDescription?.id) {
+        throw new Error("Invalid response");
+      }
+
+      // replace current selected description
+      updateDay(dayIndex, {
+        standard_description: newDescription,
+      });
+
+      // refresh list
+      dispatch(
+        fetchStandardDescriptions({
+          search: "",
+          page: 1,
+          limit: 20,
+        })
+      );
+
+      toast.success("New description created from edit");
+
+      setOpenEditDialog(false);
+      setEditingDescription(null);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create description");
     }
   }
 
@@ -481,9 +569,9 @@ export default function QuotationWizardModernPage() {
 
                             <TableCell>
                               <Select
-                                value={d.city_id}
+                                value={d.destination_city_id}
                                 onValueChange={(v) =>
-                                  updateDay(idx, { city_id: v })
+                                  updateDay(idx, { destination_city_id: v })
                                 }
                               >
                                 <SelectTrigger className="w-[220px] bg-background">
@@ -577,50 +665,165 @@ export default function QuotationWizardModernPage() {
                 </CardHeader>
 
                 <CardContent className="space-y-6 p-4 md:p-6">
-                  <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="inline-flex items-center gap-2">
-                        <MapPinned className="h-4 w-4" />
-                        City
-                      </Label>
+                  <div className="space-y-6">
 
-                      <Select
-                        value={day.city_id}
-                        onValueChange={(v) =>
-                          updateDay(dayIndex, { city_id: v })
-                        }
-                      >
-                        <SelectTrigger className="w-full bg-background">
-                          <SelectValue placeholder="City" />
-                        </SelectTrigger>
+                    {/* ROW 1 */}
+                    <div className="grid gap-6 lg:grid-cols-3">
 
-                        <SelectContent>
-                          {CITIES.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {/* Starting City */}
+                      <div className="space-y-2">
+                        <Label className="inline-flex items-center gap-2">
+                          <MapPinned className="h-4 w-4 text-muted-foreground" />
+                          Starting City
+                        </Label>
+
+                        <Select
+                          value={day.starting_city_id}
+                          onValueChange={(v) =>
+                            updateDay(dayIndex, { starting_city_id: v })
+                          }
+                        >
+                          <SelectTrigger className="w-full bg-background">
+                            <SelectValue placeholder="Starting city" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            {CITIES.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Destination City */}
+                      <div className="space-y-2">
+                        <Label className="inline-flex items-center gap-2">
+                          <MapPinned className="h-4 w-4 text-muted-foreground" />
+                          Destination City
+                        </Label>
+
+                        <Select
+                          value={day.destination_city_id}
+                          onValueChange={(v) =>
+                            updateDay(dayIndex, { destination_city_id: v })
+                          }
+                        >
+                          <SelectTrigger className="w-full bg-background">
+                            <SelectValue placeholder="Destination city" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            {CITIES.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Stops */}
+                      <div className="space-y-2">
+                        <Label className="inline-flex items-center gap-2">
+                          <MapPinned className="h-4 w-4 text-muted-foreground" />
+                          Stops
+                        </Label>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between bg-background"
+                            >
+                              {day.stop_ids?.length
+                                ? `${day.stop_ids.length} stop${day.stop_ids.length > 1 ? "s" : ""} selected`
+                                : "Select stops"}
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="w-[320px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Search city..." />
+
+                              <CommandList>
+                                <CommandEmpty>No city found.</CommandEmpty>
+
+                                <CommandGroup>
+                                  {CITIES.map((city) => {
+                                    const selected = day.stop_ids?.includes(city.id);
+
+                                    return (
+                                      <CommandItem
+                                        key={city.id}
+                                        value={city.name}
+                                        onSelect={() => {
+                                          const current = day.stop_ids || [];
+
+                                          const updated = selected
+                                            ? current.filter((id) => id !== city.id)
+                                            : [...current, city.id];
+
+                                          updateDay(dayIndex, {
+                                            stop_ids: updated,
+                                          });
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selected ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+
+                                        {city.name}
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+                        {day.stop_ids?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {day.stop_ids.map((id) => {
+                              const city = CITIES.find((c) => c.id === id);
+
+                              return (
+                                <Badge key={id} variant="secondary">
+                                  {city?.name}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
 
+                    {/* ROW 2 — FULL WIDTH NOTE */}
                     <div className="space-y-2">
                       <Label className="inline-flex items-center gap-2">
-                        <NotebookPen className="h-4 w-4" />
+                        <NotebookPen className="h-4 w-4 text-muted-foreground" />
                         Day Note
                       </Label>
 
-                      <Input
+                      <Textarea
                         value={day.note}
                         onChange={(e) =>
                           updateDay(dayIndex, {
                             note: e.target.value,
                           })
                         }
-                        className="bg-background"
-                        placeholder="Add note for this day"
+                        className="min-h-[90px] resize-none bg-background"
+                        placeholder="Add detailed note for this day"
                       />
                     </div>
+
                   </div>
 
                   <div className="rounded-xl border bg-background p-4">
@@ -671,10 +874,23 @@ export default function QuotationWizardModernPage() {
                     {day.standard_description && (
                       <Card className="mt-4 overflow-hidden">
                         <CardContent className="space-y-4 p-4">
-                          <div className="font-semibold">
-                            {day.standard_description.start_city?.name}
-                            {" → "}
-                            {day.standard_description.end_city?.name}
+                          <div className="flex justify-between items-start">
+                            <div className="font-semibold">
+                              {day.standard_description.start_city?.name}
+                              {" → "}
+                              {day.standard_description.end_city?.name}
+                            </div>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingDescription(day.standard_description);
+                                setOpenEditDialog(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
                           </div>
 
                           {day.standard_description.title && (
@@ -839,6 +1055,26 @@ export default function QuotationWizardModernPage() {
           )}
         </div>
       </div>
+      <Dialog
+        open={openEditDialog}
+        onOpenChange={(v) => {
+          if (!v) {
+            setEditingDescription(null);
+          }
+          setOpenEditDialog(v);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit & Create New Standard Description</DialogTitle>
+          </DialogHeader>
+
+          <StandardDescriptionForm
+            initial={editingDescription}
+            onSubmit={handleCreateFromEdit}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

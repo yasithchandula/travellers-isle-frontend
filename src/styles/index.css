@@ -1,15 +1,15 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
 
 /* Brand tokens inspired by travellersisle.com */
-:root {
-  --ti-primary: #0e4b5a;   /* deep teal/navy */
-  --ti-accent: #c9a66b;    /* warm sand */
-  --ti-bg: #f7fafb;        /* soft light */
-}
+/* :root {
+  --ti-primary: #0e4b5a;   
+  --ti-accent: #c9a66b;    
+  --ti-bg: #f7fafb;        
+} */
 
-.body-bg {
+/* .body-bg {
   background: var(--ti-bg);
 }
 
@@ -28,5 +28,5 @@
 
 .b-main-cont {
   max-height:calc(90vh - 4rem) !important
-}
+} */
 
