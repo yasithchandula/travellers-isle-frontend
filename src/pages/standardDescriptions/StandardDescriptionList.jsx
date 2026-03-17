@@ -75,7 +75,6 @@ export default function StandardDescriptionManager() {
     items = [],
     loading,
     search = "",
-    limit = 10,
   } = useSelector((s) => s.standardDescriptions || {});
 
   const [modalOpen, setModalOpen] = useState(false);
