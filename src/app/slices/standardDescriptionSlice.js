@@ -5,6 +5,7 @@ import {
   updateStandardDescription,
   deleteStandardDescription,
   approveStandardDescription,
+  fetchDistanceApi,
 } from "../../api/mock/standardDescriptionMock";
 
 /**
@@ -102,6 +103,25 @@ export const approveStandardDescriptionById = createAsyncThunk(
   }
 );
 
+export const fetchDistance = createAsyncThunk(
+  "standardDescriptions/fetchDistance",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await fetchDistanceApi(payload);
+
+      if (!res?.data?.distance) {
+        throw new Error("Invalid distance response");
+      }
+
+      return res.data.distance;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
 const slice = createSlice({
   name: "standardDescriptions",
   initialState: {
@@ -155,39 +175,52 @@ const slice = createSlice({
         s.error = a.payload || a.error.message;
       })
 
-    /* ================= CREATE ================= */
-    .addCase(addStandardDescription.fulfilled, (s, a) => {
-      s.items.unshift(a.payload);
-    })
+      /* ================= CREATE ================= */
+      .addCase(addStandardDescription.fulfilled, (s, a) => {
+        s.items.unshift(a.payload);
+      })
 
-    /* ================= UPDATE ================= */
-    .addCase(editStandardDescription.fulfilled, (s, a) => {
-      const idx = s.items.findIndex(
-        (x) => x.id === a.payload.id
-      );
-      if (idx !== -1) s.items[idx] = a.payload;
-    })
-
-    /* ================= DELETE ================= */
-    .addCase(removeStandardDescription.fulfilled, (s, a) => {
-      s.items = s.items.filter(
-        (i) => i.id !== a.payload
-      );
-    })
-
-    /* ================= APPROVE ================= */
-    .addCase(
-      approveStandardDescriptionById.fulfilled,
-      (s, a) => {
+      /* ================= UPDATE ================= */
+      .addCase(editStandardDescription.fulfilled, (s, a) => {
         const idx = s.items.findIndex(
           (x) => x.id === a.payload.id
         );
-        if (idx !== -1) {
-          s.items[idx].status = "APPROVED";
+        if (idx !== -1) s.items[idx] = a.payload;
+      })
+
+      /* ================= DELETE ================= */
+      .addCase(removeStandardDescription.fulfilled, (s, a) => {
+        s.items = s.items.filter(
+          (i) => i.id !== a.payload
+        );
+      })
+
+      /* ================= APPROVE ================= */
+      .addCase(
+        approveStandardDescriptionById.fulfilled,
+        (s, a) => {
+          const idx = s.items.findIndex(
+            (x) => x.id === a.payload.id
+          );
+          if (idx !== -1) {
+            s.items[idx].status = "APPROVED";
+          }
         }
-      }
-    );
-},
+      )
+
+      .addCase(fetchDistance.pending, (state) => {
+        state.distanceLoading = true;
+        state.distanceError = null;
+      })
+      .addCase(fetchDistance.fulfilled, (state, action) => {
+        state.distanceLoading = false;
+        state.distance = action.payload;
+      })
+      .addCase(fetchDistance.rejected, (state, action) => {
+        state.distanceLoading = false;
+        state.distanceError = action.payload;
+      });
+  },
 });
 
 export const {

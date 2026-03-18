@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   createQuotationFromInquiryApi,
   updateQuotationDayApi,
+  fetchQuotationFullDetailsApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -28,6 +29,18 @@ export const updateQuotationDay = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       return await updateQuotationDayApi(payload);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const fetchQuotationFullDetails = createAsyncThunk(
+  "quotation/fetchFullDetails",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await fetchQuotationFullDetailsApi(id);
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -118,8 +131,12 @@ const quotationSlice = createSlice({
       .addCase(updateQuotationDay.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      .addCase(fetchQuotationFullDetails.fulfilled, (state, action) => {
+        state.quotationShell = action.payload.data;
       });
-  },
+},
 });
 
 export const { setQuotationShell, clearQuotationShell } =

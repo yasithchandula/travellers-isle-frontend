@@ -360,9 +360,18 @@ export default function InquiryList() {
 
                 dispatch(createQuotationFromInquiry(payload))
                   .unwrap()
-                  .then(() => {
+                  .then((res) => {
+
+                    const id = res?.data?.quotation_id;
+
+                    if (!id) {
+                      toast.error("Invalid quotation response");
+                      return;
+                    }
+
                     setConvertModal(null);
-                    navigate("/quotations/new");
+
+                    navigate(`/quotations/${id}`);
                   });
 
               }}

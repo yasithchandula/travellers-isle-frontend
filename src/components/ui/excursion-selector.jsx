@@ -135,7 +135,7 @@ export default function ExcursionSelector({
               onValueChange={(v) => onSearch?.(v)}
             />
 
-            <CommandList>
+            <CommandList className="max-h-[300px] overflow-y-auto">
 
               <CommandEmpty>No excursions found</CommandEmpty>
 
@@ -150,9 +150,8 @@ export default function ExcursionSelector({
                   return (
                     <CommandItem
                       key={item.id}
-                      value={item.name}
+                      value={`${item.id} ${item.name} ${item.pricing_type ?? ""}`}
                       onSelect={() => toggleSelection(item)}
-                      className="flex gap-3 items-start"
                     >
 
                       {/* Thumbnail */}

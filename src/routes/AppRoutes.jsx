@@ -97,7 +97,7 @@ export default function AppRoutes() {
           />
 
           <Route
-            path="/quotations/new"
+            path="/quotations/:id"
             element={
               <Layout>
                 <QuotationFlow mode="new" />

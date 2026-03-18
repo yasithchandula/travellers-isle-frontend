@@ -60,3 +60,12 @@ export async function approveStandardDescription(id) {
   );
   return data;
 }
+
+
+export const fetchDistanceApi = async (payload) => {
+  const res = await api.post(
+    "/standard-descriptions/distance",
+    payload
+  );
+  return res.data;
+};

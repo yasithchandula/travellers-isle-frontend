@@ -16,6 +16,7 @@ import ExcursionSelector from "@/components/ui/excursion-selector";
 
 
 import { fetchExcursions } from "@/app/slices/excursionSlice";
+import { fetchDistance } from "@/app/slices/standardDescriptionSlice";
 
 import { uploadFile } from "@/app/slices/uploadSlice";
 import { fetchCities } from "@/app/slices/citySlice";
@@ -45,6 +46,10 @@ export default function StandardDescriptionForm({
   const excursions = useSelector((s) => s.excursions.items || []);
   const [excursionSearch, setExcursionSearch] = useState("");
   const [selectedExcursions, setSelectedExcursions] = useState([]);
+
+  const { distanceLoading } = useSelector(
+    (s) => s.standardDescriptions
+  );
 
 
   /* =====================
@@ -415,6 +420,50 @@ export default function StandardDescriptionForm({
 
   const destinationCities = cities.filter((c) => c.is_destination);
 
+  function getCityName(id) {
+    const city = cities.find((c) => String(c.id) === String(id));
+    return city?.city || "";
+  }
+
+  async function handleFetchDistance() {
+    try {
+      if (!form.start_city_id || !form.end_city_id) {
+        toast.error("Select start and destination cities first");
+        return;
+      }
+
+      const origin = `${getCityName(form.start_city_id)}, Sri Lanka`;
+      const destination = `${getCityName(form.end_city_id)}, Sri Lanka`;
+
+      const stops = form.stops.map(
+        (id) => `${getCityName(id)}, Sri Lanka`
+      );
+
+      const payload = {
+        origin,
+        destination,
+        stops,
+        travel_mode: "driving",
+      };
+
+      const res = await dispatch(fetchDistance(payload)).unwrap();
+
+      const distanceMeters = res.Distance;
+      const durationNano = res.Duration;
+
+      const km = Math.round(distanceMeters / 1000);
+      const minutes = Math.round(durationNano / 1e9 / 60);
+
+      updateField("mileage", km);
+      updateField("travel_time_minutes", minutes);
+
+      toast.success("Distance calculated 🚗");
+    } catch (err) {
+      console.error(err);
+      toast.error(err || "Failed to fetch distance");
+    }
+  }
+
   return (
     <form
       id="standard-description-form"
@@ -593,7 +642,35 @@ export default function StandardDescriptionForm({
         </div>
       </div>
 
+      {/* ================= DISTANCE ================= */}
+      <div className="border rounded-xl p-4 space-y-3 bg-white shadow-sm">
+        <h3 className="text-sm font-semibold text-ti-forest">
+          Distance & Travel
+        </h3>
 
+        <div className="flex gap-2 items-end">
+          <Input
+            label="Mileage (KM)"
+            value={form.mileage}
+            onChange={(v) => updateField("mileage", v)}
+            placeholder="Auto or manual"
+          />
+
+          <Button
+            type="button"
+            onClick={handleFetchDistance}
+            disabled={distanceLoading}
+          >
+            {distanceLoading ? "Fetching..." : "Fetch"}
+          </Button>
+        </div>
+
+        {form.travel_time_minutes && (
+          <div className="text-xs text-muted-foreground">
+            Travel Time: {form.travel_time_minutes} minutes
+          </div>
+        )}
+      </div>
 
       {/* ================= EXCURSIONS ================= */}
       <div className="border rounded-md p-3 space-y-3">

@@ -9,7 +9,7 @@ import {
   fetchStandardDescriptions,
   setStandardDescriptionSearch,
 } from "@/app/slices/standardDescriptionSlice";
-import { updateQuotationDay } from "@/app/slices/quotationSlice";
+import { updateQuotationDay, fetchQuotationFullDetails } from "@/app/slices/quotationSlice";
 
 import ExcursionSelector from "@/components/ui/excursion-selector";
 import StandardDescriptionSelector from "@/components/ui/standard-description-selector";
@@ -76,6 +76,8 @@ import {
 import StandardDescriptionForm from "../../components/forms/StandardDescriptionForm";
 
 import { createStandardDescription } from "../../api/mock/standardDescriptionMock";
+
+import { useParams } from "react-router-dom";
 
 /* ======================
    DATE HELPERS
@@ -176,6 +178,7 @@ function SummaryBadge({ children }) {
 
 export default function QuotationWizardModernPage() {
   const dispatch = useDispatch();
+  const { id } = useParams();
 
   const excursions = useSelector((s) => s.excursions?.items || []);
   const quotationShell = useSelector((s) => s.quotations?.quotationShell);
@@ -239,6 +242,12 @@ export default function QuotationWizardModernPage() {
 
     loadAllCities();
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    dispatch(fetchQuotationFullDetails(id));
+  }, [id, dispatch]);
 
   /* ======================
      INFO FROM SHELL

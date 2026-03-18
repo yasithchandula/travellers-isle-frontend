@@ -57,3 +57,8 @@ export async function updateQuotationDayApi(payload) {
 
   return data;
 }
+
+
+export async function fetchQuotationFullDetailsApi(id) {
+  return api.get(`/quotations/full-details/${id}`);
+};
