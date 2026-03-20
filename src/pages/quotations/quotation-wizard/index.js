@@ -1,0 +1,1 @@
+export { default as QuotationWizardModernPage } from "./pages/QuotationWizardModernPage";

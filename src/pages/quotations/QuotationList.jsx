@@ -3,8 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import QuotationFilters from "./components/QuotationFilters";
-import QuotationTable from "./components/QuotationTable";
 import { quotationApi } from "../../api/quotationApi";
 //import { setQuotations, duplicateIntoDraft } from "../../app/slices/quotationSlice";
 

@@ -288,28 +288,51 @@ export default function QuotationWizardModernPage() {
   ====================== */
 
   useEffect(() => {
-    if (!quotationShell?.start_date || !quotationShell?.days_count) return;
+    if (!quotationShell) return;
+
+    if (!quotationShell.start_date || !quotationShell.days_count) return;
 
     const dates = generateTourDates(
       quotationShell.start_date,
       quotationShell.days_count
     );
 
-    const built = dates.map((date, i) => ({
-      id: quotationShell.days?.[i]?.id ?? null,
-      day_number: quotationShell.days?.[i]?.day_number ?? i + 1,
-      date,
+    const apiDays = quotationShell.itinerary || [];
 
-      starting_city_id: i === 0 ? "1" : "",
-      destination_city_id: "",
-      stop_ids: [],
+    const mappedDays = dates.map((date, i) => {
+      const apiDay = apiDays[i] || {};
 
-      excursions: [],
-      standard_description: null,
-      note: "",
-    }));
+      return {
+        id: apiDay.id || null,
+        day_number: apiDay.day_number || i + 1,
+        date,
 
-    setDays(built);
+        // 👇 IMPORTANT (handle 0 properly)
+        starting_city_id:
+          apiDay.start_city_id && apiDay.start_city_id !== 0
+            ? String(apiDay.start_city_id)
+            : "",
+
+        destination_city_id:
+          apiDay.end_city_id && apiDay.end_city_id !== 0
+            ? String(apiDay.end_city_id)
+            : "",
+
+        stop_ids: (apiDay.stop_ids || []).map(String),
+
+        excursions: apiDay.excursions || [],
+
+        standard_description:
+          apiDay.standard_description || null,
+
+        standard_description_id:
+          apiDay.standard_description_id || null,
+
+        note: apiDay.note || "",
+      };
+    });
+
+    setDays(mappedDays);
   }, [quotationShell]);
 
   /* ======================
@@ -601,11 +624,14 @@ export default function QuotationWizardModernPage() {
                               <ExcursionSelector
                                 items={excursions}
                                 selected={d.excursions}
-                                setSelected={(list) =>
+                                setSelected={(updater) => {
                                   updateDay(idx, {
-                                    excursions: list,
-                                  })
-                                }
+                                    excursions:
+                                      typeof updater === "function"
+                                        ? updater(days[idx].excursions || [])
+                                        : updater,
+                                  });
+                                }}
                                 onSearch={(v) => setExcursionSearch(v)}
                               />
                             </TableCell>
@@ -846,11 +872,14 @@ export default function QuotationWizardModernPage() {
                     <ExcursionSelector
                       items={excursions}
                       selected={day.excursions}
-                      setSelected={(list) =>
+                      setSelected={(updater) => {
                         updateDay(dayIndex, {
-                          excursions: list,
-                        })
-                      }
+                          excursions:
+                            typeof updater === "function"
+                              ? updater(days[dayIndex].excursions || [])
+                              : updater,
+                        });
+                      }}
                       onSearch={(v) => setExcursionSearch(v)}
                     />
                   </div>
