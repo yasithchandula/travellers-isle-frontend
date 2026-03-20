@@ -14,6 +14,7 @@ import QuotationFlow from "../pages/quotations/QuotationFlow";
 import Login from "../pages/auth/Login";
 import StandardDescriptionList from "../pages/standardDescriptions/StandardDescriptionList";
 import StandardDescriptionEditor from "../pages/standardDescriptions/StandardDescriptionEditor";
+import { QuotationWizardModernPage } from "../pages/quotations/quotation-wizard";
 
 export default function AppRoutes() {
   return (
@@ -97,10 +98,10 @@ export default function AppRoutes() {
           />
 
           <Route
-            path="/quotations/:id"
+            path="/quotations/new"
             element={
               <Layout>
-                <QuotationFlow mode="new" />
+                <QuotationWizardModernPage mode="new" />
               </Layout>
             }
           />
@@ -109,7 +110,7 @@ export default function AppRoutes() {
             path="/quotations/:id"
             element={
               <Layout>
-                <QuotationFlow mode="edit" />
+                <QuotationWizardModernPage mode="edit" />
               </Layout>
             }
           />

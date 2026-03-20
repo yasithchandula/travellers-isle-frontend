@@ -126,7 +126,7 @@ export default function ExcursionManager() {
     totalPages = 1,
   } = useSelector((s) => s.excursions || {});
 
-  const [view, setView] = useState("card");
+  const [view, setView] = useState("table");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(9);
 

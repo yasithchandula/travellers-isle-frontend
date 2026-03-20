@@ -106,7 +106,7 @@ export default function StandardDescriptionForm({
     dispatch(fetchExcursions({ search: excursionSearch }));
   }, [excursionSearch]);
 
-  console.log("cities", cities);
+
   /* =====================
      FORM STATE
   ===================== */
@@ -120,6 +120,8 @@ export default function StandardDescriptionForm({
     tags: [],
     gallery: [],
     featuredPreview: null,
+    mileage: "",
+    travel_time_minutes: "",
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -138,12 +140,11 @@ export default function StandardDescriptionForm({
       setErrors({});
       return;
     }
-
     setForm({
       title: initial.title || "",
 
-      start_city_id: String(initial.start_city_id || ""),
-      end_city_id: String(initial.end_city_id || ""),
+      start_city_id: String(initial.start_city.id || ""),
+      end_city_id: String(initial.end_city.id || ""),
 
       /* FIX: stops may come as objects or ids */
       stops: Array.isArray(initial.stops)
@@ -169,12 +170,26 @@ export default function StandardDescriptionForm({
         : initial.gallery?.[0]
           ? buildImageUrl(initial.gallery[0])
           : null,
+      mileage: Number(initial.mileage) || "",
+      travel_time_minutes: Number(initial.travel_time_minutes) || "",
+      excursions: initial.excursions || [],
     });
 
-    /* FIX: hydrate excursions for edit mode */
     if (Array.isArray(initial.excursions)) {
       setSelectedExcursions(
-        initial.excursions.map((e) => e.excursion || e)
+        (initial.excursions || []).map((entry) => {
+          const excursion = entry.excursion || entry;
+
+          return {
+            ...excursion,
+            id:
+              excursion?.id ??
+              entry?.excursion_id ??
+              entry?.id ??
+              null,
+            is_optional: entry?.is_optional ?? false,
+          };
+        }).filter(e => e.id !== null)
       );
     } else {
       setSelectedExcursions([]);
@@ -349,6 +364,7 @@ export default function StandardDescriptionForm({
       )?.url || galleryUrls[0] || null;
 
     const payload = {
+      ...(initial?.id && { id: initial.id }),
       title: form.title,
       start_city_id: Number(form.start_city_id),
       end_city_id: Number(form.end_city_id),
@@ -366,7 +382,6 @@ export default function StandardDescriptionForm({
       travel_time_minutes: 0
 
     };
-
     onSubmit(payload);
   }
 

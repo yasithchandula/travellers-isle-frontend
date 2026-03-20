@@ -134,9 +134,15 @@ const quotationSlice = createSlice({
       })
 
       .addCase(fetchQuotationFullDetails.fulfilled, (state, action) => {
-        state.quotationShell = action.payload.data;
+        const { quotation, itinerary } = action.payload.data;
+        state.quotationShell = {
+          ...quotation,
+          itinerary,
+        };
       });
-},
+
+
+  },
 });
 
 export const { setQuotationShell, clearQuotationShell } =
