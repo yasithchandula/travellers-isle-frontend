@@ -1,29 +1,48 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
-import Input from "../common/Input";
-import Select from "../common/Select";
-import Button from "../common/Button";
-import RichTextEditor from "../common/RichTextEditor";
-
+import { toast } from "sonner";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  ImagePlus,
+  MapPin,
+  Route,
+  Clock3,
+  Trash2,
+  Star,
+  UploadCloud,
+  Sparkles,
+  Tag,
+  FileText,
+  Mountain,
+  CheckCircle2,
+  Loader2,
+  GalleryHorizontal,
+  Car,
+} from "lucide-react";
 
+import RichTextEditor from "../common/RichTextEditor";
 import ExcursionSelector from "@/components/ui/excursion-selector";
-
 
 import { fetchExcursions } from "@/app/slices/excursionSlice";
 import { fetchDistance } from "@/app/slices/standardDescriptionSlice";
-
 import { uploadFile } from "@/app/slices/uploadSlice";
 import { fetchCities } from "@/app/slices/citySlice";
 import { buildImageUrl } from "../../utils/urls";
 
-import { toast } from "sonner";
-import { MapPin, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function StandardDescriptionForm({
   initial,
@@ -31,26 +50,21 @@ export default function StandardDescriptionForm({
   hideActions = false,
 }) {
   const dispatch = useDispatch();
+  const fileInputRef = useRef(null);
+  const titleRef = useRef(null);
+
   const [cities, setCities] = useState([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [stopSelect, setStopSelect] = useState("");
   const [tagSelect, setTagSelect] = useState("");
-  const tagOptions = [
-    "family",
-    "honeymoon",
-    "beach",
-    "culture",
-    "wildlife",
-  ];
+
+  const tagOptions = ["family", "honeymoon", "beach", "culture", "wildlife"];
 
   const excursions = useSelector((s) => s.excursions.items || []);
   const [excursionSearch, setExcursionSearch] = useState("");
   const [selectedExcursions, setSelectedExcursions] = useState([]);
 
-  const { distanceLoading } = useSelector(
-    (s) => s.standardDescriptions
-  );
-
+  const { distanceLoading } = useSelector((s) => s.standardDescriptions);
 
   /* =====================
      LOAD CITIES
@@ -66,10 +80,7 @@ export default function StandardDescriptionForm({
         let totalPages = 1;
 
         do {
-          const res = await dispatch(
-            fetchCities({ search: "", page, limit })
-          ).unwrap();
-
+          const res = await dispatch(fetchCities({ search: "", page, limit })).unwrap();
           const data = res?.data || res;
 
           if (!data?.items) {
@@ -78,7 +89,6 @@ export default function StandardDescriptionForm({
 
           allCities = [...allCities, ...data.items];
           totalPages = data.total_pages || 1;
-
           page++;
         } while (page <= totalPages);
 
@@ -104,8 +114,17 @@ export default function StandardDescriptionForm({
   useEffect(() => {
     if (excursionSearch.length < 2) return;
     dispatch(fetchExcursions({ search: excursionSearch }));
-  }, [excursionSearch]);
+  }, [excursionSearch, dispatch]);
 
+  useEffect(() => {
+    const el = titleRef.current;
+
+    if (el) {
+      requestAnimationFrame(() => {
+        el.focus({ preventScroll: true }); // ✅ KEY FIX
+      });
+    }
+  }, [initial]);
 
   /* =====================
      FORM STATE
@@ -130,9 +149,6 @@ export default function StandardDescriptionForm({
   /* =====================
      EDIT MODE HYDRATION
   ===================== */
-  /* =====================
-     EDIT MODE HYDRATION
-  ===================== */
   useEffect(() => {
     if (!initial) {
       setForm(emptyForm);
@@ -140,20 +156,25 @@ export default function StandardDescriptionForm({
       setErrors({});
       return;
     }
+
+    console.log("Hydrating form with initial data:", initial);
+
     setForm({
       title: initial.title || "",
+      start_city_id: initial.start_city?.id
+        ? String(initial.start_city.id)
+        : "",
 
-      start_city_id: String(initial.start_city.id || ""),
-      end_city_id: String(initial.end_city.id || ""),
+      end_city_id: initial.end_city?.id
+        ? String(initial.end_city.id)
+        : "",
 
-      /* FIX: stops may come as objects or ids */
       stops: Array.isArray(initial.stops)
         ? initial.stops.map((s) => String(s?.id ?? s))
         : [],
 
       starting_paragraph: initial.starting_paragraph || "[]",
       description: initial.description || "",
-
       tags: Array.isArray(initial.tags) ? initial.tags : [],
 
       gallery: Array.isArray(initial.gallery)
@@ -170,6 +191,7 @@ export default function StandardDescriptionForm({
         : initial.gallery?.[0]
           ? buildImageUrl(initial.gallery[0])
           : null,
+
       mileage: Number(initial.mileage) || "",
       travel_time_minutes: Number(initial.travel_time_minutes) || "",
       excursions: initial.excursions || [],
@@ -177,28 +199,24 @@ export default function StandardDescriptionForm({
 
     if (Array.isArray(initial.excursions)) {
       setSelectedExcursions(
-        (initial.excursions || []).map((entry) => {
-          const excursion = entry.excursion || entry;
+        (initial.excursions || [])
+          .map((entry) => {
+            const excursion = entry.excursion || entry;
 
-          return {
-            ...excursion,
-            id:
-              excursion?.id ??
-              entry?.excursion_id ??
-              entry?.id ??
-              null,
-            is_optional: entry?.is_optional ?? false,
-          };
-        }).filter(e => e.id !== null)
+            return {
+              ...excursion,
+              id: excursion?.id ?? entry?.excursion_id ?? entry?.id ?? null,
+              is_optional: entry?.is_optional ?? false,
+            };
+          })
+          .filter((e) => e.id !== null)
       );
     } else {
       setSelectedExcursions([]);
     }
-
+    console.log("Hydrated form state:", form);
     setErrors({});
   }, [initial]);
-
-
 
   function updateField(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -228,13 +246,8 @@ export default function StandardDescriptionForm({
       form.end_city_id &&
       form.start_city_id === form.end_city_id
     ) {
-      e.end_city_id =
-        "Starting city and destination city cannot be the same";
+      e.end_city_id = "Starting city and destination city cannot be the same";
     }
-
-    // if (!form.starting_paragraph.trim()) {
-    //   e.starting_paragraph = "Starting paragraph is required";
-    // }
 
     if (!form.description.trim()) {
       e.description = "Description is required";
@@ -251,7 +264,6 @@ export default function StandardDescriptionForm({
   /* =====================
      IMAGE UPLOAD
   ===================== */
-
   function handleGallerySelect(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -259,7 +271,6 @@ export default function StandardDescriptionForm({
     files.forEach((file) => {
       const preview = URL.createObjectURL(file);
 
-      // optimistic add
       setForm((prev) => ({
         ...prev,
         gallery: [
@@ -295,16 +306,10 @@ export default function StandardDescriptionForm({
           }));
         })
         .catch((err) => {
-          toast.error(
-            typeof err === "string"
-              ? err
-              : `Failed to upload ${file.name}`
-          );
+          toast.error(typeof err === "string" ? err : `Failed to upload ${file.name}`);
 
           setForm((prev) => {
-            const gallery = prev.gallery.filter(
-              (g) => g.preview !== preview
-            );
+            const gallery = prev.gallery.filter((g) => g.preview !== preview);
 
             URL.revokeObjectURL(preview);
 
@@ -319,9 +324,9 @@ export default function StandardDescriptionForm({
           });
         });
     });
+
+    e.target.value = "";
   }
-
-
 
   function removeGalleryItem(index) {
     setForm((prev) => {
@@ -354,14 +359,12 @@ export default function StandardDescriptionForm({
     e.preventDefault();
     if (!validate()) return;
 
-    const galleryUrls = form.gallery
-      .map((g) => g.url)
-      .filter(Boolean);
+    const galleryUrls = form.gallery.map((g) => g.url).filter(Boolean);
 
     const featuredImage =
-      form.gallery.find(
-        (g) => g.preview === form.featuredPreview
-      )?.url || galleryUrls[0] || null;
+      form.gallery.find((g) => g.preview === form.featuredPreview)?.url ||
+      galleryUrls[0] ||
+      null;
 
     const payload = {
       ...(initial?.id && { id: initial.id }),
@@ -379,22 +382,11 @@ export default function StandardDescriptionForm({
         is_optional: e.is_optional,
       })),
       mileage: 0,
-      travel_time_minutes: 0
-
+      travel_time_minutes: 0,
     };
+
     onSubmit(payload);
   }
-
-  // function addStop() {
-  //   if (!stopSelect) return;
-
-  //   if (form.stops.includes(stopSelect)) {
-  //     return; // prevent duplicates
-  //   }
-
-  //   updateField("stops", [...form.stops, stopSelect]);
-  //   setStopSelect("");
-  // }
 
   function removeStop(id) {
     updateField(
@@ -405,10 +397,7 @@ export default function StandardDescriptionForm({
 
   function addTag() {
     if (!tagSelect) return;
-
-    if (form.tags.includes(tagSelect)) {
-      return; // prevent duplicates
-    }
+    if (form.tags.includes(tagSelect)) return;
 
     updateField("tags", [...form.tags, tagSelect]);
     setTagSelect("");
@@ -420,20 +409,6 @@ export default function StandardDescriptionForm({
       form.tags.filter((t) => t !== tag)
     );
   }
-
-  // function addExcursion(e) {
-  //   if (selectedExcursions.find((x) => x.id === e.id)) return;
-  //   setSelectedExcursions((p) => [...p, e]);
-  // }
-
-  // function removeExcursion(id) {
-  //   setSelectedExcursions((p) => p.filter((x) => x.id !== id));
-  // }
-
-
-
-
-  const destinationCities = cities.filter((c) => c.is_destination);
 
   function getCityName(id) {
     const city = cities.find((c) => String(c.id) === String(id));
@@ -449,10 +424,7 @@ export default function StandardDescriptionForm({
 
       const origin = `${getCityName(form.start_city_id)}, Sri Lanka`;
       const destination = `${getCityName(form.end_city_id)}, Sri Lanka`;
-
-      const stops = form.stops.map(
-        (id) => `${getCityName(id)}, Sri Lanka`
-      );
+      const stops = form.stops.map((id) => `${getCityName(id)}, Sri Lanka`);
 
       const payload = {
         origin,
@@ -479,323 +451,549 @@ export default function StandardDescriptionForm({
     }
   }
 
+  const stopCities = (cities || []).filter((c) => c.is_stop);
+  const totalImages = form.gallery.length;
+  const uploadedImages = form.gallery.filter((g) => g.status === "done").length;
+
   return (
     <form
       id="standard-description-form"
       onSubmit={handleSubmit}
-      className="space-y-5"
+      className="space-y-6"
     >
-      {/* ================= TITLE ================= */}
-      <Input
-        label="Title / Name"
-        value={form.title}
-        error={errors.title}
-        onChange={(v) => updateField("title", v)}
-      />
 
-      {/* ================= GALLERY ================= */}
-      <div className="border rounded-md p-3 space-y-2">
-        <h3 className="text-sm font-semibold">Gallery</h3>
+      {/* Basic Info */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" />
+            Basic Information
+          </CardTitle>
+          <CardDescription>
+            Define the title and core identity of this standard description.
+          </CardDescription>
+        </CardHeader>
 
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleGallerySelect}
-          className="text-sm"
-        />
+        <CardContent className="space-y-2">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title / Name</Label>
+            <Input
+              id="title"
+              value={form.title}
+              onChange={(e) => updateField("title", e.target.value)}
+              placeholder="e.g. Scenic South Coast Journey"
+              className="h-11"
+              ref={titleRef}
+            />
+            {errors.title && (
+              <p className="text-xs font-medium text-destructive">{errors.title}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {errors.gallery && (
-          <p className="text-xs text-ti-red">{errors.gallery}</p>
-        )}
+      {/* Gallery */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ImagePlus className="h-4 w-4" />
+            Gallery Management
+          </CardTitle>
+          <CardDescription>
+            Upload destination imagery, curate gallery items, and choose the featured image.
+          </CardDescription>
+        </CardHeader>
 
-        <div className="grid grid-cols-4 gap-3">
-          {form.gallery.map((img, i) => (
-            <div key={i} className="relative">
-              <img
-                src={img.preview}
-                className={`h-24 w-full object-cover rounded border ${form.featuredPreview === img.preview
-                  ? "border-ti-teal border-4"
-                  : ""
-                  }`}
-              />
-
-              <button
-                type="button"
-                onClick={() => removeGalleryItem(i)}
-                className="absolute top-1 right-1 bg-black/60 text-white px-2 rounded text-xs"
-              >
-                ✕
-              </button>
-
-              {form.featuredPreview !== img.preview && (
-                <button
-                  type="button"
-                  onClick={() => setAsFeatured(i)}
-                  className="absolute bottom-1 left-1 bg-ti-teal text-white text-xs px-2 rounded"
-                >
-                  Set Featured
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ================= ROUTE ================= */}
-      <div className="border rounded-xl p-4 space-y-4 bg-white shadow-sm">
-        <h3 className="text-sm font-semibold text-ti-forest">
-          Route
-        </h3>
-
-        {/* START + DESTINATION */}
-        <div className="grid grid-cols-2 gap-3">
-          <Select
-            label="Starting City"
-            value={form.start_city_id}
-            error={errors.start_city_id}
-            onChange={(v) => updateField("start_city_id", v)}
-            options={[
-              { value: "", label: "Select city" },
-              ...cities.map((c) => ({
-                value: String(c.id),
-                label: c.city,
-              })),
-            ]}
-          />
-
-          <Select
-            label="Destination City"
-            value={form.end_city_id}
-            error={errors.end_city_id}
-            onChange={(v) => updateField("end_city_id", v)}
-            options={[
-              { value: "", label: "Select city" },
-              ...cities.map((c) => ({
-                value: String(c.id),
-                label: c.city,
-              })),
-            ]}
-          />
-        </div>
-
-        {/* STOPS */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium">Intermediate Stops</label>
-
-          {/* SELECTOR (auto add on select) */}
-          <select
-            className="w-full border rounded-md px-3 py-2 text-sm"
-            value={stopSelect}
-            onChange={(e) => {
-              const val = e.target.value;
-              setStopSelect("");
-
-              if (!val) return;
-
-              if (!form.stops.includes(val)) {
-                updateField("stops", [...form.stops, val]);
-              }
-            }}
+        <CardContent className="space-y-5">
+          <div
+            className="rounded-2xl border border-dashed bg-muted/30 p-6 transition hover:bg-muted/40"
+            onClick={() => fileInputRef.current?.click()}
           >
-            <option value="">Select city to add</option>
-            {(cities || [])
-              .filter((c) => c.is_stop)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.city}
-                </option>
-              ))}
-          </select>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleGallerySelect}
+              className="hidden"
+            />
 
-          {/* CHIPS */}
-          <div className="flex flex-wrap gap-3 items-center">
-            {form.stops.length ? (
-              form.stops.map((id, index) => {
-                const city = cities.find((c) => String(c.id) === String(id));
+            <div className="flex flex-col items-center justify-center gap-3 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border bg-background shadow-sm">
+                <UploadCloud className="h-6 w-6 text-muted-foreground" />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Click to upload gallery images
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Supports multiple image uploads. First image becomes featured until changed.
+                </p>
+              </div>
+
+              <Button type="button" variant="secondary" className="rounded-xl">
+                Choose Images
+              </Button>
+            </div>
+          </div>
+
+          {errors.gallery && (
+            <p className="text-xs font-medium text-destructive">{errors.gallery}</p>
+          )}
+
+          {!!form.gallery.length && (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {form.gallery.map((img, i) => {
+                const isFeatured = form.featuredPreview === img.preview;
+                const isUploading = img.status === "uploading";
 
                 return (
-                  <div key={id} className="flex items-center gap-2 group">
-                    {/* Optional: Add a connector arrow between stops, except for the first one */}
-                    {index > 0 && (
-                      <span className="text-ti-sky/40 font-bold text-xs">→</span>
-                    )}
+                  <div
+                    key={i}
+                    className={`group overflow-hidden rounded-2xl border bg-background shadow-sm transition ${isFeatured ? "ring-2 ring-primary/30" : "hover:shadow-md"
+                      }`}
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                      <img
+                        src={img.preview}
+                        alt={`Gallery ${i + 1}`}
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                      />
 
-                    <div
-                      className=" flex items-center pl-2 pr-1 py-1.5 rounded-xl text-xs gap-3 border transition-all duration-200 shadow-sm bg-ti-mint/5 border-ti-mint/20 hover:border-ti-mint/40"
-                    >
-                      {/* The Icon */}
-                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-ti-sky/10">
-                        <MapPin size={14} strokeWidth={1} />
+                      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-2">
+                        <Badge
+                          variant={isFeatured ? "default" : "secondary"}
+                          className="rounded-lg"
+                        >
+                          {isFeatured ? (
+                            <>
+                              <Star className="mr-1 h-3 w-3" />
+                              Featured
+                            </>
+                          ) : (
+                            "Gallery"
+                          )}
+                        </Badge>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="h-8 w-8 rounded-full shadow-sm"
+                          onClick={() => removeGalleryItem(i)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
 
-                      {/* City Label */}
-                      <span className="font-semibold tracking-tight">
-                        {city?.city || id}
-                      </span>
+                      <div className="absolute inset-x-0 bottom-0 p-2">
+                        <div className="rounded-xl bg-black/55 px-3 py-2 text-xs text-white backdrop-blur">
+                          {isUploading ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Ready
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                      {/* Improved Remove Button */}
-                      <button
-                        type="button"
-                        onClick={() => removeStop(id)}
-                        className="ml-1 p-1 rounded-full text-slate-300 hover:text-white hover:bg-ti-red transition-all border-l pl-2 ml-1"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <div className="flex items-center justify-between gap-2 p-3">
+                      <div className="text-xs text-muted-foreground">
+                        Image #{i + 1}
+                      </div>
+
+                      {!isFeatured && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="rounded-xl"
+                          onClick={() => setAsFeatured(i)}
+                        >
+                          <Star className="mr-1 h-3.5 w-3.5" />
+                          Set Featured
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-2 border-2 border-dashed border-slate-100 rounded-xl w-full">
-                <span className="text-xs text-slate-400 italic">
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Route */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Route className="h-4 w-4" />
+            Route Configuration
+          </CardTitle>
+          <CardDescription>
+            Select the origin, destination, and intermediate stops for this itinerary path.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Starting City</Label>
+              <Select
+                key={`start-${form.start_city_id}-${cities.length}`}
+                value={form.start_city_id || undefined}
+                onValueChange={(v) => updateField("start_city_id", v)}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue
+                    placeholder={isLoadingCities ? "Loading cities..." : "Select starting city"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.start_city_id && (
+                <p className="text-xs font-medium text-destructive">
+                  {errors.start_city_id}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Destination City</Label>
+              <Select
+                key={`end-${form.end_city_id}-${cities.length}`}
+                value={form.end_city_id || undefined}
+                onValueChange={(v) => updateField("end_city_id", v)}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue
+                    placeholder={isLoadingCities ? "Loading cities..." : "Select destination city"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.end_city_id && (
+                <p className="text-xs font-medium text-destructive">
+                  {errors.end_city_id}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label>Intermediate Stops</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add optional stop points between the start and destination cities.
+              </p>
+            </div>
+
+            <Select
+              value={stopSelect || undefined}
+              onValueChange={(val) => {
+                setStopSelect("");
+                if (!val) return;
+                if (!form.stops.includes(val)) {
+                  updateField("stops", [...form.stops, val]);
+                }
+              }}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select city to add as a stop" />
+              </SelectTrigger>
+              <SelectContent>
+                {stopCities.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {form.stops.length ? (
+                form.stops.map((id, index) => {
+                  const city = cities.find((c) => String(c.id) === String(id));
+
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      {index > 0 && (
+                        <div className="rounded-full border bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+                          → Route
+                        </div>
+                      )}
+
+                      <div className="inline-flex items-center gap-2 rounded-2xl border bg-background px-3 py-2 shadow-sm">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <MapPin className="h-3.5 w-3.5" />
+                        </div>
+
+                        <span className="text-sm font-medium">
+                          {city?.city || id}
+                        </span>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                          onClick={() => removeStop(id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="w-full rounded-2xl border border-dashed bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
                   No intermediate stops added yet
-                </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Distance */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Car className="h-4 w-4" />
+            Distance & Travel Details
+          </CardTitle>
+          <CardDescription>
+            Fetch automated mileage and travel duration based on the selected route.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
+            <div className="space-y-2">
+              <Label>Mileage (KM)</Label>
+              <Input
+                value={form.mileage}
+                onChange={(e) => updateField("mileage", e.target.value)}
+                placeholder="Auto or manual"
+                className="h-11"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Travel Time (Minutes)</Label>
+              <Input
+                value={form.travel_time_minutes}
+                onChange={(e) => updateField("travel_time_minutes", e.target.value)}
+                placeholder="Auto calculated"
+                className="h-11"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button
+                type="button"
+                onClick={handleFetchDistance}
+                disabled={distanceLoading}
+                className="h-11 w-full rounded-xl lg:w-auto"
+              >
+                {distanceLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Fetching...
+                  </>
+                ) : (
+                  <>
+                    <Route className="mr-2 h-4 w-4" />
+                    Fetch Distance
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {form.travel_time_minutes ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border bg-muted/20 p-4">
+                <div className="text-xs text-muted-foreground">Mileage</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {form.mileage || 0} km
+                </div>
+              </div>
+
+              <div className="rounded-2xl border bg-muted/20 p-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  Travel Time
+                </div>
+                <div className="mt-1 text-lg font-semibold">
+                  {form.travel_time_minutes} minutes
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* Excursions */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mountain className="h-4 w-4" />
+            Linked Excursions
+          </CardTitle>
+          <CardDescription>
+            Search and attach relevant excursions to enrich this standard description.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <ExcursionSelector
+            items={excursions}
+            selected={selectedExcursions}
+            setSelected={setSelectedExcursions}
+            onSearch={(val) => setExcursionSearch(val)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Content */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" />
+            Content Editor
+          </CardTitle>
+          <CardDescription>
+            Write the rich itinerary description content shown to users and quotations.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <div className="rounded-2xl border bg-background p-2 shadow-sm">
+              <RichTextEditor
+                value={form.description}
+                onChange={(v) => updateField("description", v)}
+              />
+            </div>
+            {errors.description && (
+              <p className="text-xs font-medium text-destructive">
+                {errors.description}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tags */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Tag className="h-4 w-4" />
+            Audience Tags
+          </CardTitle>
+          <CardDescription>
+            Organize this description with reusable travel audience and theme tags.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <div className="space-y-2">
+              <Label>Select Tag</Label>
+              <Select
+                value={tagSelect || undefined}
+                onValueChange={(value) => setTagSelect(value)}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Choose a tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tagOptions.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 rounded-xl"
+                onClick={addTag}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Add Tag
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {form.tags.length ? (
+              form.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="rounded-xl px-3 py-1.5 text-sm capitalize"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="ml-2 text-muted-foreground transition hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))
+            ) : (
+              <div className="w-full rounded-2xl border border-dashed bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
+                No tags added
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* ================= DISTANCE ================= */}
-      <div className="border rounded-xl p-4 space-y-3 bg-white shadow-sm">
-        <h3 className="text-sm font-semibold text-ti-forest">
-          Distance & Travel
-        </h3>
-
-        <div className="flex gap-2 items-end">
-          <Input
-            label="Mileage (KM)"
-            value={form.mileage}
-            onChange={(v) => updateField("mileage", v)}
-            placeholder="Auto or manual"
-          />
-
-          <Button
-            type="button"
-            onClick={handleFetchDistance}
-            disabled={distanceLoading}
-          >
-            {distanceLoading ? "Fetching..." : "Fetch"}
-          </Button>
-        </div>
-
-        {form.travel_time_minutes && (
-          <div className="text-xs text-muted-foreground">
-            Travel Time: {form.travel_time_minutes} minutes
-          </div>
-        )}
-      </div>
-
-      {/* ================= EXCURSIONS ================= */}
-      <div className="border rounded-md p-3 space-y-3">
-        <h3 className="text-sm font-semibold">Link Excursions</h3>
-        <ExcursionSelector
-          items={excursions}
-          selected={selectedExcursions}
-          setSelected={setSelectedExcursions}
-          onSearch={(val) => setExcursionSearch(val)}
-        />
-
-      </div>
-
-
-
-      {/* ================= CONTENT ================= */}
-      <div className="border rounded-md p-3 space-y-2">
-        {/* <h3 className="text-sm font-semibold">Content</h3>
-        <label className="block text-xs font-medium">
-          Starting Paragraph
-        </label>
-
-        <RichTextEditor
-          value={form.starting_paragraph}
-          onChange={(v) =>
-            updateField("starting_paragraph", v)
-          }
-        />
-        {errors.starting_paragraph && (
-          <p className="text-xs text-ti-red">
-            {errors.starting_paragraph}
-          </p>
-        )} */}
-
-
-        <label className="block text-xs font-medium pt-2">
-          Description
-        </label>
-
-        <RichTextEditor
-          value={form.description}
-          onChange={(v) => updateField("description", v)}
-        />
-        {errors.description && (
-          <p className="text-xs text-ti-red">
-            {errors.description}
-          </p>
-        )}
-      </div>
-
-      {/* ================= TAGS ================= */}
-      <div className="p-2 border rounded space-y-2">
-        <h3 className="text-sm font-semibold">Tags</h3>
-
-        <div className="flex gap-2">
-          <select
-            className="flex-1 border rounded px-2 py-1.5 text-sm"
-            value={tagSelect}
-            onChange={(e) => setTagSelect(e.target.value)}
-          >
-            <option value="">Select tag</option>
-            {tagOptions.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </select>
-
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={addTag}
-          >
-            Add
-          </Button>
-        </div>
-
-        {/* SELECTED TAGS */}
-        <div className="flex flex-wrap gap-2">
-          {form.tags.length ? (
-            form.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-1 border rounded text-xs flex items-center gap-1 bg-ti-mint/60"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="text-ti-red"
-                >
-                  ×
-                </button>
-              </span>
-            ))
-          ) : (
-            <span className="text-xs text-gray-500">
-              No tags added
-            </span>
-          )}
-        </div>
-      </div>
-
+        </CardContent>
+      </Card>
 
       {!hideActions && (
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button type="submit">
-            {initial ? "Save Changes" : "Add Description"}
-          </Button>
+        <div className="sticky bottom-0 z-10 border-t bg-background/95 px-1 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              Review the gallery, route, excursions, and content before saving.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="submit" className="min-w-[180px] rounded-xl">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {initial ? "Save Changes" : "Add Description"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </form>

@@ -8,7 +8,16 @@ export const fetchCities = createAsyncThunk(
   "cities/fetch",
   async ({ search = "", page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
-      return await getCities({ search, page, limit });
+      const data = await getCities({ search, page, limit }); // ✅ NO .data
+
+      return {
+        items: data.items || [],
+        page: data.page || 1,
+        limit: data.page_size || limit,
+        total: data.total || 0,
+        total_pages: data.total_pages || 1,
+      };
+
     } catch (e) {
       return rejectWithValue(e.response?.data?.message || e.message);
     }
@@ -64,6 +73,7 @@ const citySlice = createSlice({
     items: [],
     page: 1,
     limit: 10,
+    total_pages: 1,
     total: 0,
     loading: false,
     error: null,
@@ -90,6 +100,7 @@ const citySlice = createSlice({
         s.page = a.payload.page;
         s.limit = a.payload.limit;
         s.total = a.payload.total;
+        s.total_pages = a.payload.total_pages;
       })
       .addCase(fetchCities.rejected, (s, a) => {
         s.loading = false;
@@ -122,7 +133,7 @@ const citySlice = createSlice({
       .addCase(deactivate.fulfilled, (s, a) => {
         const idx = s.items.findIndex((c) => c.id === a.payload);
         if (idx !== -1) {
-          s.items[idx].status = "inactive";
+          s.items[idx].status = 0;
         }
       });
   },

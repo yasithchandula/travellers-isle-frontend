@@ -15,6 +15,7 @@ import {
   addCity,
   editCity,
   deactivate,
+  setCityPage,
 } from "../../app/slices/citySlice";
 
 import {
@@ -51,9 +52,9 @@ import PaginationBar from "@/components/common/PaginationBar";
 export default function DestinationManager() {
   const dispatch = useDispatch();
 
-  const { items = [], loading, search = "" } = useSelector(
-    (s) => s.cities || {}
-  );
+  // const { items = [], loading, search = "" } = useSelector(
+  //   (s) => s.cities || {}
+  // );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -61,36 +62,25 @@ export default function DestinationManager() {
 
   const [view, setView] = useState("table");
   const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  //const [page, setPage] = useState(1);
+
+  const {
+    items,
+    loading,
+    page,
+    total_pages,
+    total,
+    search
+  } = useSelector((s) => s.cities);
+
+  console.log("Cities in DestinationManager:", items); // Debug log
 
   /* ================= LOAD ================= */
 
   useEffect(() => {
-    dispatch(fetchCities({ search, page: 1, limit })).catch(() =>
-      toast.error("Failed to load cities")
-    );
-  }, [dispatch, search, limit]);
+    dispatch(fetchCities({ search, page, limit }));
+  }, [dispatch, search, page, limit]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, limit]);
-
-  /* ================= FILTER ================= */
-
-  const filtered = useMemo(() => {
-    return items.filter((c) =>
-      c.city?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [items, search]);
-
-  /* ================= PAGINATION ================= */
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * limit;
-    return filtered.slice(start, start + limit);
-  }, [filtered, page, limit]);
 
   /* ================= ACTIONS ================= */
 
@@ -168,7 +158,7 @@ export default function DestinationManager() {
 
         <StatCard
           title="Total Cities"
-          value={items.length}
+          value={total}
           icon={MapPinned}
         />
 
@@ -201,14 +191,14 @@ export default function DestinationManager() {
         setView={setView}
 
         loading={loading}
-        resultCount={filtered.length}
+        resultCount={total}
       />
 
       {/* VIEW SWITCH */}
 
       {view === "card" ? (
         <CardGrid>
-          {paginated.map((c, index) => (
+          {items.map((c, index) => (
             <div
               key={c.id}
               className={cn(
@@ -309,7 +299,7 @@ export default function DestinationManager() {
                   Loading...
                 </TableCell>
               </TableRow>
-            ) : paginated.map((c) => (
+            ) : items.map((c) => (
 
               <TableRow key={c.id}>
 
@@ -322,8 +312,8 @@ export default function DestinationManager() {
                 <TableCell>{c.country}</TableCell>
 
                 <TableCell>
-                  {c.isDestination && <Badge>Destination</Badge>}
-                  {c.isStop && <Badge variant="secondary">Stop</Badge>}
+                  {c.isDestination === 1 && <Badge>Destination</Badge>}
+                  {c.isStop === 1 && <Badge variant="secondary">Stop</Badge>}
                 </TableCell>
 
                 <TableCell>
@@ -379,9 +369,9 @@ export default function DestinationManager() {
 
       <PaginationBar
         page={page}
-        totalPages={totalPages}
+        totalPages={total_pages}
         loading={loading}
-        onPageChange={setPage}
+        onPageChange={(p) => dispatch(setCityPage(p))}
       />
 
       {/* MODAL */}

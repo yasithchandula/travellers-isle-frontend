@@ -54,13 +54,6 @@ export default function InquiryList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const {
-    items = [],
-    loading,
-    query,
-    labelFilter
-  } = useSelector((s) => s.inquiries);
-
   const users = useSelector((s) => s.users?.items || []);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,30 +62,33 @@ export default function InquiryList() {
 
   const [view, setView] = useState("table");
   const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+
+  const {
+    items = [],
+    loading,
+    query,
+    labelFilter,
+    page,
+    totalPages,
+    total
+  } = useSelector((s) => s.inquiries);
 
   /* LOAD */
 
   useEffect(() => {
-    dispatch(fetchInquiries({ q: query, label: labelFilter }));
-  }, [dispatch, query, labelFilter]);
+    dispatch(fetchInquiries({
+      q: query,
+      label: labelFilter,
+      page,
+      limit
+    }));
+  }, [dispatch, query, labelFilter, page, limit]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [query, labelFilter, limit]);
 
   /* FILTER */
 
   const filtered = useMemo(() => items, [items]);
 
-  /* PAGINATION */
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * limit;
-    return filtered.slice(start, start + limit);
-  }, [filtered, page, limit]);
 
   /* CREATE */
 
@@ -141,7 +137,7 @@ export default function InquiryList() {
 
         <StatCard
           title="Total"
-          value={items.length}
+          value={total}
           icon={FileText}
         />
 
@@ -178,7 +174,7 @@ export default function InquiryList() {
         setView={setView}
 
         loading={loading}
-        resultCount={filtered.length}
+        resultCount={total}
       />
 
       {/* VIEW */}
@@ -187,7 +183,7 @@ export default function InquiryList() {
 
         <CardGrid>
 
-          {paginated.map((i) => (
+          {items.map((i) => (
 
             <div key={i.id} className="border rounded-xl p-4 shadow-sm">
 
@@ -237,7 +233,7 @@ export default function InquiryList() {
 
           body={
 
-            paginated.map((i) => (
+            items.map((i) => (
 
               <TableRow key={i.id}>
 
@@ -306,7 +302,14 @@ export default function InquiryList() {
         page={page}
         totalPages={totalPages}
         loading={loading}
-        onPageChange={setPage}
+        onPageChange={(p) =>
+          dispatch(fetchInquiries({
+            q: query,
+            label: labelFilter,
+            page: p,
+            limit
+          }))
+        }
       />
 
       {/* CREATE */}

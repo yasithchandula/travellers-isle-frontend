@@ -169,25 +169,6 @@ export default function ExcursionSelector({
     return () => clearTimeout(timer);
   }, [searchText, onSearch]);
 
-  const { isOptionalAll, isIndeterminate } = useMemo(() => {
-    if (selected.length === 0) {
-      return {
-        isOptionalAll: false,
-        isIndeterminate: false,
-      };
-    }
-
-    const optionalCount = selected.filter(
-      (item) => item.is_optional === true
-    ).length;
-
-    return {
-      isOptionalAll: optionalCount === selected.length,
-      isIndeterminate:
-        optionalCount > 0 && optionalCount < selected.length,
-    };
-  }, [selected]);
-
   /* =========================
      FAST LOOKUPS
   ========================= */
@@ -243,7 +224,7 @@ export default function ExcursionSelector({
       ...prev,
       {
         ...item,
-        is_optional: isOptionalAll,
+        is_optional: false,
       },
     ]);
   }
@@ -284,88 +265,85 @@ export default function ExcursionSelector({
             className="min-h-11 w-full justify-between rounded-xl px-3 py-2"
           >
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pr-3 text-left">
-              <div className="flex w-full items-center justify-between gap-2">
-                {/* LEFT: Selected badges */}
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left">
-                  {selected.length > 0 ? (
-                    <>
-                      {visibleSelections.map((item) => (
-                        <Badge
-                          key={item.id}
-                          variant="secondary"
-                          className="flex max-w-full items-center gap-1 rounded-lg px-2 py-1"
-                        >
-                          <span className="max-w-[180px] truncate">
-                            {item.name || item.title}
-                          </span>
+              {selected.length > 0 ? (
+                <>
+                  {visibleSelections.map((item) => (
+                    <Badge
+                      key={item.id}
+                      variant="secondary"
+                      className="flex max-w-full items-center gap-2 rounded-lg px-2 py-1"
+                    >
+                      {/* Name */}
+                      <span className="max-w-[150px] truncate">
+                        {item.name || item.title}
+                      </span>
 
-                          {isOptionalAll && (
-                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                              Optional
-                            </span>
-                          )}
-
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSelection(item.id);
-                            }}
-                            className="cursor-pointer rounded p-0.5 hover:bg-background"
-                          >
-                            <XIcon className="h-3 w-3" />
-                          </span>
-                        </Badge>
-                      ))}
-
-                      {(hiddenCount > 0 || expanded) && (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpanded((prev) => !prev);
-                          }}
-                          className="inline-flex items-center rounded-lg border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
-                        >
-                          {expanded ? "Show less" : `+${hiddenCount} more`}
+                      {/* Optional Toggle */}
+                      <div
+                        className="flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={!!item.is_optional}
+                          onCheckedChange={(checked) =>
+                            toggleOptional(item.id, checked)
+                          }
+                          className="h-3.5 w-3.5"
+                        />
+                        <span className="text-muted-foreground">
+                          Optional
                         </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Select excursions
+                      </div>
+
+                      {/* Remove */}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSelection(item.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            removeSelection(item.id);
+                          }
+                        }}
+                        className="cursor-pointer rounded p-0.5 hover:bg-background"
+                        aria-label={`Remove ${item.name || item.title}`}
+                      >
+                        <XIcon className="h-3 w-3" />
+                      </span>
+                    </Badge>
+                  ))}
+
+                  {(hiddenCount > 0 || expanded) && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpanded((prev) => !prev);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setExpanded((prev) => !prev);
+                        }
+                      }}
+                      className="inline-flex items-center rounded-lg border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                    >
+                      {expanded ? "Show less" : `+${hiddenCount} more`}
                     </span>
                   )}
-                </div>
-
-                {/* RIGHT: Optional toggle */}
-                {selected.length > 0 && (
-                  <div
-                    className="flex shrink-0 items-center gap-2 rounded-lg border bg-emerald-50 px-2 py-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-700" />
-
-                    <span className="text-[11px] font-medium text-emerald-800">
-                      Optional
-                    </span>
-
-                    <Checkbox
-                      checked={isIndeterminate ? "indeterminate" : isOptionalAll}
-                      onCheckedChange={(checked) => {
-                        const value = checked === true;
-
-                        setSelected((prev) =>
-                          prev.map((item) => ({
-                            ...item,
-                            is_optional: value,
-                          }))
-                        );
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  Select excursions
+                </span>
+              )}
             </div>
 
             <ChevronsUpDownIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -507,7 +485,7 @@ export default function ExcursionSelector({
                                     ) : null}
                                   </div>
 
-                                  {/* {isSelected && (
+                                  {isSelected && (
                                     <div
                                       className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2"
                                       onClick={(e) => e.stopPropagation()}
@@ -515,23 +493,24 @@ export default function ExcursionSelector({
                                       <div className="flex items-center gap-2">
                                         <Sparkles className="h-3.5 w-3.5 text-emerald-700" />
                                         <span className="text-xs font-medium text-emerald-800">
-                                          Apply optional to all
+                                          Mark as optional
                                         </span>
                                       </div>
 
                                       <div className="flex items-center gap-2">
                                         <Checkbox
-                                          checked={isOptionalAll}
+                                          checked={!!selectedItem?.is_optional}
                                           onCheckedChange={(checked) =>
-                                            setIsOptionalAll(checked === true)
+                                            toggleOptional(item.id, checked)
                                           }
+                                          aria-label={`Optional ${item.name || item.title}`}
                                         />
                                         <span className="text-xs text-emerald-800">
                                           Optional in quotation
                                         </span>
                                       </div>
                                     </div>
-                                  )} */}
+                                  )}
                                 </div>
                               </CommandItem>
                             );

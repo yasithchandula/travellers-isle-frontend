@@ -65,17 +65,16 @@ import CardGrid from "@/components/common/CardGrid";
 import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
 import { buildImageUrl } from "../../utils/urls";
+import { useRef } from "react";
+
+import StandardDescriptionHeader from "./StandardDescriptionHeader";
+
 
 
 export default function StandardDescriptionManager() {
 
   const dispatch = useDispatch();
-
-  const {
-    items = [],
-    loading,
-    search = "",
-  } = useSelector((s) => s.standardDescriptions || {});
+  const scrollRef = useRef(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -85,41 +84,41 @@ export default function StandardDescriptionManager() {
 
   const [view, setView] = useState("table");
   const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+
+
+  const {
+    items = [],
+    loading,
+    search = "",
+    page,
+    totalPages,
+    total,
+  } = useSelector((s) => s.standardDescriptions || {});
+
 
   useEffect(() => {
-    dispatch(fetchStandardDescriptions({ search, page: 1, limit }));
-  }, [dispatch, search, limit]);
+    dispatch(fetchStandardDescriptions({ search, page, limit }));
+  }, [dispatch, search, page, limit]);
 
   useEffect(() => {
-    setPage(1);
-  }, [search, limit]);
+    if (!modalOpen) return;
 
-  /* filter */
+    let frame;
+    let count = 0;
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const run = () => {
+      scrollRef.current?.scrollTo({ top: 0 });
 
-    return items.filter(
-      (d) =>
-        d.start_city?.name?.toLowerCase().includes(q) ||
-        d.end_city?.name?.toLowerCase().includes(q) ||
-        d.title?.toLowerCase().includes(q)
-    );
+      count++;
+      if (count < 15) {
+        frame = requestAnimationFrame(run);
+      }
+    };
 
-  }, [items, search]);
+    run();
 
-  /* pagination */
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filtered.length / limit)
-  );
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * limit;
-    return filtered.slice(start, start + limit);
-  }, [filtered, page, limit]);
+    return () => cancelAnimationFrame(frame);
+  }, [modalOpen]);
 
   /* submit */
 
@@ -207,7 +206,7 @@ export default function StandardDescriptionManager() {
 
         <StatCard
           title="Total"
-          value={items.length}
+          value={total}
           icon={FileText}
         />
 
@@ -243,14 +242,14 @@ export default function StandardDescriptionManager() {
         setView={setView}
 
         loading={loading}
-        resultCount={filtered.length}
+        resultCount={total}
       />
 
       {/* VIEW */}
 
       {view === "card" ? (
         <CardGrid>
-          {paginated.map((d, index) => {
+          {items.map((d, index) => {
             const image =
               d.featured_image || d.gallery?.[0] || "/placeholder.jpg";
 
@@ -398,7 +397,7 @@ export default function StandardDescriptionManager() {
 
           body={
 
-            paginated.map((d) => (
+            items.map((d) => (
 
               <TableRow key={d.id}>
 
@@ -514,7 +513,9 @@ export default function StandardDescriptionManager() {
         page={page}
         totalPages={totalPages}
         loading={loading}
-        onPageChange={setPage}
+        onPageChange={(p) =>
+          dispatch(fetchStandardDescriptions({ search, page: p, limit }))
+        }
       />
 
       {/* FORM MODAL */}
@@ -524,17 +525,24 @@ export default function StandardDescriptionManager() {
         <DialogContent
           className="max-w-6xl h-[90vh] p-0 flex flex-col bg-white"
           onInteractOutside={(e) => e.preventDefault()}
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
 
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>
-              {editItem
-                ? "Edit Standard Description"
-                : "Create Standard Description"}
+              <div className="px-1 pt-2">
+
+                <StandardDescriptionHeader
+                  initial={editItem}
+                  uploadedImages={0} // optional: wire later
+                  totalImages={0}
+                  excursionCount={0}
+                />
+              </div>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4" ref={scrollRef}>
 
             <StandardDescriptionForm
               key={editItem?.id || "new"}
