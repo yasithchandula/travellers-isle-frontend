@@ -20,24 +20,13 @@ import {
   CheckCircle2,
   XCircle,
   MapPinned,
-  ArrowLeft,
-  Home,
-  Grid3X3,
-  Rows3,
-  PanelLeft,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -312,72 +301,13 @@ function getStats(items) {
   };
 }
 
-function filterItems(items, search, statusFilter) {
-  let result = [...items];
-
-  if (statusFilter && statusFilter !== "ALL") {
-    result = result.filter((item) => item.status === statusFilter);
-  }
-
-  const q = search.trim().toLowerCase();
-  if (q) {
-    result = result.filter((item) => {
-      const haystack = [
-        item.quote_no,
-        item.customer_name,
-        item.company,
-        item.start_city,
-        item.end_city,
-        item.status,
-        item.month,
-        item.year,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(q);
-    });
-  }
-
-  return result.sort((a, b) => {
-    if (a.updated_at > b.updated_at) return -1;
-    if (a.updated_at < b.updated_at) return 1;
-    return b.id - a.id;
-  });
-}
-
-function getMonthNodeByKey(tree, monthKey) {
-  for (const year of tree) {
-    for (const month of year.months) {
-      if (month.key === monthKey) {
-        return {
-          ...month,
-          year: year.year,
-          quotations: month.quotations.map((q) => ({
-            ...q,
-            year: year.year,
-            month: month.month,
-            monthKey: month.key,
-          })),
-        };
-      }
-    }
-  }
-  return null;
-}
-
-function getYearNode(tree, yearValue) {
-  return tree.find((item) => item.year === Number(yearValue)) || null;
-}
-
 /* =========================================================
    MAIN PAGE
 ========================================================= */
 
 export default function QuotationManagerPage() {
-  const [view, setView] = useState("explorer"); // explorer | drive | table | cards
+  const [view, setView] = useState("explorer"); // explorer | table | cards
   const [explorerInnerView, setExplorerInnerView] = useState("table"); // table | cards
-  const [driveInnerView, setDriveInnerView] = useState("grid"); // grid | list
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedMonthKey, setSelectedMonthKey] = useState("2026-03");
@@ -386,17 +316,27 @@ export default function QuotationManagerPage() {
     2025: true,
   }));
 
-  // drive path
-  const [drivePath, setDrivePath] = useState({
-    year: null,
-    monthKey: null,
-  });
-
   const allQuotations = useMemo(() => flattenTree(quotationTreeData), []);
   const stats = useMemo(() => getStats(allQuotations), [allQuotations]);
 
   const selectedMonthNode = useMemo(() => {
-    return getMonthNodeByKey(quotationTreeData, selectedMonthKey);
+    for (const year of quotationTreeData) {
+      for (const month of year.months) {
+        if (month.key === selectedMonthKey) {
+          return {
+            ...month,
+            year: year.year,
+            quotations: month.quotations.map((q) => ({
+              ...q,
+              year: year.year,
+              month: month.month,
+              monthKey: month.key,
+            })),
+          };
+        }
+      }
+    }
+    return null;
   }, [selectedMonthKey]);
 
   const filteredExplorerItems = useMemo(() => {
@@ -418,21 +358,6 @@ export default function QuotationManagerPage() {
     }, {});
   }, []);
 
-  const driveYearNode = useMemo(() => {
-    if (!drivePath.year) return null;
-    return getYearNode(quotationTreeData, drivePath.year);
-  }, [drivePath.year]);
-
-  const driveMonthNode = useMemo(() => {
-    if (!drivePath.monthKey) return null;
-    return getMonthNodeByKey(quotationTreeData, drivePath.monthKey);
-  }, [drivePath.monthKey]);
-
-  const filteredDriveMonthItems = useMemo(() => {
-    if (!driveMonthNode) return [];
-    return filterItems(driveMonthNode.quotations || [], search, statusFilter);
-  }, [driveMonthNode, search, statusFilter]);
-
   const toggleYear = (year) => {
     setExpandedYears((prev) => ({
       ...prev,
@@ -440,31 +365,13 @@ export default function QuotationManagerPage() {
     }));
   };
 
-  const openDriveRoot = () => {
-    setDrivePath({ year: null, monthKey: null });
-  };
-
-  const openDriveYear = (year) => {
-    setDrivePath({ year, monthKey: null });
-  };
-
-  const openDriveMonth = (year, monthKey) => {
-    setDrivePath({ year, monthKey });
-  };
-
-  const goDriveBack = () => {
-    if (drivePath.monthKey) {
-      setDrivePath((prev) => ({ ...prev, monthKey: null }));
-      return;
-    }
-    if (drivePath.year) {
-      setDrivePath({ year: null, monthKey: null });
-    }
-  };
-
   return (
     <div className="space-y-6 p-6">
+      {/* =====================================================
+          HERO
+      ===================================================== */}
       <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-background via-background to-muted/40 shadow-sm">
+        <div className="absolute inset-0" />
         <div className="relative flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between md:p-8">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
@@ -477,8 +384,8 @@ export default function QuotationManagerPage() {
                 Quotation Manager
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground md:text-base">
-                Browse quotations by year and month in explorer mode, switch to a
-                Drive-style folder experience, or use flat table and card views.
+                Browse quotations by year and month in explorer mode, or switch to
+                flat table and card views for faster scanning and management.
               </p>
             </div>
           </div>
@@ -492,6 +399,9 @@ export default function QuotationManagerPage() {
         </div>
       </section>
 
+      {/* =====================================================
+          STATS
+      ===================================================== */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Quotations"
@@ -519,6 +429,9 @@ export default function QuotationManagerPage() {
         />
       </section>
 
+      {/* =====================================================
+          TOOLBAR
+      ===================================================== */}
       <Card className="rounded-2xl border shadow-sm">
         <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
@@ -555,12 +468,6 @@ export default function QuotationManagerPage() {
                 label="Explorer"
               />
               <ToolbarToggleButton
-                active={view === "drive"}
-                onClick={() => setView("drive")}
-                icon={PanelLeft}
-                label="Drive"
-              />
-              <ToolbarToggleButton
                 active={view === "table"}
                 onClick={() => setView("table")}
                 icon={Table2}
@@ -577,8 +484,12 @@ export default function QuotationManagerPage() {
         </CardContent>
       </Card>
 
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
       {view === "explorer" ? (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+          {/* LEFT TREE */}
           <Card className="h-fit rounded-2xl border shadow-sm xl:sticky xl:top-6">
             <CardHeader className="border-b pb-4">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -666,6 +577,7 @@ export default function QuotationManagerPage() {
             </CardContent>
           </Card>
 
+          {/* RIGHT CONTENT */}
           <div className="space-y-4">
             <Card className="rounded-2xl border shadow-sm">
               <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -710,208 +622,6 @@ export default function QuotationManagerPage() {
               <QuotationTable items={filteredExplorerItems} showTimeline={false} />
             ) : (
               <QuotationCards items={filteredExplorerItems} showTimeline={false} />
-            )}
-          </div>
-        </div>
-      ) : view === "drive" ? (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
-          <Card className="h-fit rounded-2xl border shadow-sm xl:sticky xl:top-6">
-            <CardHeader className="border-b pb-4">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <PanelLeft className="h-4 w-4" />
-                Drive Navigation
-              </CardTitle>
-              <CardDescription>
-                Folder-first quotation browsing, similar to Google Drive.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="p-3">
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={openDriveRoot}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition",
-                    !drivePath.year
-                      ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                      : "hover:bg-muted/50"
-                  )}
-                >
-                  <Home className="h-4 w-4" />
-                  My Quotations
-                </button>
-
-                {quotationTreeData.map((yearNode) => {
-                  const isActiveYear = String(drivePath.year) === String(yearNode.year);
-
-                  return (
-                    <div key={yearNode.year} className="rounded-xl border bg-background">
-                      <button
-                        type="button"
-                        onClick={() => openDriveYear(yearNode.year)}
-                        className={cn(
-                          "flex w-full items-center justify-between px-3 py-2.5 text-left transition",
-                          isActiveYear ? "bg-sky-50 text-sky-700" : "hover:bg-muted/50"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Folder className="h-4 w-4 text-sky-600" />
-                          <span className="font-medium">{yearNode.year}</span>
-                        </div>
-                        <Badge variant="secondary" className="rounded-md">
-                          {yearNode.months.length}
-                        </Badge>
-                      </button>
-
-                      {isActiveYear && (
-                        <div className="space-y-1 border-t bg-muted/15 p-2">
-                          {yearNode.months.map((monthNode) => {
-                            const activeMonth = drivePath.monthKey === monthNode.key;
-
-                            return (
-                              <button
-                                key={monthNode.key}
-                                type="button"
-                                onClick={() =>
-                                  openDriveMonth(yearNode.year, monthNode.key)
-                                }
-                                className={cn(
-                                  "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition",
-                                  activeMonth
-                                    ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                                    : "hover:bg-background"
-                                )}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <FolderOpen className="h-4 w-4 text-amber-500" />
-                                  <span className="text-sm font-medium">
-                                    {monthNode.month}
-                                  </span>
-                                </div>
-                                <Badge variant="outline" className="rounded-md">
-                                  {monthNode.quotations.length}
-                                </Badge>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-4">
-            <Card className="rounded-2xl border shadow-sm">
-              <CardContent className="space-y-4 p-5">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="min-w-0">
-                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <button
-                        type="button"
-                        onClick={openDriveRoot}
-                        className="rounded-md border bg-muted/50 px-2 py-1 hover:bg-muted"
-                      >
-                        My Quotations
-                      </button>
-
-                      {drivePath.year && (
-                        <>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                          <button
-                            type="button"
-                            onClick={() => openDriveYear(drivePath.year)}
-                            className="rounded-md border bg-muted/50 px-2 py-1 hover:bg-muted"
-                          >
-                            {drivePath.year}
-                          </button>
-                        </>
-                      )}
-
-                      {driveMonthNode && (
-                        <>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                          <span className="rounded-md border bg-muted/50 px-2 py-1">
-                            {driveMonthNode.month}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <h2 className="text-lg font-semibold tracking-tight">
-                      {!drivePath.year
-                        ? "All quotation folders"
-                        : driveMonthNode
-                          ? `${driveMonthNode.month} ${driveMonthNode.year}`
-                          : `${drivePath.year} folders`}
-                    </h2>
-
-                    <p className="text-sm text-muted-foreground">
-                      {!drivePath.year
-                        ? "Open a year folder to view months."
-                        : driveMonthNode
-                          ? `${filteredDriveMonthItems.length} quotation${filteredDriveMonthItems.length === 1 ? "" : "s"
-                          } inside this month`
-                          : `${driveYearNode?.months?.length || 0} month folder${(driveYearNode?.months?.length || 0) === 1 ? "" : "s"
-                          } available`}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="gap-2 rounded-xl"
-                      onClick={goDriveBack}
-                      disabled={!drivePath.year && !drivePath.monthKey}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back
-                    </Button>
-
-                    <div className="inline-flex rounded-xl border bg-muted/30 p-1">
-                      <ToolbarToggleButton
-                        active={driveInnerView === "grid"}
-                        onClick={() => setDriveInnerView("grid")}
-                        icon={Grid3X3}
-                        label="Grid"
-                      />
-                      <ToolbarToggleButton
-                        active={driveInnerView === "list"}
-                        onClick={() => setDriveInnerView("list")}
-                        icon={Rows3}
-                        label="List"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {!drivePath.year ? (
-              driveInnerView === "grid" ? (
-                <DriveYearGrid items={quotationTreeData} onOpenYear={openDriveYear} />
-              ) : (
-                <DriveYearList items={quotationTreeData} onOpenYear={openDriveYear} />
-              )
-            ) : !driveMonthNode ? (
-              driveInnerView === "grid" ? (
-                <DriveMonthGrid
-                  yearNode={driveYearNode}
-                  onOpenMonth={(monthKey) => openDriveMonth(drivePath.year, monthKey)}
-                />
-              ) : (
-                <DriveMonthList
-                  yearNode={driveYearNode}
-                  onOpenMonth={(monthKey) => openDriveMonth(drivePath.year, monthKey)}
-                />
-              )
-            ) : driveInnerView === "grid" ? (
-              <DriveQuotationGrid items={filteredDriveMonthItems} />
-            ) : (
-              <DriveQuotationList items={filteredDriveMonthItems} />
             )}
           </div>
         </div>
@@ -968,12 +678,7 @@ function ToolbarToggleButton({ active, onClick, icon: Icon, label }) {
 
 function QuotationTable({ items, showTimeline = true }) {
   if (!items.length) {
-    return (
-      <EmptyState
-        title="No quotations found"
-        description="Try changing the search or status filter."
-      />
-    );
+    return <EmptyState title="No quotations found" description="Try changing the search or status filter." />;
   }
 
   return (
@@ -1009,18 +714,14 @@ function QuotationTable({ items, showTimeline = true }) {
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">{item.quote_no}</div>
-                      <div className="text-xs text-muted-foreground">
-                        ID #{item.id}
-                      </div>
+                      <div className="text-xs text-muted-foreground">ID #{item.id}</div>
                     </div>
                   </TableCell>
 
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">{item.customer_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {item.company}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{item.company}</div>
                     </div>
                   </TableCell>
 
@@ -1036,10 +737,7 @@ function QuotationTable({ items, showTimeline = true }) {
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={cn(
-                        "rounded-md font-medium",
-                        getStatusBadgeClass(item.status)
-                      )}
+                      className={cn("rounded-md font-medium", getStatusBadgeClass(item.status))}
                     >
                       {item.status}
                     </Badge>
@@ -1061,9 +759,7 @@ function QuotationTable({ items, showTimeline = true }) {
                   )}
 
                   <TableCell>
-                    <div className="text-sm text-muted-foreground">
-                      {item.updated_at}
-                    </div>
+                    <div className="text-sm text-muted-foreground">{item.updated_at}</div>
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -1081,12 +777,7 @@ function QuotationTable({ items, showTimeline = true }) {
 
 function QuotationCards({ items, showTimeline = true }) {
   if (!items.length) {
-    return (
-      <EmptyState
-        title="No quotations found"
-        description="Try changing the search or status filter."
-      />
-    );
+    return <EmptyState title="No quotations found" description="Try changing the search or status filter." />;
   }
 
   return (
@@ -1100,18 +791,13 @@ function QuotationCards({ items, showTimeline = true }) {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold">{item.quote_no}</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  ID #{item.id}
-                </div>
+                <div className="mt-1 text-xs text-muted-foreground">ID #{item.id}</div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "rounded-md font-medium",
-                    getStatusBadgeClass(item.status)
-                  )}
+                  className={cn("rounded-md font-medium", getStatusBadgeClass(item.status))}
                 >
                   {item.status}
                 </Badge>
@@ -1138,11 +824,7 @@ function QuotationCards({ items, showTimeline = true }) {
               <div className="grid grid-cols-3 gap-3">
                 <MiniInfo icon={Users} label="Pax" value={item.pax} />
                 <MiniInfo icon={CalendarDays} label="Nights" value={item.nights} />
-                <MiniInfo
-                  icon={TrendingUp}
-                  label="Value"
-                  value={formatMoney(item.value, item.currency)}
-                />
+                <MiniInfo icon={TrendingUp} label="Value" value={formatMoney(item.value, item.currency)} />
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground">
@@ -1222,388 +904,46 @@ function EmptyState({ title, description }) {
           <FolderOpen className="h-6 w-6 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 max-w-md text-sm text-muted-foreground">
-          {description}
-        </p>
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );
 }
 
 /* =========================================================
-   DRIVE VIEW COMPONENTS
+   FILTERING
 ========================================================= */
 
-function DriveYearGrid({ items, onOpenYear }) {
-  if (!items?.length) {
-    return (
-      <EmptyState
-        title="No year folders"
-        description="No quotation folders are available yet."
-      />
-    );
+function filterItems(items, search, statusFilter) {
+  let result = [...items];
+
+  if (statusFilter && statusFilter !== "ALL") {
+    result = result.filter((item) => item.status === statusFilter);
   }
 
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-      {items.map((yearNode) => {
-        const totalQuotes = yearNode.months.reduce(
-          (sum, month) => sum + month.quotations.length,
-          0
-        );
+  const q = search.trim().toLowerCase();
+  if (q) {
+    result = result.filter((item) => {
+      const haystack = [
+        item.quote_no,
+        item.customer_name,
+        item.company,
+        item.start_city,
+        item.end_city,
+        item.status,
+        item.month,
+        item.year,
+      ]
+        .join(" ")
+        .toLowerCase();
 
-        return (
-          <button
-            key={yearNode.year}
-            type="button"
-            onClick={() => onOpenYear(yearNode.year)}
-            className="text-left"
-          >
-            <Card className="rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <CardContent className="p-5">
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="rounded-2xl border bg-sky-50 p-3">
-                    <Folder className="h-6 w-6 text-sky-600" />
-                  </div>
-                  <Badge variant="secondary" className="rounded-md">
-                    {yearNode.months.length} months
-                  </Badge>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-base font-semibold">{yearNode.year}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {totalQuotes} quotation{totalQuotes === 1 ? "" : "s"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function DriveYearList({ items, onOpenYear }) {
-  if (!items?.length) {
-    return (
-      <EmptyState
-        title="No year folders"
-        description="No quotation folders are available yet."
-      />
-    );
+      return haystack.includes(q);
+    });
   }
 
-  return (
-    <Card className="rounded-2xl border shadow-sm">
-      <CardHeader className="border-b pb-4">
-        <CardTitle className="text-base">Year Folders</CardTitle>
-        <CardDescription>Open a year folder to view month folders.</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {items.map((yearNode) => {
-            const totalQuotes = yearNode.months.reduce(
-              (sum, month) => sum + month.quotations.length,
-              0
-            );
-
-            return (
-              <button
-                key={yearNode.year}
-                type="button"
-                onClick={() => onOpenYear(yearNode.year)}
-                className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-muted/30"
-              >
-                <div className="flex items-center gap-3">
-                  <Folder className="h-5 w-5 text-sky-600" />
-                  <div>
-                    <div className="font-medium">{yearNode.year}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {yearNode.months.length} months
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-sm text-muted-foreground">
-                  {totalQuotes} quotation{totalQuotes === 1 ? "" : "s"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DriveMonthGrid({ yearNode, onOpenMonth }) {
-  const months = yearNode?.months || [];
-
-  if (!months.length) {
-    return (
-      <EmptyState
-        title="No month folders"
-        description="This year does not contain any quotation months."
-      />
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-      {months.map((monthNode) => (
-        <button
-          key={monthNode.key}
-          type="button"
-          onClick={() => onOpenMonth(monthNode.key)}
-          className="text-left"
-        >
-          <Card className="rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <CardContent className="p-5">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="rounded-2xl border bg-amber-50 p-3">
-                  <FolderOpen className="h-6 w-6 text-amber-600" />
-                </div>
-                <Badge variant="secondary" className="rounded-md">
-                  {monthNode.quotations.length} files
-                </Badge>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-base font-semibold">{monthNode.month}</div>
-                <div className="text-sm text-muted-foreground">
-                  {yearNode.year} quotation folder
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function DriveMonthList({ yearNode, onOpenMonth }) {
-  const months = yearNode?.months || [];
-
-  if (!months.length) {
-    return (
-      <EmptyState
-        title="No month folders"
-        description="This year does not contain any quotation months."
-      />
-    );
-  }
-
-  return (
-    <Card className="rounded-2xl border shadow-sm">
-      <CardHeader className="border-b pb-4">
-        <CardTitle className="text-base">Month Folders</CardTitle>
-        <CardDescription>Select a month to view quotation files.</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {months.map((monthNode) => (
-            <button
-              key={monthNode.key}
-              type="button"
-              onClick={() => onOpenMonth(monthNode.key)}
-              className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-muted/30"
-            >
-              <div className="flex items-center gap-3">
-                <FolderOpen className="h-5 w-5 text-amber-600" />
-                <div>
-                  <div className="font-medium">{monthNode.month}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {yearNode.year}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                {monthNode.quotations.length} file
-                {monthNode.quotations.length === 1 ? "" : "s"}
-              </div>
-            </button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DriveQuotationGrid({ items }) {
-  if (!items.length) {
-    return (
-      <EmptyState
-        title="No quotation files"
-        description="Try changing the search or status filter."
-      />
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-      {items.map((item) => (
-        <Card
-          key={item.id}
-          className="rounded-2xl border shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <CardContent className="p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="rounded-2xl border bg-muted/40 p-3">
-                  <FileText className="h-5 w-5 text-foreground" />
-                </div>
-
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    {item.quote_no}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {item.customer_name}
-                  </div>
-                </div>
-              </div>
-
-              <QuotationActions />
-            </div>
-
-            <div className="space-y-3">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-medium",
-                  getStatusBadgeClass(item.status)
-                )}
-              >
-                {item.status}
-              </Badge>
-
-              <div className="rounded-xl border bg-muted/20 p-3">
-                <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Route
-                </div>
-                <div className="text-sm font-medium">
-                  {item.start_city} → {item.end_city}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-xl border p-3">
-                  <div className="text-xs text-muted-foreground">Pax</div>
-                  <div className="font-semibold">{item.pax}</div>
-                </div>
-                <div className="rounded-xl border p-3">
-                  <div className="text-xs text-muted-foreground">Nights</div>
-                  <div className="font-semibold">{item.nights}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
-                <span>{formatMoney(item.value, item.currency)}</span>
-                <span>Updated {item.updated_at}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function DriveQuotationList({ items }) {
-  if (!items.length) {
-    return (
-      <EmptyState
-        title="No quotation files"
-        description="Try changing the search or status filter."
-      />
-    );
-  }
-
-  return (
-    <Card className="rounded-2xl border shadow-sm">
-      <CardHeader className="border-b pb-4">
-        <CardTitle className="text-base">Quotation Files</CardTitle>
-        <CardDescription>
-          Drive-style file listing inside the selected month folder.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead>Name</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead className="text-right">Value</TableHead>
-                <TableHead>Modified</TableHead>
-                <TableHead className="w-[70px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">{item.quote_no}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ID #{item.id}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{item.customer_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {item.company}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "rounded-md font-medium",
-                        getStatusBadgeClass(item.status)
-                      )}
-                    >
-                      {item.status}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell>
-                    {item.start_city} → {item.end_city}
-                  </TableCell>
-
-                  <TableCell className="text-right font-medium">
-                    {formatMoney(item.value, item.currency)}
-                  </TableCell>
-
-                  <TableCell className="text-sm text-muted-foreground">
-                    {item.updated_at}
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <QuotationActions />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return result.sort((a, b) => {
+    if (a.updated_at > b.updated_at) return -1;
+    if (a.updated_at < b.updated_at) return 1;
+    return b.id - a.id;
+  });
 }
