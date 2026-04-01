@@ -560,7 +560,7 @@ export default function QuotationManagerPage() {
                 icon={PanelLeft}
                 label="Drive"
               />
-              <ToolbarToggleButton
+              {/* <ToolbarToggleButton
                 active={view === "table"}
                 onClick={() => setView("table")}
                 icon={Table2}
@@ -571,7 +571,7 @@ export default function QuotationManagerPage() {
                 onClick={() => setView("cards")}
                 icon={LayoutGrid}
                 label="Cards"
-              />
+              /> */}
             </div>
           </div>
         </CardContent>

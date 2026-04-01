@@ -3,6 +3,8 @@ import {
   createQuotationFromInquiryApi,
   updateQuotationDayApi,
   fetchQuotationFullDetailsApi,
+  fetchQuotationSummaryTreeApi,
+  fetchMonthlyQuotationDetailsApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -47,6 +49,28 @@ export const fetchQuotationFullDetails = createAsyncThunk(
   }
 );
 
+export const fetchQuotationSummaryTree = createAsyncThunk(
+  "quotation/fetchSummaryTree",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await fetchQuotationSummaryTreeApi();
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const fetchMonthlyQuotationDetails = createAsyncThunk(
+  "quotation/fetchMonthlyDetails",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await fetchMonthlyQuotationDetailsApi(payload);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 /* ===============================
    INITIAL STATE
 ================================ */
@@ -55,6 +79,9 @@ const persisted = loadState(STORAGE_KEY);
 
 const initialState = {
   quotationShell: persisted || null,
+  summaryTree: [],
+  monthlyDetails: [],
+  selectedMonth: null,
   loading: false,
   error: null,
 };
@@ -139,6 +166,28 @@ const quotationSlice = createSlice({
           ...quotation,
           itinerary,
         };
+      })
+
+      .addCase(fetchQuotationSummaryTree.fulfilled, (state, action) => {
+        state.summaryTree = action.payload.data.years;
+      })
+
+      .addCase(fetchMonthlyQuotationDetails.pending, (state) => {
+        state.loading = true;
+      })
+
+      .addCase(fetchMonthlyQuotationDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.monthlyDetails = action.payload.data.inquiries;
+        state.selectedMonth = {
+          year: action.payload.data.year,
+          month: action.payload.data.month,
+        };
+      })
+
+      .addCase(fetchMonthlyQuotationDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
 
 

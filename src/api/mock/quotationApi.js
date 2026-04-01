@@ -61,4 +61,40 @@ export async function updateQuotationDayApi(payload) {
 
 export async function fetchQuotationFullDetailsApi(id) {
   return api.get(`/quotations/full-details/${id}`);
+}
+
+
+/**
+ * GET SUMMARY TREE
+ * GET /quotations/summary
+ */
+export async function fetchQuotationSummaryTreeApi() {
+  const { data } = await api.get("/quotations/summary");
+  return data;
+}
+
+/**
+ * GET MONTHLY DETAILS
+ * POST /quotations/monthly-details
+ */
+export async function fetchMonthlyQuotationDetailsApi(payload) {
+  const { year, month } = payload;
+
+  const { data } = await api.post("/quotations/monthly-details", {
+    year,
+    month,
+  });
+
+  return data;
+}
+
+/**
+ * GET HTML PREVIEW
+ */
+export async function fetchQuotationPreviewHtmlApi(id) {
+  const res = await api.get(`/quotations/generate-html/${id}`, {
+    responseType: "text", // IMPORTANT
+  });
+
+  return res.data;
 };
