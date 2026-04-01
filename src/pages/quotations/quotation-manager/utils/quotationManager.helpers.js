@@ -33,12 +33,15 @@ export function formatMoney(value, currency = "USD") {
   }).format(value || 0);
 }
 
-export function getStats(items) {
+export function getSummaryStats(summaryPayload) {
+  const global = summaryPayload?.data?.global || {};
+
   return {
-    total: items.length,
-    confirmed: items.filter((i) => i.status === "CONFIRMED").length,
-    pending: items.filter((i) => i.status === "PENDING").length,
-    cancelled: items.filter((i) => i.status === "CANCELLED").length,
+    total: global.total_count || 0,
+    draft: global.draft_count || 0,
+    pending: global.pending_count || 0,
+    completed: global.completed_count || 0,
+    cancelled: global.cancelled_count || 0,
   };
 }
 

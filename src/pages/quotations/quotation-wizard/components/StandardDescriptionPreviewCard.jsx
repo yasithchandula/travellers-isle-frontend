@@ -109,7 +109,7 @@ export default function StandardDescriptionPreviewCard({
         {/* =========================
             INTRO
         ========================= */}
-        {description.starting_paragraph && (
+        {/* {description.starting_paragraph && (
           <div className="rounded-lg border bg-muted/30 p-4">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               <Sparkles className="h-4 w-4" />
@@ -123,7 +123,7 @@ export default function StandardDescriptionPreviewCard({
               }}
             />
           </div>
-        )}
+        )} */}
 
         {/* =========================
             MAIN DESCRIPTION

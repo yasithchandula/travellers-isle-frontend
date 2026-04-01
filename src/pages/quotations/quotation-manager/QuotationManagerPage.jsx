@@ -33,7 +33,7 @@ import {
   flattenTree,
   filterItems,
   getMonthNodeByKey,
-  getStats,
+  getSummaryStats,
   getYearNode,
 } from "./utils/quotationManager.helpers";
 
@@ -63,6 +63,7 @@ function buildInitialTree(summaryPayload) {
 
   return years.map((y) => ({
     year: y.year,
+    total: y.total_count || 0,
     months: (y.months || []).map((m) => ({
       key: `${y.year}-${String(m.month).padStart(2, "0")}`,
       month: m.month_name,
@@ -99,7 +100,7 @@ function fillMonthData(tree, year, month, inquiries) {
 
         return {
           ...m,
-          inquiries: inquiryFolders, 
+          inquiries: inquiryFolders,
           quotations: inquiryFolders.flatMap((i) => i.quotations), // keep for flat views
           quotation_count:
             inquiryFolders.reduce((sum, i) => sum + i.quotations.length, 0) ||
@@ -179,6 +180,7 @@ export default function QuotationManagerPage() {
   const [loadedMonths, setLoadedMonths] = useState(() => new Set());
   const [loadingMonths, setLoadingMonths] = useState(() => new Set());
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryData, setSummaryData] = useState(null);
 
   const isMonthLoading = (key) => Boolean(key) && loadingMonths.has(key);
 
@@ -229,6 +231,8 @@ export default function QuotationManagerPage() {
         const res = await dispatch(fetchQuotationSummaryTree());
         const tree = buildInitialTree(res?.payload);
 
+        setSummaryData(res?.payload);
+
         if (!active) return;
 
         setQuotationTreeData(tree);
@@ -270,7 +274,8 @@ export default function QuotationManagerPage() {
     [quotationTreeData]
   );
 
-  const stats = useMemo(() => getStats(allQuotations), [allQuotations]);
+  const stats = useMemo(() => getSummaryStats(summaryData), [summaryData]);
+
 
   const selectedMonthNode = useMemo(() => {
     return getMonthNodeByKey(quotationTreeData, selectedMonthKey);
@@ -407,25 +412,35 @@ export default function QuotationManagerPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
           title="Total Quotations"
           value={stats.total}
           icon={FileText}
           hint="Across all years and months"
         />
+
         <StatCard
-          title="Confirmed"
-          value={stats.confirmed}
-          icon={CheckCircle2}
-          hint="Ready / approved quotations"
+          title="Draft"
+          value={stats.draft}
+          icon={FileText}
+          hint="Not finalized yet"
         />
+
         <StatCard
           title="Pending"
           value={stats.pending}
           icon={Clock3}
-          hint="Waiting for customer action"
+          hint="Waiting for approval"
         />
+
+        <StatCard
+          title="Completed"
+          value={stats.completed}
+          icon={CheckCircle2}
+          hint="Successfully converted"
+        />
+
         <StatCard
           title="Cancelled"
           value={stats.cancelled}

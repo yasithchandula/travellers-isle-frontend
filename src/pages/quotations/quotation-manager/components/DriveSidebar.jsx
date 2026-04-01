@@ -57,7 +57,7 @@ export default function DriveSidebar({ tree, drivePath, openDriveRoot, openDrive
                     <span className="font-medium">{yearNode.year}</span>
                   </div>
                   <Badge variant="secondary" className="rounded-md">
-                    {yearNode.months.length}
+                    {yearNode.total || 0}
                   </Badge>
                 </button>
 

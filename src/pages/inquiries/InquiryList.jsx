@@ -277,10 +277,10 @@ export default function InquiryList() {
 
                       <DropdownMenuItem
                         onClick={() => {
-                          if (i.status === "NEW") {
-                            setConvertModal(i); // open modal
+                          if (i.quotation_id && i.quotation_id > 0) {
+                            navigate(`/quotations/${i.quotation_id}`);
                           } else {
-                            navigate(`/quotations/${i.id}`);
+                            setConvertModal(i); // open modal
                           }
                         }}
                       >
