@@ -98,7 +98,7 @@ export default function DriveQuotationList({ items }) {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <QuotationActions />
+                    <QuotationActions quotationId={item.id} />
                   </TableCell>
                 </TableRow>
               ))}

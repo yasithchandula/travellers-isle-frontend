@@ -37,7 +37,7 @@ export default function DriveQuotationGrid({ items }) {
                 </div>
               </div>
 
-              <QuotationActions />
+              <QuotationActions quotationId={item.id} />
             </div>
 
             <div className="space-y-3">

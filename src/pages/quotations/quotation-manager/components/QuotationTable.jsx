@@ -113,7 +113,7 @@ export default function QuotationTable({ items, showTimeline = true }) {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <QuotationActions />
+                    <QuotationActions quotationId={item.id} />
                   </TableCell>
                 </TableRow>
               ))}

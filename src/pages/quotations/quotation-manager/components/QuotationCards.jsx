@@ -40,7 +40,7 @@ export default function QuotationCards({ items, showTimeline = true }) {
                 >
                   {item.status}
                 </Badge>
-                <QuotationActions />
+                <QuotationActions quotationId={item.id} />
               </div>
             </div>
 
@@ -80,14 +80,14 @@ export default function QuotationCards({ items, showTimeline = true }) {
                 <div>Updated: {item.updated_at}</div>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              {/* <div className="flex items-center gap-2 pt-1">
                 <Button size="sm" className="rounded-lg">
                   Open
                 </Button>
                 <Button size="sm" variant="outline" className="rounded-lg">
                   Duplicate
                 </Button>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

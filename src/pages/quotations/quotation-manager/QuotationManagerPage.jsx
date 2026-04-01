@@ -51,6 +51,8 @@ import DriveMonthGrid from "./components/drive/DriveMonthGrid";
 import DriveMonthList from "./components/drive/DriveMonthList";
 import DriveQuotationGrid from "./components/drive/DriveQuotationGrid";
 import DriveQuotationList from "./components/drive/DriveQuotationList";
+import DriveInquiryGrid from "./components/drive/DriveInquiryGrid";
+import DriveInquiryList from "./components/drive/DriveInquiryList";
 
 /* ===============================
    TRANSFORMERS
@@ -80,22 +82,29 @@ function fillMonthData(tree, year, month, inquiries) {
       months: y.months.map((m) => {
         if (m.monthNumber !== month) return m;
 
-        const quotations = (inquiries || []).flatMap((inq) =>
-          (inq.quotations || []).map((q) => ({
+        const inquiryFolders = (inquiries || []).map((inq) => ({
+          inquiry_id: inq.inquiry_id,
+          inquiry_number: inq.inquiry_number,
+          guest_name: inq.guest_name,
+          arrival_date: inq.arrival_date,
+
+          quotations: (inq.quotations || []).map((q) => ({
             id: q.id,
             quote_no: q.quotation_number,
-            customer_name: inq.guest_name,
-            inquiry_number: inq.inquiry_number,
             status: q.status,
             pax: q.pax_adults,
             created_at: inq.arrival_date,
-          }))
-        );
+          })),
+        }));
 
         return {
           ...m,
-          quotations,
-          quotation_count: quotations.length || m.quotation_count || 0,
+          inquiries: inquiryFolders, 
+          quotations: inquiryFolders.flatMap((i) => i.quotations), // keep for flat views
+          quotation_count:
+            inquiryFolders.reduce((sum, i) => sum + i.quotations.length, 0) ||
+            m.quotation_count ||
+            0,
         };
       }),
     };
@@ -164,6 +173,7 @@ export default function QuotationManagerPage() {
   const [drivePath, setDrivePath] = useState({
     year: null,
     monthKey: null,
+    inquiry: null,
   });
 
   const [loadedMonths, setLoadedMonths] = useState(() => new Set());
@@ -330,13 +340,34 @@ export default function QuotationManagerPage() {
     fetchMonthIfNeeded(year, monthKey);
   };
 
+  // const goDriveBack = () => {
+  //   if (drivePath.monthKey) {
+  //     setDrivePath((prev) => ({ ...prev, monthKey: null }));
+  //     return;
+  //   }
+  //   if (drivePath.year) {
+  //     setDrivePath({ year: null, monthKey: null });
+  //   }
+  // };
+
+  const openDriveInquiry = (inq) => {
+    setDrivePath((prev) => ({
+      ...prev,
+      inquiry: inq,
+    }));
+  };
+
   const goDriveBack = () => {
+    if (drivePath.inquiry) {
+      setDrivePath((prev) => ({ ...prev, inquiry: null }));
+      return;
+    }
     if (drivePath.monthKey) {
       setDrivePath((prev) => ({ ...prev, monthKey: null }));
       return;
     }
     if (drivePath.year) {
-      setDrivePath({ year: null, monthKey: null });
+      setDrivePath({ year: null, monthKey: null, inquiry: null });
     }
   };
 
@@ -520,12 +551,23 @@ export default function QuotationManagerPage() {
                   onOpenMonth={(monthKey) => openDriveMonth(drivePath.year, monthKey)}
                 />
               )
-            ) : driveMonthLoading ? (
-              <DriveMonthSkeleton />
+            ) : !drivePath.inquiry ? (
+              driveInnerView === "grid" ? (
+                <DriveInquiryGrid
+                  inquiries={driveMonthNode.inquiries || []}
+                  onOpenInquiry={openDriveInquiry}
+                />
+              ) : (
+                <DriveInquiryList
+                  inquiries={driveMonthNode.inquiries || []}
+                  onOpenInquiry={openDriveInquiry}
+                />
+              )
+
             ) : driveInnerView === "grid" ? (
-              <DriveQuotationGrid items={filteredDriveMonthItems} />
+              <DriveQuotationGrid items={drivePath.inquiry.quotations} />
             ) : (
-              <DriveQuotationList items={filteredDriveMonthItems} />
+              <DriveQuotationList items={drivePath.inquiry.quotations} />
             )}
           </div>
         </div>

@@ -5,6 +5,7 @@ import {
   fetchQuotationFullDetailsApi,
   fetchQuotationSummaryTreeApi,
   fetchMonthlyQuotationDetailsApi,
+  fetchQuotationPreviewHtmlApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -71,6 +72,18 @@ export const fetchMonthlyQuotationDetails = createAsyncThunk(
   }
 );
 
+export const fetchQuotationPreviewHtml = createAsyncThunk(
+  "quotation/fetchPreviewHtml",
+  async (id, { rejectWithValue }) => {
+    try {
+      const html = await fetchQuotationPreviewHtmlApi(id);
+      return html;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 /* ===============================
    INITIAL STATE
 ================================ */
@@ -84,6 +97,7 @@ const initialState = {
   selectedMonth: null,
   loading: false,
   error: null,
+  previewHtml: null,
 };
 
 /* ===============================
@@ -186,6 +200,21 @@ const quotationSlice = createSlice({
       })
 
       .addCase(fetchMonthlyQuotationDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchQuotationPreviewHtml.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchQuotationPreviewHtml.fulfilled, (state, action) => {
+        state.loading = false;
+        state.previewHtml = action.payload; // HTML string
+      })
+
+      .addCase(fetchQuotationPreviewHtml.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

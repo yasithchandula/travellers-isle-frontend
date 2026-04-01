@@ -276,7 +276,13 @@ export default function InquiryList() {
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
-                        onClick={() => setConvertModal(i)}
+                        onClick={() => {
+                          if (i.status === "NEW") {
+                            setConvertModal(i); // open modal
+                          } else {
+                            navigate(`/quotations/${i.id}`);
+                          }
+                        }}
                       >
                         Convert
                       </DropdownMenuItem>
