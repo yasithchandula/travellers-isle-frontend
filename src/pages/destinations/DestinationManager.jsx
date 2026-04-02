@@ -73,7 +73,6 @@ export default function DestinationManager() {
     search
   } = useSelector((s) => s.cities);
 
-  console.log("Cities in DestinationManager:", items); // Debug log
 
   /* ================= LOAD ================= */
 

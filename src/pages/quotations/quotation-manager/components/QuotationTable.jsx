@@ -47,7 +47,7 @@ export default function QuotationTable({ items, showTimeline = true }) {
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="min-w-[150px]">Quotation</TableHead>
                 <TableHead className="min-w-[180px]">Customer</TableHead>
-                <TableHead className="min-w-[180px]">Route</TableHead>
+                {/* <TableHead className="min-w-[180px]">Route</TableHead> */}
                 <TableHead>Status</TableHead>
                 <TableHead>Pax</TableHead>
                 <TableHead>Nights</TableHead>
@@ -75,14 +75,14 @@ export default function QuotationTable({ items, showTimeline = true }) {
                     </div>
                   </TableCell>
 
-                  <TableCell>
+                  {/* <TableCell>
                     <div className="inline-flex items-center gap-2 text-sm">
                       <MapPinned className="h-4 w-4 text-muted-foreground" />
                       <span className="truncate">
                         {item.start_city} → {item.end_city}
                       </span>
                     </div>
-                  </TableCell>
+                  </TableCell> */}
 
                   <TableCell>
                     <Badge

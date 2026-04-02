@@ -463,8 +463,6 @@ export default function QuotationWizardModernPage() {
         formattedNotes,
       };
 
-      console.log(payload);
-
       toast.success("Quotation saved");
       alert("Quotation Saved");
     } catch (err) {

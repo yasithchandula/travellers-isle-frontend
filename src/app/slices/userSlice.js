@@ -49,9 +49,7 @@ export const editUser = createAsyncThunk(
   "users/edit",
   async ({ id, ...patch }, { rejectWithValue }) => {
     try {
-      console.log("PATCH SENDING:", patch); // debug once
       const data = await updateUser(id, patch);
-      console.log("UPDATE RESPONSE:", data); // debug once
       if ((!data.data && data.status !== 200) || !data) {
         throw new Error("No data returned from updateUser");
       }

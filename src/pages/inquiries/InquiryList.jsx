@@ -224,6 +224,7 @@ export default function InquiryList() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
+              <TableHead>Arrival Date</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assigned</TableHead>
@@ -244,6 +245,10 @@ export default function InquiryList() {
                 <TableCell>{i.email || "-"}</TableCell>
 
                 <TableCell>{i.phone || "-"}</TableCell>
+
+                <TableCell>
+                  {i.arrival_date ? new Date(i.arrival_date).toLocaleDateString() : "-"}
+                </TableCell>
 
                 <TableCell>
                   <Badge>{i.source}</Badge>

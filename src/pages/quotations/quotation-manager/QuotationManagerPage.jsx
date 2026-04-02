@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   fetchQuotationSummaryTree,
   fetchMonthlyQuotationDetails,
@@ -161,6 +162,7 @@ function DriveRootSkeleton() {
 
 export default function QuotationManagerPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [quotationTreeData, setQuotationTreeData] = useState([]);
 
@@ -404,7 +406,7 @@ export default function QuotationManagerPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button className="gap-2 rounded-xl">
+            <Button className="gap-2 rounded-xl" onClick={() => navigate(`/inquiries/`)}>
               <Plus className="h-4 w-4" />
               New Quotation
             </Button>
@@ -414,7 +416,7 @@ export default function QuotationManagerPage() {
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          title="Total Quotations"
+          title="Total"
           value={stats.total}
           icon={FileText}
           hint="Across all years and months"

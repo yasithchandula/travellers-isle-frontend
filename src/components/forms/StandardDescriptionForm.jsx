@@ -157,8 +157,6 @@ export default function StandardDescriptionForm({
       return;
     }
 
-    console.log("Hydrating form with initial data:", initial);
-
     setForm({
       title: initial.title || "",
       start_city_id: initial.start_city?.id
@@ -214,7 +212,6 @@ export default function StandardDescriptionForm({
     } else {
       setSelectedExcursions([]);
     }
-    console.log("Hydrated form state:", form);
     setErrors({});
   }, [initial]);
 

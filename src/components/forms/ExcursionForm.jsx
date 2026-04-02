@@ -466,29 +466,29 @@ return (
             <div className="grid grid-cols-4 gap-3 items-center">
               <span>Infant</span>
               <Input value={pp.infant.from} disabled />
-              <Input value={pp.infant.to} onChange={(e)=>updateInfantTo(e.target.value)} />
-              <Input value={infantPrice} onChange={(e)=>setInfantPrice(e.target.value)} />
+              <Input value={pp.infant.to} onChange={(v)=>updateInfantTo(v)} />
+              <Input value={infantPrice} onChange={(v)=>setInfantPrice(v)} />
             </div>
 
             <div className="grid grid-cols-4 gap-3 items-center">
               <span>Child</span>
               <Input value={pp.child.from} disabled />
-              <Input value={pp.child.to} onChange={(e)=>updateChildTo(e.target.value)} />
-              <Input value={childPrice} onChange={(e)=>setChildPrice(e.target.value)} />
+              <Input value={pp.child.to} onChange={(v)=>updateChildTo(v)} />
+              <Input value={childPrice} onChange={(v)=>setChildPrice(v)} />
             </div>
 
             <div className="grid grid-cols-4 gap-3 items-center">
               <span>Adult</span>
               <Input value={pp.adult.from} disabled />
               <div className="text-muted-foreground">∞</div>
-              <Input value={adultPrice} onChange={(e)=>setAdultPrice(e.target.value)} />
+              <Input value={adultPrice} onChange={(v)=>setAdultPrice(v)} />
             </div>
 
             <div className="grid grid-cols-4 gap-3 items-center">
               <span>Guide Fee</span>
               <div />
               <div />
-              <Input value={guideFee} onChange={(e)=>setGuideFee(e.target.value)} />
+              <Input value={guideFee} onChange={(v)=>setGuideFee(v)} />
             </div>
 
           </div>
