@@ -262,9 +262,9 @@ export default function ExcursionSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="min-h-11 w-full justify-between rounded-xl px-3 py-2"
+            className="min-h-11 h-auto w-full items-start justify-between rounded-xl px-3 py-2"
           >
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pr-3 text-left">
+            <div className="flex min-w-0 flex-1 flex-wrap items-start gap-2 pr-3 text-left">
               {selected.length > 0 ? (
                 <>
                   {visibleSelections.map((item) => (
