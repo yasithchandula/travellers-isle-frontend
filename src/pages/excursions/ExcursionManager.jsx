@@ -570,10 +570,10 @@ export default function ExcursionManager() {
           if (!open) setEditItem(null);
         }}
       >
-        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col">
+        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col overflow-hidden">
 
-          {/* HEADER (STICKY) */}
-          <div className="px-6 py-4 border-b bg-background sticky top-0 z-10">
+          {/* HEADER */}
+          <div className="px-6 py-4 border-b bg-background shrink-0">
             <DialogTitle className="text-lg font-semibold">
               {editItem ? "Edit Excursion" : "Create Excursion"}
             </DialogTitle>
@@ -582,18 +582,21 @@ export default function ExcursionManager() {
             </p>
           </div>
 
-          {/* BODY (SCROLLABLE) */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <ExcursionForm
-              initial={editItem}
-              cities={cities}
-              onSubmit={handleSubmit}
-              hideActions // 🔥 important
-            />
+          {/* SCROLLABLE BODY */}
+          <div className="flex-1 overflow-y-auto relative">
+            <div className="px-6 py-6">
+              <ExcursionForm
+                initial={editItem}
+                cities={cities}
+                onSubmit={handleSubmit}
+                hideActions
+              />
+            </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
           </div>
 
-          {/* FOOTER (STICKY ACTION BAR) */}
-          <div className="px-6 py-4 border-t bg-background sticky bottom-0 flex justify-end gap-2">
+          {/* FOOTER */}
+          <div className="px-6 py-4 border-t bg-background flex justify-end gap-2 shrink-0">
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
