@@ -4,9 +4,9 @@ import {
   ChevronUp,
   Hotel,
   UserCheck,
-  UtensilsCrossed,
-  BedDouble,
-  Wallet,
+  Plus,
+  Copy,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,20 @@ import { Separator } from "@/components/ui/separator";
 
 import AccommodationHotelCard from "./AccommodationHotelCard";
 
+/** =========================
+ * HELPERS
+ ========================== */
+const createEmptyOption = (dayId, index) => ({
+  option_name: `Option ${index + 1}`,
+  option_index: index,
+  itinerary_day_id: dayId,
+  hotel_id: null,
+  hotel_name_override: "",
+  meal_plan: "BB",
+  notes: "",
+  rooms: [],
+});
+
 export default function AccommodationCell({
   day,
   hotels = [],
@@ -24,268 +38,316 @@ export default function AccommodationCell({
 }) {
   const [open, setOpen] = useState(false);
 
-  /** =========================
-   * LOCAL STATE (EDIT BUFFER)
-   ========================== */
-  const [current, setCurrent] = useState(
-    day.accommodation || {
-      itinerary_day_id: day.id,
-      hotel_id: null,
-      hotel_name_override: "",
-      meal_plan: "BB",
-      is_customer_booked: false,
-      notes: "",
-      rooms: [],
-    }
+  /** GLOBAL STATE */
+  const [isCustomerBooked, setIsCustomerBooked] = useState(
+    day.is_customer_booked || false
+  );
+
+  /** OPTIONS */
+  const [options, setOptions] = useState(
+    day.accommodation_options?.length
+      ? day.accommodation_options
+      : [createEmptyOption(day.id, 0)]
   );
 
   const [initial, setInitial] = useState(
-    JSON.stringify(day.accommodation || {})
+    JSON.stringify(options)
   );
 
-  /** Sync when day changes */
+  /** SYNC */
   useEffect(() => {
-    const acc =
-      day.accommodation || {
-        itinerary_day_id: day.id,
-        hotel_id: null,
-        hotel_name_override: "",
-        meal_plan: "BB",
-        is_customer_booked: false,
-        notes: "",
-        rooms: [],
-      };
+    const opts =
+      day.accommodation_options?.length
+        ? day.accommodation_options
+        : [createEmptyOption(day.id, 0)];
 
-    setCurrent(acc);
-    setInitial(JSON.stringify(acc));
+    setOptions(opts);
+    setInitial(JSON.stringify(opts));
+    setIsCustomerBooked(day.is_customer_booked || false);
   }, [day]);
 
   /** =========================
-   * UPDATE HANDLER
+   * UPDATE OPTION
    ========================== */
-  const update = (patch) => {
-    const next = {
-      ...current,
+  const updateOption = (index, patch) => {
+    const next = [...options];
+    next[index] = {
+      ...next[index],
       ...patch,
       itinerary_day_id: day.id,
     };
-    setCurrent(next);
+    setOptions(next);
+  };
+
+  /** =========================
+   * ADD OPTION
+   ========================== */
+  const addOption = () => {
+    const next = [
+      ...options,
+      createEmptyOption(day.id, options.length),
+    ];
+    setOptions(next);
+  };
+
+  /** =========================
+   * DUPLICATE OPTION
+   ========================== */
+  const duplicateOption = (index) => {
+    const clone = {
+      ...options[index],
+      option_name: `Option ${options.length + 1}`,
+    };
+
+    const next = [...options];
+    next.splice(index + 1, 0, clone);
+
+    setOptions(next);
+  };
+
+  /** =========================
+   * DELETE OPTION
+   ========================== */
+  const deleteOption = (index) => {
+    if (options.length === 1) return;
+
+    const next = options.filter((_, i) => i !== index);
+
+    const normalized = next.map((opt, i) => ({
+      ...opt,
+      option_name: `Option ${i + 1}`,
+      option_index: i,
+    }));
+
+    setOptions(normalized);
+  };
+
+  /** =========================
+   * RESET OPTION
+   ========================== */
+  const resetOption = (index) => {
+    const parsed = JSON.parse(initial);
+    const next = [...options];
+    next[index] =
+      parsed[index] || createEmptyOption(day.id, index);
+    setOptions(next);
+  };
+
+  /** =========================
+   * SAVE
+   ========================== */
+  const handleSave = () => {
+    onChange({
+      is_customer_booked: isCustomerBooked,
+      accommodation_options: options,
+    });
+
+    setInitial(JSON.stringify(options));
   };
 
   /** =========================
    * DIRTY CHECK
    ========================== */
   const isDirty = useMemo(() => {
-    return JSON.stringify(current) !== initial;
-  }, [current, initial]);
-
-  /** =========================
-   * SAVE / RESET
-   ========================== */
-  const handleSave = () => {
-    onChange(current); // send to parent / API
-    setInitial(JSON.stringify(current));
-  };
-
-  const handleReset = () => {
-    const parsed = JSON.parse(initial);
-    setCurrent(parsed);
-  };
-
-  /** =========================
-   * SUMMARY
-   ========================== */
-  const summary = useMemo(() => {
-    const roomCount = (current.rooms || []).reduce(
-      (sum, r) => sum + (Number(r.count) || 0),
-      0
-    );
-
-    const total = (current.rooms || []).reduce(
-      (sum, r) =>
-        sum + (Number(r.unit_price) || 0) * (Number(r.count) || 0),
-      0
-    );
-
-    return {
-      roomLines: (current.rooms || []).length,
-      roomCount,
-      total,
-    };
-  }, [current.rooms]);
-
-  const displayName = current.is_customer_booked
-    ? current.hotel_name_override || "Booked by Customer"
-    : current.hotel_name_override || "No hotel selected";
+    return JSON.stringify(options) !== initial;
+  }, [options, initial]);
 
   /** =========================
    * UI
    ========================== */
   return (
-    <div className="space-y-3 min-w-[460px]">
-      <Card className="overflow-hidden rounded-2xl border bg-background shadow-sm">
-        <CardContent className="p-0">
-          <div className="p-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              {/* LEFT */}
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
-                    current.is_customer_booked
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-primary/5 text-primary"
-                  }`}
-                >
-                  {current.is_customer_booked ? (
-                    <UserCheck className="h-5 w-5" />
-                  ) : (
-                    <Hotel className="h-5 w-5" />
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold">
-                      Accommodation
-                    </p>
-
-                    {current.is_customer_booked ? (
-                      <Badge variant="secondary" className="rounded-full">
-                        Customer Booked
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="rounded-full">
-                        Hotel Managed
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {displayName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {current.is_customer_booked
-                        ? "Hotel selection is disabled for this day."
-                        : "Manage hotel, meal plan, room categories, and pricing."}
-                    </p>
-                  </div>
-                </div>
+    <div className="space-y-3 min-w-[500px]">
+      {/* ================= HEADER ================= */}
+      <Card className="rounded-2xl border bg-background shadow-sm">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            {/* LEFT */}
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
+                  isCustomerBooked
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary/5 text-primary"
+                }`}
+              >
+                {isCustomerBooked ? (
+                  <UserCheck className="h-5 w-5" />
+                ) : (
+                  <Hotel className="h-5 w-5" />
+                )}
               </div>
 
-              {/* RIGHT */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
-                  <Switch
-                    checked={current.is_customer_booked}
-                    onCheckedChange={(v) =>
-                      update({
-                        is_customer_booked: v,
-                        hotel_id: v ? null : current.hotel_id,
-                        rooms: v ? [] : current.rooms,
-                      })
+              <div>
+                <p className="text-sm font-semibold">
+                  Accommodation Options
+                </p>
+
+                <div className="flex gap-2 mt-1">
+                  <Badge variant="secondary" className="rounded-full">
+                    {options.length} Options
+                  </Badge>
+
+                  {isCustomerBooked && (
+                    <Badge className="rounded-full">
+                      Customer Booked
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* GLOBAL SWITCH */}
+              <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-muted/30">
+                <Switch
+                  checked={isCustomerBooked}
+                  onCheckedChange={(v) => {
+                    setIsCustomerBooked(v);
+
+                    if (v) {
+                      // 🔥 clear all + collapse
+                      setOptions([
+                        createEmptyOption(day.id, 0),
+                      ]);
+                      setOpen(false);
                     }
-                  />
-                  <span className="text-xs font-medium">
-                    Booked by Customer
-                  </span>
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl"
-                  onClick={() => setOpen((prev) => !prev)}
-                >
-                  {open ? (
-                    <>
-                      <ChevronUp className="mr-2 h-4 w-4" />
-                      Collapse
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      Expand
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <Separator className="my-4" />
-
-            {/* SUMMARY */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border bg-muted/20 p-3">
-                <div className="mb-1 flex items-center gap-2 text-muted-foreground">
-                  <UtensilsCrossed className="h-4 w-4" />
-                  <span className="text-xs font-medium">Meal Plan</span>
-                </div>
-                <p className="text-sm font-semibold">
-                  {current.meal_plan || "-"}
-                </p>
+                  }}
+                />
+                <span className="text-xs font-medium">
+                  Booked by Customer
+                </span>
               </div>
 
-              <div className="rounded-xl border bg-muted/20 p-3">
-                <div className="mb-1 flex items-center gap-2 text-muted-foreground">
-                  <BedDouble className="h-4 w-4" />
-                  <span className="text-xs font-medium">Room Lines</span>
-                </div>
-                <p className="text-sm font-semibold">
-                  {summary.roomLines}
-                </p>
-              </div>
-
-              <div className="rounded-xl border bg-muted/20 p-3">
-                <div className="mb-1 flex items-center gap-2 text-muted-foreground">
-                  <Wallet className="h-4 w-4" />
-                  <span className="text-xs font-medium">Total</span>
-                </div>
-                <p className="text-sm font-semibold">
-                  {summary.total}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* EDIT PANEL */}
-      {open && (
-        <>
-          <AccommodationHotelCard
-            value={current}
-            hotels={hotels}
-            disabled={current.is_customer_booked}
-            onChange={update}
-          />
-
-          {/* 🔥 SAVE / RESET BAR (UI SAME STYLE) */}
-          <div className="flex items-center justify-between border rounded-xl px-3 py-2 bg-muted/30">
-            <div className="text-xs text-muted-foreground">
-              {isDirty ? "Unsaved changes" : "All changes saved"}
-            </div>
-
-            <div className="flex gap-2">
+              {/* ADD */}
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleReset}
-                disabled={!isDirty}
+                className="rounded-xl"
+                onClick={addOption}
+                disabled={isCustomerBooked}
               >
-                Reset
+                <Plus className="mr-2 h-4 w-4" />
+                Add Option
               </Button>
 
+              {/* EXPAND */}
               <Button
                 size="sm"
-                onClick={handleSave}
-                disabled={!isDirty}
+                variant="ghost"
+                disabled={isCustomerBooked}
+                onClick={() => setOpen((p) => !p)}
               >
-                Save
+                {open ? (
+                  <>
+                    <ChevronUp className="mr-2 h-4 w-4" />
+                    Collapse
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 h-4 w-4" />
+                    Expand
+                  </>
+                )}
               </Button>
             </div>
           </div>
-        </>
+
+          <Separator />
+        </CardContent>
+      </Card>
+
+      {/* ================= OPTIONS ================= */}
+      {open && !isCustomerBooked && (
+        <div className="flex gap-4 overflow-x-auto pb-3">
+          {options.map((opt, index) => (
+            <div
+              key={index}
+              className="min-w-[420px] space-y-3 group"
+            >
+              {/* HEADER */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="rounded-full px-2 py-0.5 text-xs"
+                  >
+                    {opt.option_name}
+                  </Badge>
+
+                  {index === 0 && (
+                    <span className="text-[10px] text-muted-foreground">
+                      Default
+                    </span>
+                  )}
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-lg"
+                    onClick={() => duplicateOption(index)}
+                    disabled={isCustomerBooked}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-lg"
+                    onClick={() => resetOption(index)}
+                  >
+                    Reset
+                  </Button>
+
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-lg text-destructive hover:text-destructive"
+                    onClick={() => deleteOption(index)}
+                    disabled={options.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* CARD */}
+              <div className="rounded-2xl border bg-background shadow-sm hover:shadow-md transition">
+                <div className="p-3">
+                  <AccommodationHotelCard
+                    value={opt}
+                    hotels={hotels}
+                    disabled={isCustomerBooked}
+                    onChange={(patch) =>
+                      updateOption(index, patch)
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ================= SAVE BAR ================= */}
+      {open && !isCustomerBooked && (
+        <div className="flex items-center justify-between border rounded-xl px-3 py-2 bg-muted/30">
+          <div className="text-xs text-muted-foreground">
+            {isDirty ? "Unsaved changes" : "All changes saved"}
+          </div>
+
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={!isDirty}
+          >
+            Save All
+          </Button>
+        </div>
       )}
     </div>
   );

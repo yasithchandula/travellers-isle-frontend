@@ -5,7 +5,7 @@ import {
   Tag,
   Trash2,
   Wallet,
-  Copy, // ✅ NEW
+  Copy,
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ export default function RoomRow({
   index,
   onChange,
   onRemove,
-  onDuplicate, // ✅ NEW
+  onDuplicate,
   disabled,
 }) {
   const update = (patch) => {
@@ -33,70 +33,68 @@ export default function RoomRow({
   }, [value.unit_price, value.count]);
 
   return (
-    <Card className="rounded-2xl border bg-background shadow-sm">
-      <CardContent className="p-4">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          
-          {/* LEFT */}
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border bg-muted/30">
-              <BedDouble className="h-4 w-4" />
+    <Card className="rounded-xl border bg-background shadow-sm">
+      <CardContent className="p-3 space-y-3">
+
+        {/* HEADER - SINGLE LINE */}
+        <div className="flex items-center justify-between gap-2">
+
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-muted/30">
+              <BedDouble className="h-3.5 w-3.5" />
             </div>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold">
-                  Room Category {index + 1}
-                </p>
-                <Badge variant="outline" className="rounded-full">
-                  Pricing Line
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Category, room type, quantity, and unit pricing
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-xs font-semibold truncate">
+                Room {index + 1}
               </p>
+
+              <Badge
+                variant="outline"
+                className="rounded-full text-[10px] px-2 py-0"
+              >
+                Line
+              </Badge>
             </div>
           </div>
 
-          {/* RIGHT ACTIONS */}
-          <div className="flex items-center gap-2">
-            
-            <Badge variant="secondary" className="rounded-full">
-              Line Total: {lineTotal}
+          {/* RIGHT */}
+          <div className="flex items-center gap-1 shrink-0">
+
+            <Badge className="rounded-full text-[10px] px-2 py-0">
+              {lineTotal}
             </Badge>
 
-            {/* 🔥 DUPLICATE BUTTON */}
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl"
+              className="h-7 w-7 rounded-lg"
               onClick={onDuplicate}
               disabled={disabled}
-              title="Duplicate"
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="h-3.5 w-3.5" />
             </Button>
 
-            {/* REMOVE */}
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl text-red-500 hover:text-red-600"
+              className="h-7 w-7 rounded-lg text-red-500 hover:text-red-600"
               onClick={onRemove}
               disabled={disabled}
-              title="Remove"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
-        {/* INPUT GRID */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {/* INPUTS */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+
+          {/* CATEGORY */}
           <div>
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Layers3 className="h-4 w-4" />
-              Room Category
+            <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+              <Layers3 className="h-3 w-3" />
+              Category
             </label>
             <Input
               placeholder="Deluxe"
@@ -104,30 +102,32 @@ export default function RoomRow({
               onChange={(e) =>
                 update({ room_category: e.target.value })
               }
-              className="rounded-xl"
+              className="h-8 rounded-lg text-xs"
               disabled={disabled}
             />
           </div>
 
+          {/* TYPE */}
           <div>
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Tag className="h-4 w-4" />
-              Room Type
+            <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+              <Tag className="h-3 w-3" />
+              Type
             </label>
             <Input
-              placeholder="DOUBLE"
+              placeholder="DBL"
               value={value.room_type || ""}
               onChange={(e) =>
                 update({ room_type: e.target.value })
               }
-              className="rounded-xl"
+              className="h-8 rounded-lg text-xs"
               disabled={disabled}
             />
           </div>
 
+          {/* COUNT */}
           <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">
-              Count
+            <label className="text-[10px] text-muted-foreground mb-1 block">
+              Qty
             </label>
             <Input
               type="number"
@@ -136,15 +136,16 @@ export default function RoomRow({
               onChange={(e) =>
                 update({ count: Number(e.target.value) })
               }
-              className="rounded-xl"
+              className="h-8 rounded-lg text-xs"
               disabled={disabled}
             />
           </div>
 
+          {/* PRICE */}
           <div>
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Wallet className="h-4 w-4" />
-              Unit Price
+            <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
+              <Wallet className="h-3 w-3" />
+              Price
             </label>
             <Input
               type="number"
@@ -153,10 +154,11 @@ export default function RoomRow({
               onChange={(e) =>
                 update({ unit_price: Number(e.target.value) })
               }
-              className="rounded-xl"
+              className="h-8 rounded-lg text-xs"
               disabled={disabled}
             />
           </div>
+
         </div>
       </CardContent>
     </Card>

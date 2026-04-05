@@ -56,41 +56,44 @@ export default function AccommodationHotelCard({
   );
 
   return (
-    <Card className="rounded-2xl border bg-background shadow-sm">
+    <Card className="rounded-xl border bg-background shadow-sm">
       <CardContent className="p-0">
-        <div className="p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border bg-primary/5 text-primary">
-                <Building2 className="h-5 w-5" />
+        <div className="p-4 space-y-4">
+
+          {/* HEADER */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-primary/5 text-primary">
+                <Building2 className="h-4 w-4" />
               </div>
 
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold">Hotel Details</p>
-                  <Badge variant="outline" className="rounded-full">
-                    Day Accommodation
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold">Hotel</p>
+                  <Badge variant="outline" className="rounded-full text-[10px] px-2 py-0">
+                    Day
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Configure hotel, meal plan, override label, notes, and room pricing.
+                <p className="text-[11px] text-muted-foreground">
+                  Hotel, meal, rooms & pricing
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border bg-muted/20 px-4 py-3 text-right">
-              <p className="text-xs font-medium text-muted-foreground">
-                Accommodation Total
-              </p>
-              <p className="text-lg font-semibold">{total}</p>
+            <div className="rounded-lg border bg-muted/20 px-3 py-2 text-right">
+              <p className="text-[10px] text-muted-foreground">Total</p>
+              <p className="text-sm font-semibold">{total}</p>
             </div>
           </div>
 
-          <Separator className="my-5" />
+          <Separator />
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          {/* MAIN GRID */}
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+
+            {/* HOTEL */}
             <div className="xl:col-span-5">
-              <label className="mb-2 block text-xs font-medium text-muted-foreground">
+              <label className="mb-1 block text-[11px] text-muted-foreground">
                 Hotel
               </label>
               <Select
@@ -104,7 +107,7 @@ export default function AccommodationHotelCard({
                 }
                 disabled={disabled}
               >
-                <SelectTrigger className="rounded-xl">
+                <SelectTrigger className="rounded-lg h-9">
                   <SelectValue placeholder="Select hotel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,17 +120,18 @@ export default function AccommodationHotelCard({
               </Select>
             </div>
 
+            {/* MEAL */}
             <div className="xl:col-span-3">
-              <label className="mb-2 block text-xs font-medium text-muted-foreground">
-                Meal Plan
+              <label className="mb-1 block text-[11px] text-muted-foreground">
+                Meal
               </label>
               <Select
                 value={value.meal_plan || "BB"}
                 onValueChange={(v) => update({ meal_plan: v })}
                 disabled={disabled}
               >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Meal Plan" />
+                <SelectTrigger className="rounded-lg h-9">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BB">BB</SelectItem>
@@ -138,108 +142,93 @@ export default function AccommodationHotelCard({
               </Select>
             </div>
 
+            {/* OVERRIDE */}
             <div className="xl:col-span-4">
-              <label className="mb-2 block text-xs font-medium text-muted-foreground">
-                Hotel Name Override
+              <label className="mb-1 block text-[11px] text-muted-foreground">
+                Override
               </label>
               <Input
-                placeholder="Override display name"
+                placeholder="Custom name"
                 value={value.hotel_name_override || ""}
                 onChange={(e) =>
                   update({ hotel_name_override: e.target.value })
                 }
-                className="rounded-xl"
+                className="rounded-lg h-9"
                 disabled={disabled}
               />
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border bg-muted/20 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-semibold">Room Categories</p>
+          {/* ROOMS */}
+          <div className="rounded-xl border bg-muted/20 p-3 space-y-3">
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-xs font-semibold">Rooms</p>
+              </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 rounded-lg text-xs"
+                onClick={addRoom}
+                disabled={disabled}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Add
+              </Button>
             </div>
 
-            <div className="space-y-3">
-              {(value.rooms || []).length === 0 ? (
-                <div className="rounded-xl border border-dashed bg-background p-6 text-center">
-                  <Hotel className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm font-medium">No room categories added</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Add room lines like Normal, Deluxe, Superior, etc.
-                  </p>
-
-                  <Button
-                    size="sm"
-                    className="mt-4 rounded-xl"
-                    onClick={addRoom}
+            {(value.rooms || []).length === 0 ? (
+              <div className="rounded-lg border border-dashed bg-background p-4 text-center">
+                <Hotel className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-xs">No rooms added</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(value.rooms || []).map((r, i) => (
+                  <RoomRow
+                    key={i}
+                    value={r}
+                    index={i}
+                    onChange={(updated) => {
+                      const next = [...value.rooms];
+                      next[i] = updated;
+                      update({ rooms: next });
+                    }}
+                    onRemove={() =>
+                      update({
+                        rooms: value.rooms.filter((_, idx) => idx !== i),
+                      })
+                    }
+                    onDuplicate={() => {
+                      const next = [...value.rooms];
+                      next.splice(i + 1, 0, { ...r });
+                      update({ rooms: next });
+                    }}
                     disabled={disabled}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add First Room Category
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {(value.rooms || []).map((r, i) => (
-                    <RoomRow
-                      key={i}
-                      value={r}
-                      index={i}
-                      onChange={(updated) => {
-                        const next = [...value.rooms];
-                        next[i] = updated;
-                        update({ rooms: next });
-                      }}
-                      onRemove={() =>
-                        update({
-                          rooms: value.rooms.filter((_, idx) => idx !== i),
-                        })
-                      }
-
-                      onDuplicate={() => {
-                        const next = [...value.rooms];
-
-                        next.splice(i + 1, 0, {
-                          ...r,
-                          // optional: reset count if needed
-                          // count: 1,
-                        });
-
-                        update({ rooms: next });
-                      }}
-                      disabled={disabled}
-                    />
-                  ))}
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-xl"
-                    onClick={addRoom}
-                    disabled={disabled}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Room Category
-                  </Button>
-                </>
-              )}
-            </div>
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mt-5">
-            <label className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <MessageSquareText className="h-4 w-4" />
+          {/* NOTES */}
+          <div>
+            <label className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <MessageSquareText className="h-3 w-3" />
               Notes
             </label>
             <Textarea
-              placeholder="Internal notes, guest preferences, special requests..."
+              placeholder="Notes..."
               value={value.notes || ""}
               onChange={(e) => update({ notes: e.target.value })}
-              className="min-h-[100px] rounded-2xl"
+              className="min-h-[70px] rounded-xl text-sm"
               disabled={disabled}
             />
           </div>
+
         </div>
       </CardContent>
     </Card>
