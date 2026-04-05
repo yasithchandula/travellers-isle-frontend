@@ -21,6 +21,7 @@ import WizardHeader from "../components/WizardHeader";
 import ScheduleTableStep from "../components/ScheduleTableStep";
 import ItineraryStep from "../components/ItineraryStep";
 import ReviewStep from "../components/ReviewStep";
+import AccommodationTableStep from "../components/AccommodationTableStep";
 
 import useQuotationWizard from "../hooks/useQuotationWizard";
 import { QUOTATION_WIZARD_STEPS } from "../utils/quotationWizardConstants";
@@ -125,6 +126,14 @@ export default function QuotationWizardModernPage() {
             )}
 
             {step === 2 && <ReviewStep formattedNotes={formattedNotes} />}
+
+            {step === 3 && (<div>
+              <AccommodationTableStep
+                days={days}
+                cities={cities}
+                onUpdateDay={updateDay}
+              />
+            </div>)}
           </CardContent>
         </Card>
 
