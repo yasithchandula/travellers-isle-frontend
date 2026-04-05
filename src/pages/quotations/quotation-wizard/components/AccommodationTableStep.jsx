@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Table,
   TableHeader,
@@ -8,6 +9,13 @@ import {
   TableCell,
 } from "@/components/ui/table";
 
+
+import {
+  fetchHotels,
+} from "../../../../app/slices/hotelSlice";
+
+
+
 import AccommodationCell from "./AccommodationCell";
 
 export default function AccommodationTableStep({
@@ -15,11 +23,27 @@ export default function AccommodationTableStep({
   cities = [],
   onUpdateDay,
 }) {
+  const dispatch = useDispatch();
+
+  const { items: hotels, loading } = useSelector((state) => state.hotels);
+
+  useEffect(() => {
+    dispatch(fetchHotels({ page: 1, limit: 50 }));
+  }, [dispatch]);
+
   const cityMap = useMemo(() => {
     const map = {};
-    cities.forEach((c) => (map[c.id] = c.name));
+    cities.forEach((c) => {
+      map[c.id] = c.name || c.city || "-";
+    });
     return map;
   }, [cities]);
+
+  const normalizedHotels = hotels.map((h) => ({
+    id: h.id,
+    name: h.name,
+    roomCategories: h.room_categories || [],
+  }));
 
   return (
     <div className="space-y-4">
@@ -30,7 +54,7 @@ export default function AccommodationTableStep({
             Accommodation Planning
           </h3>
           <p className="text-sm text-muted-foreground">
-            Add multiple hotel options, room categories, and pricing.
+            Add multiple hotels, room categories, and pricing for each day.
           </p>
         </div>
       </div>
@@ -41,10 +65,8 @@ export default function AccommodationTableStep({
           <Table>
             <TableHeader className="sticky top-0 bg-muted z-10">
               <TableRow>
-                <TableHead className="min-w-[120px]">Day</TableHead>
-                <TableHead className="min-w-[160px]">City</TableHead>
-                <TableHead className="min-w-[140px]">Excursions</TableHead>
-                <TableHead className="min-w-[520px]">
+                <TableHead className="min-w-[240px]">Day Info</TableHead>
+                <TableHead className="min-w-[820px]">
                   Accommodation Options
                 </TableHead>
               </TableRow>
@@ -52,31 +74,40 @@ export default function AccommodationTableStep({
 
             <TableBody>
               {days.map((day, idx) => (
-                <TableRow key={day.id || day.date} className="align-top">
-                  {/* DAY */}
+                <TableRow key={day.id || day.date || idx} className="align-top">
+                  {/* MERGED INFO COLUMN */}
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{day.date}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Day {day.day_number || idx + 1}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {day.date || "-"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Day {day.day_number || idx + 1}
+                        </span>
+                      </div>
+
+                      <div className="text-sm">
+                        <span className="font-medium">City:</span>{" "}
+                        <span className="text-muted-foreground">
+                          {cityMap[day.destination_city_id] || "-"}
+                        </span>
+                      </div>
+
+                      <div className="text-sm">
+                        <span className="font-medium">Excursions:</span>{" "}
+                        <span className="text-muted-foreground">
+                          {(day.excursions || []).length} selected
+                        </span>
+                      </div>
                     </div>
-                  </TableCell>
-
-                  {/* CITY */}
-                  <TableCell>
-                    {cityMap[day.destination_city_id] || "-"}
-                  </TableCell>
-
-                  {/* EXCURSIONS */}
-                  <TableCell className="text-xs text-muted-foreground">
-                    {(day.excursions || []).length} selected
                   </TableCell>
 
                   {/* ACCOMMODATION */}
                   <TableCell>
                     <AccommodationCell
                       day={day}
+                      hotels={normalizedHotels}
                       onChange={(accommodation) =>
                         onUpdateDay(idx, { accommodation })
                       }
@@ -85,17 +116,17 @@ export default function AccommodationTableStep({
                 </TableRow>
               ))}
 
-            {!days.length && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-10">
-                  No days available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              {!days.length && (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center py-10">
+                    No days available
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
-    </div >
   );
 }
