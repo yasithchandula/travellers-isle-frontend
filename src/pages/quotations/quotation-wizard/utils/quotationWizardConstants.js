@@ -3,4 +3,5 @@ export const QUOTATION_WIZARD_STEPS = [
   { id: "itinerary", label: "Itinerary" },
   { id: "review", label: "Review" },
   { id: "accommodation", label: "Accommodation" },
+  { id: "preview", label: "Preview" },
 ];

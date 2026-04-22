@@ -98,3 +98,27 @@ export async function fetchQuotationPreviewHtmlApi(id) {
 
   return res.data;
 };
+
+
+/**
+ * BULK SAVE OPTIONS (HOTELS / ROOMS)
+ * POST /quotations/options/bulk-save
+ */
+export async function bulkSaveQuotationOptionsApi(payload) {
+  const { data } = await api.post(
+    "/quotations/options/bulk-save",
+    payload
+  );
+  return data;
+}
+
+/**
+ * FETCH QUOTATION OPTIONS
+ * GET /quotations/:id/options
+ */
+export async function fetchQuotationOptionsApi(quotationId) {
+  const { data } = await api.get(
+    `/quotations/${quotationId}/options`
+  );
+  return data;
+}

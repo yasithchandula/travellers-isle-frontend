@@ -9,6 +9,12 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchQuotationOptions,
+  bulkSaveQuotationOptions,
+} from "@/app/slices/quotationSlice";
+
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -34,80 +40,171 @@ const createEmptyOption = (dayId, index) => ({
 export default function AccommodationCell({
   day,
   hotels = [],
+  quotationshell,
   onChange,
 }) {
-  const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
+  const { options: apiOptions, loading } = useSelector(
+    (state) => state.quotations
+  );
 
-  /** GLOBAL STATE */
+  /** =========================
+   * QUOTATION ID (SOURCE OF TRUTH)
+   ========================== */
+  const quotationId = useMemo(
+    () => quotationshell?.id || day?.quotation_id,
+    [quotationshell?.id, day?.quotation_id]
+  );
+
+  const [open, setOpen] = useState(false);
   const [isCustomerBooked, setIsCustomerBooked] = useState(
     day.is_customer_booked || false
   );
 
-  /** OPTIONS */
-  const [options, setOptions] = useState(
-    day.accommodation_options?.length
-      ? day.accommodation_options
-      : [createEmptyOption(day.id, 0)]
-  );
+  const [options, setOptions] = useState([]);
+  const [initialOptions, setInitialOptions] = useState("[]");
 
-  const [initial, setInitial] = useState(
-    JSON.stringify(options)
-  );
+  const getRoomTypeFromPax = (pax) => {
+    if (Number(pax) === 1) return "Single";
+    if (Number(pax) === 2) return "Double";
+    if (Number(pax) === 3) return "Triple";
+    if (Number(pax) >= 4) return "Family";
+    return "";
+  };
 
-  /** SYNC */
-  useEffect(() => {
-    const opts =
-      day.accommodation_options?.length
-        ? day.accommodation_options
-        : [createEmptyOption(day.id, 0)];
+  const normalizeRoom = (room, hotel) => {
+    const categories = hotel?.roomCategories || hotel?.room_categories || [];
 
-    setOptions(opts);
-    setInitial(JSON.stringify(opts));
-    setIsCustomerBooked(day.is_customer_booked || false);
-  }, [day]);
+    let matchedCategory = null;
+
+    if (room?.room_category_id) {
+      matchedCategory = categories.find(
+        (c) => String(c.id) === String(room.room_category_id)
+      );
+    }
+
+    if (!matchedCategory && room?.room_category) {
+      matchedCategory = categories.find(
+        (c) =>
+          String(c.name).trim().toLowerCase() ===
+          String(room.room_category).trim().toLowerCase()
+      );
+    }
+
+    return {
+      ...room,
+      room_category_id: matchedCategory?.id ?? room?.room_category_id ?? "",
+      room_category: matchedCategory?.name ?? room?.room_category ?? "",
+      pax: matchedCategory?.pax ?? room?.pax ?? "",
+      room_type:
+        room?.room_type ||
+        getRoomTypeFromPax(matchedCategory?.pax) ||
+        "",
+      unit_price:
+        room?.unit_price ?? matchedCategory?.price ?? 0,
+      count: room?.count ?? 1,
+      base_price: room?.base_price ?? matchedCategory?.price ?? 0,
+    };
+  };
 
   /** =========================
-   * UPDATE OPTION
+   * SYNC (API + LOCAL)
+   ========================== */
+  useEffect(() => {
+    let opts = [];
+
+    if (apiOptions?.length) {
+      // 🔥 ONLY options that contain THIS day
+      const relevantOptions = apiOptions.filter((opt) =>
+        opt.days?.some(
+          (d) => Number(d.itinerary_day_id) === Number(day.id)
+        )
+      );
+
+      opts = relevantOptions.map((opt, idx) => {
+        const foundDay = opt.days.find(
+          (d) => Number(d.itinerary_day_id) === Number(day.id)
+        );
+
+        const hotelForOption = hotels.find(
+          (h) => String(h.id) === String(foundDay?.hotel_id)
+        );
+
+        const normalizedRooms = (foundDay?.rooms || []).map((room) =>
+          normalizeRoom(room, hotelForOption)
+        );
+
+        return {
+          option_name: opt.option_name || `Option ${idx + 1}`,
+          option_index: idx,
+          itinerary_day_id: day.id,
+
+          hotel_id: foundDay?.hotel_id || null,
+          hotel_name_override: foundDay?.hotel_name || "",
+          meal_plan: foundDay?.meal_plan || "BB",
+          notes: foundDay?.notes || "",
+
+          rooms: normalizedRooms,
+        };
+      });
+    }
+
+    // fallback if nothing found
+    if (!opts.length) {
+      opts = [createEmptyOption(day.id, 0)];
+    }
+
+    setOptions(opts);
+    setInitialOptions(JSON.stringify(opts));
+    setIsCustomerBooked(day.is_customer_booked || false);
+  }, [day, apiOptions, hotels]);
+
+  /** =========================
+   * UPDATE
    ========================== */
   const updateOption = (index, patch) => {
     const next = [...options];
+
     next[index] = {
       ...next[index],
       ...patch,
+
       itinerary_day_id: day.id,
     };
+
     setOptions(next);
   };
 
   /** =========================
-   * ADD OPTION
+   * ADD / DUPLICATE / DELETE
    ========================== */
   const addOption = () => {
-    const next = [
+    setOptions([
       ...options,
       createEmptyOption(day.id, options.length),
-    ];
-    setOptions(next);
+    ]);
   };
 
-  /** =========================
-   * DUPLICATE OPTION
-   ========================== */
   const duplicateOption = (index) => {
     const clone = {
       ...options[index],
       option_name: `Option ${options.length + 1}`,
+      option_index: options.length,
+      itinerary_day_id: day.id,
     };
 
     const next = [...options];
     next.splice(index + 1, 0, clone);
 
-    setOptions(next);
+    const normalized = next.map((opt, i) => ({
+      ...opt,
+      option_name: `Option ${i + 1}`,
+      option_index: i,
+    }));
+
+    setOptions(normalized);
   };
 
-  /** =========================
-   * DELETE OPTION
-   ========================== */
   const deleteOption = (index) => {
     if (options.length === 1) return;
 
@@ -123,52 +220,82 @@ export default function AccommodationCell({
   };
 
   /** =========================
-   * RESET OPTION
+   * RESET
    ========================== */
   const resetOption = (index) => {
-    const parsed = JSON.parse(initial);
-    const next = [...options];
-    next[index] =
-      parsed[index] || createEmptyOption(day.id, index);
-    setOptions(next);
+    try {
+      const parsed = JSON.parse(initialOptions);
+      const next = [...options];
+      next[index] =
+        parsed[index] || createEmptyOption(day.id, index);
+      setOptions(next);
+    } catch {
+      const next = [...options];
+      next[index] = createEmptyOption(day.id, index);
+      setOptions(next);
+    }
   };
 
   /** =========================
-   * SAVE
+   * SAVE (PER OPTION)
    ========================== */
-  const handleSave = () => {
-    onChange({
-      is_customer_booked: isCustomerBooked,
-      accommodation_options: options,
-    });
+  const handleSaveOption = async (index) => {
+    const option = options[index];
 
-    setInitial(JSON.stringify(options));
+    const payload = {
+      quotation_id: quotationId,
+      option_name: option.option_name,
+      option_index: option.option_index,
+      hotesls: [
+        {
+          itinerary_day_id: day.id,
+          hotel_id: (Number(option.hotel_id)),
+          hotel_name_override: option.hotel_name_override,
+          meal_plan: option.meal_plan,
+          is_customer_booked: isCustomerBooked,
+          notes: option.notes,
+          rooms: option.rooms || [],
+        }
+      ],
+    };
+
+    await dispatch(bulkSaveQuotationOptions(payload));
+
+    // 🔁 REFETCH
+    if (quotationId) {
+      dispatch(fetchQuotationOptions(quotationId));
+    }
+
+    setInitialOptions(JSON.stringify(options));
   };
 
   /** =========================
    * DIRTY CHECK
    ========================== */
-  const isDirty = useMemo(() => {
-    return JSON.stringify(options) !== initial;
-  }, [options, initial]);
+  const isOptionDirty = (index) => {
+    try {
+      const parsed = JSON.parse(initialOptions);
+      return (
+        JSON.stringify(options[index]) !==
+        JSON.stringify(parsed[index])
+      );
+    } catch {
+      return true;
+    }
+  };
 
-  /** =========================
-   * UI
-   ========================== */
   return (
     <div className="space-y-3 min-w-[500px]">
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <Card className="rounded-2xl border bg-background shadow-sm">
         <CardContent className="p-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            {/* LEFT */}
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
-                  isCustomerBooked
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary/5 text-primary"
-                }`}
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isCustomerBooked
+                  ? "bg-muted text-muted-foreground"
+                  : "bg-primary/5 text-primary"
+                  }`}
               >
                 {isCustomerBooked ? (
                   <UserCheck className="h-5 w-5" />
@@ -196,20 +323,16 @@ export default function AccommodationCell({
               </div>
             </div>
 
-            {/* RIGHT */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* GLOBAL SWITCH */}
               <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-muted/30">
                 <Switch
                   checked={isCustomerBooked}
                   onCheckedChange={(v) => {
                     setIsCustomerBooked(v);
-
                     if (v) {
-                      // 🔥 clear all + collapse
-                      setOptions([
-                        createEmptyOption(day.id, 0),
-                      ]);
+                      const empty = [createEmptyOption(day.id, 0)];
+                      setOptions(empty);
+                      setInitialOptions(JSON.stringify(empty));
                       setOpen(false);
                     }
                   }}
@@ -219,7 +342,6 @@ export default function AccommodationCell({
                 </span>
               </div>
 
-              {/* ADD */}
               <Button
                 size="sm"
                 variant="outline"
@@ -231,7 +353,6 @@ export default function AccommodationCell({
                 Add Option
               </Button>
 
-              {/* EXPAND */}
               <Button
                 size="sm"
                 variant="ghost"
@@ -257,7 +378,7 @@ export default function AccommodationCell({
         </CardContent>
       </Card>
 
-      {/* ================= OPTIONS ================= */}
+      {/* OPTIONS */}
       {open && !isCustomerBooked && (
         <div className="flex gap-4 overflow-x-auto pb-3">
           {options.map((opt, index) => (
@@ -265,39 +386,26 @@ export default function AccommodationCell({
               key={index}
               className="min-w-[420px] space-y-3 group"
             >
-              {/* HEADER */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="rounded-full px-2 py-0.5 text-xs"
-                  >
-                    {opt.option_name}
-                  </Badge>
+                <Badge
+                  variant="outline"
+                  className="rounded-full px-2 py-0.5 text-xs"
+                >
+                  {opt.option_name}
+                </Badge>
 
-                  {index === 0 && (
-                    <span className="text-[10px] text-muted-foreground">
-                      Default
-                    </span>
-                  )}
-                </div>
-
-                {/* ACTIONS */}
-                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                <div className="flex items-center gap-1">
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7 rounded-lg"
                     onClick={() => duplicateOption(index)}
-                    disabled={isCustomerBooked}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
 
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="ghost"
-                    className="h-7 w-7 rounded-lg"
                     onClick={() => resetOption(index)}
                   >
                     Reset
@@ -306,17 +414,14 @@ export default function AccommodationCell({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7 rounded-lg text-destructive hover:text-destructive"
                     onClick={() => deleteOption(index)}
-                    disabled={options.length === 1}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* CARD */}
-              <div className="rounded-2xl border bg-background shadow-sm hover:shadow-md transition">
+              <div className="rounded-2xl border bg-background shadow-sm">
                 <div className="p-3">
                   <AccommodationHotelCard
                     value={opt}
@@ -328,27 +433,34 @@ export default function AccommodationCell({
                   />
                 </div>
               </div>
+
+              <div className="flex justify-between items-center border rounded-xl px-3 py-2 bg-muted/30">
+                <span className="text-xs text-muted-foreground">
+                  {isOptionDirty(index)
+                    ? "Unsaved changes"
+                    : "Saved"}
+                </span>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveOption(index)}
+                  disabled={!isOptionDirty(index) || loading}
+                >
+                  Save
+                </Button>
+              </div>
+              {opt.isEmpty && (
+                <Badge variant="secondary" className="text-xs">
+                  Not configured
+                </Badge>
+              )}
             </div>
+
           ))}
         </div>
       )}
 
-      {/* ================= SAVE BAR ================= */}
-      {open && !isCustomerBooked && (
-        <div className="flex items-center justify-between border rounded-xl px-3 py-2 bg-muted/30">
-          <div className="text-xs text-muted-foreground">
-            {isDirty ? "Unsaved changes" : "All changes saved"}
-          </div>
 
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={!isDirty}
-          >
-            Save All
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

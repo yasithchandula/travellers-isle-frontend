@@ -25,6 +25,7 @@ import AccommodationTableStep from "../components/AccommodationTableStep";
 
 import useQuotationWizard from "../hooks/useQuotationWizard";
 import { QUOTATION_WIZARD_STEPS } from "../utils/quotationWizardConstants";
+import FinalPreviewStep from "../components/FinalPreviewStep";
 
 export default function QuotationWizardModernPage() {
   const dispatch = useDispatch();
@@ -82,13 +83,13 @@ export default function QuotationWizardModernPage() {
         onStepChange={setStep}
       />
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 md:px-6">
+      <div className="mx-auto flex flex-col gap-8 px-4 py-8 md:px-6">
         <Card className="overflow-hidden border-border/60 shadow-sm">
-          <WizardHeader
+          {/* <WizardHeader
             daysCount={days.length}
             totalExcursions={totalExcursions}
             totalDescriptions={totalDescriptions}
-          />
+          /> */}
 
           <CardContent className="space-y-6 p-4 md:p-6">
             {step === 0 && (
@@ -125,15 +126,20 @@ export default function QuotationWizardModernPage() {
               />
             )}
 
-            {step === 2 && <ReviewStep formattedNotes={formattedNotes} />}
+            {step === 2 && <ReviewStep formattedNotes={formattedNotes} quotationShell={quotationShell} cities={cities} />}
 
             {step === 3 && (<div>
               <AccommodationTableStep
                 days={days}
                 cities={cities}
                 onUpdateDay={updateDay}
+                quotationShell={quotationShell}
               />
             </div>)}
+
+            {step === 4 && id && (
+              <FinalPreviewStep quotationId={id} />
+            )}
           </CardContent>
         </Card>
 
@@ -147,7 +153,7 @@ export default function QuotationWizardModernPage() {
             Back
           </Button>
 
-          {step < 2 ? (
+          {step < 4 ? (
             <Button onClick={nextStep} className="min-w-[140px]">
               Continue
             </Button>

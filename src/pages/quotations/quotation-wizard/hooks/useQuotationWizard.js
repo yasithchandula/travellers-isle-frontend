@@ -133,7 +133,7 @@ export default function useQuotationWizard({
   }
 
   function nextStep() {
-    setStep((prev) => Math.min(2, prev + 1));
+    setStep((prev) => Math.min(4, prev + 1));
   }
 
   function prevStep() {
@@ -167,8 +167,6 @@ export default function useQuotationWizard({
         days,
         formattedNotes,
       };
-
-      console.log("Quotation Final Payload:", payload);
 
       toast.success("Quotation saved");
       alert("Quotation Saved");

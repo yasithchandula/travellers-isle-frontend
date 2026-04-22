@@ -1,128 +1,146 @@
-"use client";
-
-import React, { useState } from "react";
-import { Eye, FileText, MoreHorizontal, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { toast } from "sonner";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Loader2,
+  Eye,
+  RefreshCw,
+  Monitor,
+  FileText,
+} from "lucide-react";
 
 import { fetchQuotationPreviewHtml } from "../../../../app/slices/quotationSlice";
 
-export default function QuotationActions({ quotationId }) {
-  const navigate = useNavigate();
+export default function FinalPreviewStep({ quotationId }) {
   const dispatch = useDispatch();
 
-  const [openPreview, setOpenPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
-  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  /* =========================
-     HANDLE OPEN
-  ========================= */
-  const handleOpen = () => {
-    if (!quotationId) return;
-
-    navigate(`/quotations/${quotationId}`);
-  };
-
-  /* =========================
-     HANDLE PREVIEW
-  ========================= */
-  const handlePreview = async () => {
+  /** =========================
+   * FETCH
+   ========================== */
+  const loadPreview = async () => {
     if (!quotationId) return;
 
     try {
-      setLoadingPreview(true);
-      setOpenPreview(true);
+      setLoading(true);
+      setError(false);
 
       const res = await dispatch(
         fetchQuotationPreviewHtml(quotationId)
       ).unwrap();
 
-      // assuming API returns html string
-      setPreviewHtml(res?.html || res || "");
+      // ✅ SAFE HANDLING
+      const html =
+        typeof res === "string"
+          ? res
+          : res?.html || res?.data || "";
+
+      setPreviewHtml(html);
     } catch (err) {
-      toast.error("Failed to load preview");
-      setOpenPreview(false);
+      setError(true);
     } finally {
-      setLoadingPreview(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadPreview();
+  }, [quotationId]);
+
   return (
-    <>
-      {/* ================= DROPDOWN ================= */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onClick={handleOpen}>
-            <Eye className="mr-2 h-4 w-4" />
-            Open
-          </DropdownMenuItem>
-
-          <DropdownMenuItem onClick={handlePreview}>
-            <FileText className="mr-2 h-4 w-4" />
-            Preview
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem className="text-rose-600 focus:text-rose-600">
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* ================= PREVIEW MODAL ================= */}
-      <Dialog open={openPreview} onOpenChange={setOpenPreview}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Quotation Preview</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto rounded-lg border p-4 bg-muted/30">
-            {loadingPreview ? (
-              <div className="flex items-center justify-center h-60">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    <div className="space-y-6">
+      {/* HEADER */}
+      <Card>
+        <CardContent className="p-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Eye className="w-5 h-5 text-primary" />
+            <div>
+              <div className="font-semibold">Quotation Preview</div>
+              <div className="text-xs text-muted-foreground">
+                Client-ready proposal
               </div>
-            ) : previewHtml ? (
-              <div
-                className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
-            ) : (
-              <div className="text-center text-muted-foreground py-10">
-                No preview available
-              </div>
-            )}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+
+          <Button size="sm" variant="outline" onClick={loadPreview}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* PREVIEW */}
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/20 flex justify-between items-center">
+          <div>
+            <CardTitle className="text-base">
+              Document Preview
+            </CardTitle>
+            <CardDescription>
+              Final client view
+            </CardDescription>
+          </div>
+
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <Monitor className="w-4 h-4" />
+            Desktop
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {/* LOADING */}
+          {loading && (
+            <div className="h-[650px] flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          )}
+
+          {/* ERROR */}
+          {!loading && error && (
+            <div className="h-[650px] flex flex-col items-center justify-center gap-3">
+              <div className="text-sm text-red-500">
+                Failed to load preview
+              </div>
+              <Button variant="outline" size="sm" onClick={loadPreview}>
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {/* SUCCESS */}
+          {!loading && !error && previewHtml && (
+            <div className="bg-muted/30 p-6">
+              <div className="mx-auto max-w-5xl bg-white rounded-xl shadow-lg border overflow-hidden">
+                <iframe
+                  srcDoc={previewHtml}
+                  className="w-full h-[700px] border-0"
+                  title="Preview"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* EMPTY */}
+          {!loading && !error && !previewHtml && (
+            <div className="h-[650px] flex items-center justify-center text-sm text-muted-foreground">
+              No preview available
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

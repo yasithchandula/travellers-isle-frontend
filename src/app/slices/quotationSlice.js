@@ -6,6 +6,8 @@ import {
   fetchQuotationSummaryTreeApi,
   fetchMonthlyQuotationDetailsApi,
   fetchQuotationPreviewHtmlApi,
+  bulkSaveQuotationOptionsApi,
+  fetchQuotationOptionsApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -84,6 +86,28 @@ export const fetchQuotationPreviewHtml = createAsyncThunk(
   }
 );
 
+export const bulkSaveQuotationOptions = createAsyncThunk(
+  "quotation/bulkSaveOptions",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await bulkSaveQuotationOptionsApi(payload);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const fetchQuotationOptions = createAsyncThunk(
+  "quotation/fetchOptions",
+  async (quotationId, { rejectWithValue }) => {
+    try {
+      return await fetchQuotationOptionsApi(quotationId);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 /* ===============================
    INITIAL STATE
 ================================ */
@@ -98,6 +122,8 @@ const initialState = {
   loading: false,
   error: null,
   previewHtml: null,
+  options: [],
+  optionsLoading: false,
 };
 
 /* ===============================
@@ -215,6 +241,47 @@ const quotationSlice = createSlice({
       })
 
       .addCase(fetchQuotationPreviewHtml.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ===============================
+   FETCH OPTIONS
+================================ */
+
+      .addCase(fetchQuotationOptions.pending, (state) => {
+        state.optionsLoading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchQuotationOptions.fulfilled, (state, action) => {
+        state.optionsLoading = false;
+
+        // API returns: { data: [...] }
+        state.options = action.payload.data || [];
+      })
+
+      .addCase(fetchQuotationOptions.rejected, (state, action) => {
+        state.optionsLoading = false;
+        state.error = action.payload;
+      })
+
+      /* ===============================
+         BULK SAVE OPTIONS
+      ================================ */
+
+      .addCase(bulkSaveQuotationOptions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(bulkSaveQuotationOptions.fulfilled, (state, action) => {
+        state.loading = false;
+
+        // ⚠️ API does not return updated data
+      })
+
+      .addCase(bulkSaveQuotationOptions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

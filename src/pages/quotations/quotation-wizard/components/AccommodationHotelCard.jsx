@@ -29,6 +29,10 @@ export default function AccommodationHotelCard({
   disabled,
   onChange,
 }) {
+  const selectedHotel = hotels.find(
+    (h) => String(h.id) === String(value.hotel_id)
+  );
+
   const update = (patch) => {
     onChange({
       ...value,
@@ -192,6 +196,7 @@ export default function AccommodationHotelCard({
                     key={i}
                     value={r}
                     index={i}
+                    hotel={selectedHotel}
                     onChange={(updated) => {
                       const next = [...value.rooms];
                       next[i] = updated;

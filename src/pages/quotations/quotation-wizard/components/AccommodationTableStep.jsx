@@ -14,13 +14,14 @@ import {
   fetchHotels,
 } from "../../../../app/slices/hotelSlice";
 
-
+import { fetchQuotationOptions } from "../../../../app/slices/quotationSlice";
 
 import AccommodationCell from "./AccommodationCell";
 
 export default function AccommodationTableStep({
   days = [],
   cities = [],
+  quotationShell,
   onUpdateDay,
 }) {
   const dispatch = useDispatch();
@@ -30,6 +31,15 @@ export default function AccommodationTableStep({
   useEffect(() => {
     dispatch(fetchHotels({ page: 1, limit: 50 }));
   }, [dispatch]);
+
+  /** =========================
+   * FETCH OPTIONS
+   ========================== */
+  useEffect(() => {
+    if (quotationShell?.id) {
+      dispatch(fetchQuotationOptions(quotationShell.id));
+    }
+  }, [quotationShell?.id, dispatch]);
 
   const cityMap = useMemo(() => {
     const map = {};
@@ -108,6 +118,7 @@ export default function AccommodationTableStep({
                     <AccommodationCell
                       day={day}
                       hotels={normalizedHotels}
+                      quotationshell={quotationShell}
                       onChange={(accommodation) =>
                         onUpdateDay(idx, { accommodation })
                       }
