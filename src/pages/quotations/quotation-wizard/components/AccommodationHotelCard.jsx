@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Building2,
   ClipboardList,
@@ -24,38 +24,79 @@ import { Separator } from "@/components/ui/separator";
 import RoomRow from "./RoomRow";
 
 export default function AccommodationHotelCard({
-  value,
+  value = {}, // ✅ SAFE DEFAULT
   hotels = [],
   disabled,
   onChange,
 }) {
-  const selectedHotel = hotels.find(
-    (h) => String(h.id) === String(value.hotel_id)
-  );
+  /** =========================
+   * SAFE VALUE
+   ========================== */
+  const safeValue = {
+    hotel_id: null,
+    hotel_name_override: "",
+    meal_plan: "BB",
+    notes: "",
+    rooms: [],
+    ...value,
+  };
 
+  /** =========================
+   * SELECTED HOTEL
+   ========================== */
+  const selectedHotel = useMemo(() => {
+    return hotels.find(
+      (h) => String(h.id) === String(safeValue.hotel_id)
+    );
+  }, [hotels, safeValue.hotel_id]);
+
+  /** =========================
+   * UPDATE
+   ========================== */
   const update = (patch) => {
     onChange({
-      ...value,
+      ...safeValue,
       ...patch,
     });
   };
 
+  /** =========================
+   * ADD ROOM (SMART DEFAULT)
+   ========================== */
   const addRoom = () => {
+    const firstCategory = selectedHotel?.roomCategories?.[0];
+
     update({
       rooms: [
-        ...(value.rooms || []),
+        ...(safeValue.rooms || []),
         {
-          room_category: "Normal",
-          room_type: "DOUBLE",
+          room_category_id: firstCategory?.id || "",
+          room_category: firstCategory?.name || "",
+          room_type: firstCategory?.pax
+            ? firstCategory.pax === 1
+              ? "Single"
+              : firstCategory.pax === 2
+              ? "Double"
+              : firstCategory.pax === 3
+              ? "Triple"
+              : "Family"
+            : "",
+          pax: firstCategory?.pax || "",
           count: 1,
-          unit_price: 0,
+          unit_price: firstCategory?.price || 0,
         },
       ],
     });
   };
 
-  const total = (value.rooms || []).reduce(
-    (sum, r) => sum + (Number(r.unit_price) || 0) * (Number(r.count) || 0),
+  /** =========================
+   * TOTAL
+   ========================== */
+  const total = (safeValue.rooms || []).reduce(
+    (sum, r) =>
+      sum +
+      (Number(r.unit_price) || 0) *
+        (Number(r.count) || 0),
     0
   );
 
@@ -101,12 +142,13 @@ export default function AccommodationHotelCard({
                 Hotel
               </label>
               <Select
-                value={value.hotel_id ? String(value.hotel_id) : ""}
+                value={safeValue.hotel_id ? String(safeValue.hotel_id) : ""}
                 onValueChange={(v) =>
                   update({
                     hotel_id: v,
                     hotel_name_override:
-                      hotels.find((h) => String(h.id) === String(v))?.name || "",
+                      selectedHotel?.name || "",
+                    rooms: [], 
                   })
                 }
                 disabled={disabled}
@@ -130,7 +172,7 @@ export default function AccommodationHotelCard({
                 Meal
               </label>
               <Select
-                value={value.meal_plan || "BB"}
+                value={safeValue.meal_plan || "BB"}
                 onValueChange={(v) => update({ meal_plan: v })}
                 disabled={disabled}
               >
@@ -153,7 +195,7 @@ export default function AccommodationHotelCard({
               </label>
               <Input
                 placeholder="Custom name"
-                value={value.hotel_name_override || ""}
+                value={safeValue.hotel_name_override || ""}
                 onChange={(e) =>
                   update({ hotel_name_override: e.target.value })
                 }
@@ -184,31 +226,31 @@ export default function AccommodationHotelCard({
               </Button>
             </div>
 
-            {(value.rooms || []).length === 0 ? (
+            {(safeValue.rooms || []).length === 0 ? (
               <div className="rounded-lg border border-dashed bg-background p-4 text-center">
                 <Hotel className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
                 <p className="text-xs">No rooms added</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {(value.rooms || []).map((r, i) => (
+                {(safeValue.rooms || []).map((r, i) => (
                   <RoomRow
                     key={i}
                     value={r}
                     index={i}
                     hotel={selectedHotel}
                     onChange={(updated) => {
-                      const next = [...value.rooms];
+                      const next = [...safeValue.rooms];
                       next[i] = updated;
                       update({ rooms: next });
                     }}
                     onRemove={() =>
                       update({
-                        rooms: value.rooms.filter((_, idx) => idx !== i),
+                        rooms: safeValue.rooms.filter((_, idx) => idx !== i),
                       })
                     }
                     onDuplicate={() => {
-                      const next = [...value.rooms];
+                      const next = [...safeValue.rooms];
                       next.splice(i + 1, 0, { ...r });
                       update({ rooms: next });
                     }}
@@ -227,7 +269,7 @@ export default function AccommodationHotelCard({
             </label>
             <Textarea
               placeholder="Notes..."
-              value={value.notes || ""}
+              value={safeValue.notes || ""}
               onChange={(e) => update({ notes: e.target.value })}
               className="min-h-[70px] rounded-xl text-sm"
               disabled={disabled}
