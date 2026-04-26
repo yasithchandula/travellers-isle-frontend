@@ -245,11 +245,11 @@ export default function AccommodationTableStep({
                         </Button>
 
                         <Button
-                          size="icon"
-                          variant="ghost"
                           onClick={() => handleSaveOptionColumn(i)}
+                          className="h-9 px-4 gap-2 rounded-lg"
                         >
-                          Save <Save className="h-4 w-4" />
+                          <Save className="h-4 w-4" />
+                          Save Option
                         </Button>
                       </div>
                     </div>
