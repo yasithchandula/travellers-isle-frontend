@@ -32,6 +32,7 @@ const createEmptyOption = (dayId, index) => ({
   meal_plan: "BB",
   notes: "",
   rooms: [],
+  is_customer_booked: false,
 });
 
 export default function AccommodationCell({
@@ -43,7 +44,6 @@ export default function AccommodationCell({
   onChange,
 }) {
   const dispatch = useDispatch();
-
   const { loading } = useSelector((state) => state.quotations);
 
   /** =========================
@@ -58,7 +58,11 @@ export default function AccommodationCell({
 
   const [open, setOpen] = useState(false);
   const [isCustomerBooked, setIsCustomerBooked] = useState(
-    day?.is_customer_booked || false
+    value?.is_customer_booked || false
+  );
+
+  const [isDeparture, setIsDeparture] = useState(
+    day?.is_departure || false
   );
 
   const [initialOption, setInitialOption] = useState(
@@ -67,6 +71,12 @@ export default function AccommodationCell({
 
   const [initialized, setInitialized] = useState(false);
 
+  /** =========================
+   * LAST DAY CHECK
+   ========================== */
+  const isLastDay = useMemo(() => {
+    return day?.is_last_day === true;
+  }, [day]);
 
   /** =========================
    * SYNC INITIAL VALUE
@@ -80,6 +90,13 @@ export default function AccommodationCell({
       setInitialized(true);
     }
   }, [initialized, value, day.id, optionIndex]);
+
+  /** SYNC CUSTOMER BOOKED FROM API */
+  useEffect(() => {
+    if (value) {
+      setIsCustomerBooked(!!value.is_customer_booked);
+    }
+  }, [value]);
 
   /** =========================
    * UPDATE SINGLE OPTION
@@ -99,14 +116,65 @@ export default function AccommodationCell({
   /** =========================
    * CUSTOMER BOOKED
    ========================== */
-  const handleCustomerBookedChange = (checked) => {
+  const handleCustomerBookedChange = async (checked) => {
     setIsCustomerBooked(checked);
 
     if (checked) {
-      const empty = createEmptyOption(day.id, optionIndex);
-      updateOption(empty);
+      const clearedOption = {
+        ...createEmptyOption(day.id, optionIndex),
+        is_customer_booked: true,
+      };
+
+      updateOption(clearedOption);
       setOpen(false);
+
+      const payload = {
+        quotation_id: quotationId,
+        option_name: `Option ${optionIndex + 1}`,
+        option_index: optionIndex,
+
+        hotesls: [
+          {
+            itinerary_day_id: day.id,
+            hotel_id: null,
+            hotel_name_override: "",
+            meal_plan: "BB",
+            is_customer_booked: true,
+            notes: "",
+            rooms: [],
+          },
+        ],
+      };
+
+      await dispatch(bulkSaveQuotationOptions(payload));
+
+      if (quotationId) {
+        dispatch(fetchQuotationOptions(quotationId));
+      }
+
+      setInitialOption(JSON.stringify(clearedOption));
+    } else {
+      updateOption({
+        ...option,
+        is_customer_booked: false,
+      });
     }
+  };
+
+  /** =========================
+   * DEPARTURE HANDLER
+   ========================== */
+  const handleDepartureChange = (checked) => {
+    setIsDeparture(checked);
+
+    if (typeof day?.handleDeparture === "function") {
+      day.handleDeparture(checked, day);
+    }
+
+    onChange?.({
+      ...option,
+      is_departure: checked,
+    });
   };
 
   /** =========================
@@ -127,14 +195,16 @@ export default function AccommodationCell({
   const handleSaveOption = async () => {
     const payload = {
       quotation_id: quotationId,
-      option_name: option.option_name || `Option ${optionIndex + 1}`,
+      option_name:
+        option.option_name || `Option ${optionIndex + 1}`,
       option_index: optionIndex,
 
-      // keep same key as your existing API payload
       hotesls: [
         {
           itinerary_day_id: day.id,
-          hotel_id: Number(option.hotel_id),
+          hotel_id: option.hotel_id
+            ? Number(option.hotel_id)
+            : null,
           hotel_name_override: option.hotel_name_override,
           meal_plan: option.meal_plan,
           is_customer_booked: isCustomerBooked,
@@ -166,10 +236,11 @@ export default function AccommodationCell({
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isCustomerBooked
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-primary/5 text-primary"
-                  }`}
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
+                  isCustomerBooked
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary/5 text-primary"
+                }`}
               >
                 {isCustomerBooked ? (
                   <UserCheck className="h-5 w-5" />
@@ -185,7 +256,8 @@ export default function AccommodationCell({
 
                 <div className="flex gap-2 mt-1">
                   <Badge variant="secondary" className="rounded-full">
-                    {option.option_name || `Option ${optionIndex + 1}`}
+                    {option.option_name ||
+                      `Option ${optionIndex + 1}`}
                   </Badge>
 
                   {isCustomerBooked && (
@@ -195,7 +267,10 @@ export default function AccommodationCell({
                   )}
 
                   {isDirty && !isCustomerBooked && (
-                    <Badge variant="outline" className="rounded-full">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full"
+                    >
                       Unsaved
                     </Badge>
                   )}
@@ -207,12 +282,28 @@ export default function AccommodationCell({
               <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-muted/30">
                 <Switch
                   checked={isCustomerBooked}
-                  onCheckedChange={handleCustomerBookedChange}
+                  onCheckedChange={
+                    handleCustomerBookedChange
+                  }
                 />
                 <span className="text-xs font-medium">
                   Booked by Customer
                 </span>
               </div>
+
+              {isLastDay && (
+                <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-muted/30">
+                  <Switch
+                    checked={isDeparture}
+                    onCheckedChange={
+                      handleDepartureChange
+                    }
+                  />
+                  <span className="text-xs font-medium">
+                    Departure
+                  </span>
+                </div>
+              )}
 
               <Button
                 size="sm"
@@ -239,7 +330,6 @@ export default function AccommodationCell({
         </CardContent>
       </Card>
 
-      {/* OPTION CONTENT */}
       {open && !isCustomerBooked && (
         <div className="min-w-[420px] space-y-3 group">
           <div className="flex items-center justify-between">
@@ -247,7 +337,8 @@ export default function AccommodationCell({
               variant="outline"
               className="rounded-full px-2 py-0.5 text-xs"
             >
-              {option.option_name || `Option ${optionIndex + 1}`}
+              {option.option_name ||
+                `Option ${optionIndex + 1}`}
             </Badge>
 
             <Button

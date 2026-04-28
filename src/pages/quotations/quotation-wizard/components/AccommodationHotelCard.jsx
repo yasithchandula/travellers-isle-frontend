@@ -7,6 +7,8 @@ import {
   Plus,
 } from "lucide-react";
 
+import { Switch } from "@/components/ui/switch";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -76,12 +78,13 @@ export default function AccommodationHotelCard({
             ? firstCategory.pax === 1
               ? "Single"
               : firstCategory.pax === 2
-              ? "Double"
-              : firstCategory.pax === 3
-              ? "Triple"
-              : "Family"
+                ? "Double"
+                : firstCategory.pax === 3
+                  ? "Triple"
+                  : "Family"
             : "",
           pax: firstCategory?.pax || "",
+          driver_accommodation_enabled: false,
           count: 1,
           unit_price: firstCategory?.price || 0,
         },
@@ -96,9 +99,13 @@ export default function AccommodationHotelCard({
     (sum, r) =>
       sum +
       (Number(r.unit_price) || 0) *
-        (Number(r.count) || 0),
+      (Number(r.count) || 0),
     0
-  );
+  ) + (
+      safeValue.driver_accommodation_enabled && !safeValue.driver_is_free
+        ? Number(safeValue.driver_price) || 0
+        : 0
+    );
 
   return (
     <Card className="rounded-xl border bg-background shadow-sm">
@@ -148,7 +155,7 @@ export default function AccommodationHotelCard({
                     hotel_id: v,
                     hotel_name_override:
                       selectedHotel?.name || "",
-                    rooms: [], 
+                    rooms: [],
                   })
                 }
                 disabled={disabled}
@@ -260,7 +267,118 @@ export default function AccommodationHotelCard({
               </div>
             )}
           </div>
+          {/* DRIVER ACCOMMODATION */}
+          <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
 
+            {/* HEADER */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg border bg-background">
+                  <Hotel className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold">Driver Accommodation</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Manage driver stay & pricing
+                  </p>
+                </div>
+              </div>
+
+              <Switch
+                checked={safeValue.driver_accommodation_enabled}
+                onCheckedChange={(v) =>
+                  update({ driver_accommodation_enabled: v })
+                }
+                disabled={disabled}
+              />
+            </div>
+
+            {/* CONTENT */}
+            {safeValue.driver_accommodation_enabled && (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+
+                {/* FREE */}
+                <div className="md:col-span-4">
+                  <div className="rounded-lg border bg-background p-3 h-full flex flex-col">
+
+                    {/* TOP LABEL (same height across all) */}
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      Free Accommodation
+                    </p>
+
+                    {/* BODY */}
+                    <div className="flex-1 flex items-center justify-between">
+                      <span className="text-xs font-medium">Free</span>
+
+                      <Switch
+                        checked={safeValue.driver_is_free}
+                        onCheckedChange={(v) =>
+                          update({
+                            driver_is_free: v,
+                            driver_price: v ? 0 : safeValue.driver_price,
+                          })
+                        }
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* PRICE */}
+                <div className="md:col-span-4">
+                  <div className="rounded-lg border bg-background p-3 h-full flex flex-col">
+
+                    {/* SAME LABEL HEIGHT */}
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      Driver Price
+                    </p>
+
+                    {/* BODY */}
+                    <div className="flex-1 flex items-center">
+                      {!safeValue.driver_is_free ? (
+                        <Input
+                          type="number"
+                          placeholder="Enter amount"
+                          value={safeValue.driver_price || ""}
+                          onChange={(e) =>
+                            update({ driver_price: e.target.value })
+                          }
+                          className="rounded-lg h-9 w-full"
+                          disabled={disabled}
+                        />
+                      ) : (
+                        <div className="h-9 w-full rounded-lg border bg-muted/30 flex items-center px-3 text-xs text-muted-foreground">
+                          Free
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* STATUS */}
+                <div className="md:col-span-4">
+                  <div className="rounded-lg border bg-background p-3 h-full flex flex-col">
+
+                    {/* SAME LABEL HEIGHT */}
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      Status
+                    </p>
+
+                    {/* BODY */}
+                    <div className="flex-1 flex items-center justify-end">
+                      <Badge
+                        variant="outline"
+                        className="rounded-full text-[10px]"
+                      >
+                        {safeValue.driver_is_free ? "Free" : "Chargeable"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
           {/* NOTES */}
           <div>
             <label className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">

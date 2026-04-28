@@ -128,6 +128,7 @@ export default function AccommodationTableStep({
           hotel_id: foundDay.hotel_id || null,
           hotel_name_override:
             foundDay.hotel_name_override || "",
+          is_customer_booked: !!foundDay.is_customer_booked,
           meal_plan: foundDay.meal_plan || "BB",
           notes: foundDay.notes || "",
           rooms: (foundDay.rooms || []).map((r) => {
@@ -472,7 +473,7 @@ export default function AccommodationTableStep({
                     <TableCell key={opt.option_index}>
                       {!collapsed && (
                         <AccommodationCell
-                          day={day}
+                          day={{ ...day, is_last_day: idx === days.length - 1 }}
                           optionIndex={opt.option_index}
                           hotels={normalizedHotels}
                           quotationshell={quotationShell}
