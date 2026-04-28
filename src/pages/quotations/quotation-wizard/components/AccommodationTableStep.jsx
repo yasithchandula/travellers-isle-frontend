@@ -16,8 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  Pencil,
 } from "lucide-react";
+
+import { toast } from "sonner"; // ✅ ADDED
 
 import { fetchHotels } from "../../../../app/slices/hotelSlice";
 import {
@@ -50,9 +51,7 @@ export default function AccommodationTableStep({
   const { items: hotels } = useSelector((state) => state.hotels);
   const { options: apiOptions } = useSelector((state) => state.quotations);
 
-  /** =========================
-   * TOGGLE COLLAPSE
-   ========================== */
+  /** ========================= */
   const toggleCollapse = (index) => {
     setCollapsedOptions((prev) => ({
       ...prev,
@@ -60,45 +59,53 @@ export default function AccommodationTableStep({
     }));
   };
 
-  /** =========================
-   * RENAME OPTION
-   ========================== */
+  /** ========================= */
   const handleRename = async (opt) => {
     if (!quotationShell?.id) return;
 
-    await dispatch(
+    const promise = dispatch(
       updateQuotationOption({
         quotationId: quotationShell.id,
         optionIndex: opt.option_index,
-        payload: {
-          option_name: tempName,
-        },
+        payload: { option_name: tempName },
       })
     );
+
+    toast.promise(promise, {
+      loading: "Renaming option...",
+      success: "Option renamed successfully",
+      error: "Failed to rename option",
+    });
+
+    await promise;
 
     setEditingOption(null);
     dispatch(fetchQuotationOptions(quotationShell.id));
   };
 
-  /** =========================
-   * DELETE OPTION
-   ========================== */
+  /** ========================= */
   const handleDelete = async (opt) => {
     if (!quotationShell?.id) return;
 
-    await dispatch(
+    const promise = dispatch(
       deleteQuotationOption({
         quotationId: quotationShell.id,
         optionIndex: opt.option_index,
       })
     );
 
+    toast.promise(promise, {
+      loading: "Deleting option...",
+      success: "Option deleted",
+      error: "Delete failed",
+    });
+
+    await promise;
+
     dispatch(fetchQuotationOptions(quotationShell.id));
   };
 
-  /** =========================
-   * INITIAL POPULATION
-   ========================== */
+  /** ========================= */
   useEffect(() => {
     if (initialized) return;
     if (!apiOptions?.length || !days?.length || !hotels.length) return;
@@ -140,7 +147,7 @@ export default function AccommodationTableStep({
               room_category: r.room_category,
               room_type:
                 r.room_type?.charAt(0).toUpperCase() +
-                r.room_type?.slice(1).toLowerCase() || "",
+                  r.room_type?.slice(1).toLowerCase() || "",
               pax: pax,
               count: r.room_count || 1,
               unit_price: r.unit_price || 0,
@@ -172,9 +179,7 @@ export default function AccommodationTableStep({
     setInitialized(true);
   }, [apiOptions, days, initialized, onUpdateDay]);
 
-  /** =========================
-   * FETCH DATA
-   ========================== */
+  /** ========================= */
   useEffect(() => {
     dispatch(fetchHotels({ page: 1, limit: 50 }));
   }, [dispatch]);
@@ -209,6 +214,8 @@ export default function AccommodationTableStep({
         option_index: prev.length,
       },
     ]);
+
+    toast.success("New option column added");
   };
 
   /** ========================= */
@@ -259,6 +266,8 @@ export default function AccommodationTableStep({
 
       onUpdateDay(i, { accommodation: next });
     });
+
+    toast.success("Option copied successfully");
   };
 
   /** ========================= */
@@ -295,16 +304,29 @@ export default function AccommodationTableStep({
       });
     });
 
-    if (!payload.hotesls.length) return;
+    if (!payload.hotesls.length) {
+      toast.error("Nothing to save");
+      return;
+    }
 
-    await dispatch(bulkSaveQuotationOptions(payload));
+    const promise = dispatch(
+      bulkSaveQuotationOptions(payload)
+    );
+
+    toast.promise(promise, {
+      loading: "Saving option...",
+      success: "Option saved successfully",
+      error: "Save failed",
+    });
+
+    await promise;
+
     dispatch(fetchQuotationOptions(quotationShell.id));
   };
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-background overflow-x-auto">
-        {/* <div className="overflow-x-auto"> */}
         <Table>
           <TableHeader className="sticky top-0 bg-muted z-10">
             <TableRow>
@@ -319,17 +341,17 @@ export default function AccommodationTableStep({
                 return (
                   <TableHead
                     key={opt.option_index}
-                    className={`transition-all duration-300 ${collapsed
-                      ? "w-[70px]"
-                      : "min-w-[420px]"
-                      }`}
+                    className={`transition-all duration-300 ${
+                      collapsed
+                        ? "w-[70px]"
+                        : "min-w-[420px]"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       {!collapsed && (
                         <div className="flex items-center gap-2">
-                          {/* ✏️ Rename */}
                           {editingOption ===
-                            opt.option_index ? (
+                          opt.option_index ? (
                             <input
                               autoFocus
                               value={tempName}
@@ -376,8 +398,7 @@ export default function AccommodationTableStep({
                           {collapsed ? (
                             <>
                               <span className="text-xs">
-                                {`O${opt.option_index + 1
-                                  }`}
+                                {`O${opt.option_index + 1}`}
                               </span>
                               <ChevronRight className="h-4 w-4" />
                             </>
@@ -412,7 +433,6 @@ export default function AccommodationTableStep({
                               <Save className="h-4 w-4" />
                             </Button>
 
-                            {/* 🗑️ DELETE */}
                             <Button
                               size="icon"
                               variant="ghost"
@@ -458,13 +478,12 @@ export default function AccommodationTableStep({
                           quotationshell={quotationShell}
                           value={
                             day?.accommodation?.[
-                            opt.option_index
+                              opt.option_index
                             ]
                           }
                           onChange={(optionData) => {
                             const next = [
-                              ...(day.accommodation ||
-                                []),
+                              ...(day.accommodation || []),
                             ];
                             next[opt.option_index] =
                               optionData;
@@ -484,7 +503,6 @@ export default function AccommodationTableStep({
             ))}
           </TableBody>
         </Table>
-        {/* </div> */}
       </div>
     </div>
   );
