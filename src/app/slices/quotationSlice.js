@@ -8,6 +8,8 @@ import {
   fetchQuotationPreviewHtmlApi,
   bulkSaveQuotationOptionsApi,
   fetchQuotationOptionsApi,
+  updateQuotationOptionApi,
+  deleteQuotationOptionApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -102,6 +104,35 @@ export const fetchQuotationOptions = createAsyncThunk(
   async (quotationId, { rejectWithValue }) => {
     try {
       return await fetchQuotationOptionsApi(quotationId);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const updateQuotationOption = createAsyncThunk(
+  "quotation/updateOption",
+  async ({ quotationId, optionIndex, payload }, { rejectWithValue }) => {
+    try {
+      return await updateQuotationOptionApi({
+        quotationId,
+        optionIndex,
+        payload,
+      });
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const deleteQuotationOption = createAsyncThunk(
+  "quotation/deleteOption",
+  async ({ quotationId, optionIndex }, { rejectWithValue }) => {
+    try {
+      return await deleteQuotationOptionApi({
+        quotationId,
+        optionIndex,
+      });
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -284,9 +315,41 @@ const quotationSlice = createSlice({
       .addCase(bulkSaveQuotationOptions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      .addCase(updateQuotationOption.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(updateQuotationOption.fulfilled, (state) => {
+        state.loading = false;
+      })
+
+      .addCase(updateQuotationOption.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(deleteQuotationOption.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(deleteQuotationOption.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const { optionIndex } = action.meta.arg;
+
+        state.options = state.options.filter(
+          (opt) => opt.option_index !== optionIndex
+        );
+      })
+
+      .addCase(deleteQuotationOption.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
-
-
   },
 });
 

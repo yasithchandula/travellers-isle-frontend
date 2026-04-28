@@ -122,3 +122,33 @@ export async function fetchQuotationOptionsApi(quotationId) {
   );
   return data;
 }
+
+/**
+ * UPDATE QUOTATION OPTION
+ * PATCH /quotations/:quotationId/options/:optionIndex
+ */
+export async function updateQuotationOptionApi({
+  quotationId,
+  optionIndex,
+  payload,
+}) {
+  const { data } = await api.patch(
+    `/quotations/${quotationId}/options/${optionIndex}`,
+    payload
+  );
+  return data;
+}
+
+/**
+ * DELETE QUOTATION OPTION
+ * DELETE /quotations/:quotationId/options/:optionIndex
+ */
+export async function deleteQuotationOptionApi({
+  quotationId,
+  optionIndex,
+}) {
+  const { data } = await api.delete(
+    `/quotations/${quotationId}/options/${optionIndex}`
+  );
+  return data;
+}

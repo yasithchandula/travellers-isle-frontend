@@ -3,11 +3,17 @@ import Topbar from "./Topbar";
 
 export default function Layout({ children }) {
   return (
-    <div className="flex">
+    <div className="h-screen w-screen flex overflow-hidden">
+      {/* Sidebar */}
       <Sidebar />
-      <div className="w-full">
+
+      {/* Main Area */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Topbar (optional) */}
         {/* <Topbar /> */}
-        <div className="pt-4 p-6">
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-6 pt-4">
           {children}
         </div>
       </div>

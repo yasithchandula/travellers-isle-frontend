@@ -20,18 +20,24 @@ export default function ModernStepper({
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
 
+  /** =========================
+   * SCROLL LISTENER (FIXED)
+   ========================== */
   useEffect(() => {
+    const container = document.querySelector("[data-scroll-container]");
+    if (!container) return;
+
     let ticking = false;
 
     const handleScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const y = window.scrollY;
+        requestAnimationFrame(() => {
+          const y = container.scrollTop;
 
           setIsScrolled((prev) => {
-            // ✅ Hysteresis thresholds (no shaking)
-            if (!prev && y > 100) return true;
-            if (prev && y < 40) return false;
+            // smooth collapse (no shaking)
+            if (!prev && y > 80) return true;
+            if (prev && y < 30) return false;
             return prev;
           });
 
@@ -42,18 +48,15 @@ export default function ModernStepper({
       }
     };
 
-    // ✅ prevent unnecessary listener if no scroll possible
-    if (document.body.scrollHeight > window.innerHeight) {
-      window.addEventListener("scroll", handleScroll);
-    }
+    container.addEventListener("scroll", handleScroll);
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <div
       className={cn(
-        "sticky top-0 z-30 border-b backdrop-blur-xl transition-all",
+        "sticky top-0 z-30 border-b backdrop-blur-xl transition-all will-change-transform",
         isScrolled
           ? "bg-background/95 shadow-sm"
           : "bg-background/80"
@@ -64,14 +67,15 @@ export default function ModernStepper({
        ========================= */}
       <div
         className={cn(
-          "mx-auto px-4 overflow-hidden transition-all duration-300 will-change-[max-height,opacity]",
+          "mx-auto px-4 overflow-hidden transition-all duration-300",
           isScrolled
-            ? "max-h-0 opacity-0 pb-0"
-            : "max-h-[220px] opacity-100 pt-4 pb-2"
+            ? "max-h-0 opacity-0 py-0"
+            : "max-h-[220px] opacity-100 py-3"
         )}
       >
         <CardHeader className="border rounded-xl bg-card/80 backdrop-blur-sm px-4 py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            
             {/* LEFT */}
             <div className="space-y-1">
               <CardTitle className="text-lg md:text-xl font-semibold tracking-tight">
@@ -108,7 +112,7 @@ export default function ModernStepper({
       <div
         className={cn(
           "mx-auto px-4 transition-all",
-          isScrolled ? "py-2" : "py-3"
+          isScrolled ? "py-2 scale-[0.98]" : "py-3 scale-100"
         )}
       >
         <div className="flex items-center justify-center gap-2 overflow-x-auto">
@@ -136,6 +140,7 @@ export default function ModernStepper({
                       "border-border bg-card text-muted-foreground hover:bg-muted/50"
                   )}
                 >
+                  {/* STEP NUMBER / CHECK */}
                   <div
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
@@ -147,6 +152,7 @@ export default function ModernStepper({
                     {isDone ? <Check size={12} /> : index + 1}
                   </div>
 
+                  {/* LABEL */}
                   <span className="font-medium whitespace-nowrap">
                     {step.label}
                   </span>
@@ -157,7 +163,7 @@ export default function ModernStepper({
                   <div className="mx-2 h-[2px] w-10 shrink-0 rounded-full bg-border relative">
                     <div
                       className={cn(
-                        "absolute inset-0 rounded-full transition-all",
+                        "absolute inset-0 rounded-full transition-all duration-300",
                         currentStep > index
                           ? "bg-ti-forest"
                           : "bg-border"

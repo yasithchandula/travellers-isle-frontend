@@ -10,10 +10,22 @@ import {
 } from "@/components/ui/table";
 
 import { Button } from "../../../../components/ui/button";
-import { Copy, Save } from "lucide-react";
+import {
+  Copy,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 
 import { fetchHotels } from "../../../../app/slices/hotelSlice";
-import { bulkSaveQuotationOptions, fetchQuotationOptions } from "../../../../app/slices/quotationSlice";
+import {
+  bulkSaveQuotationOptions,
+  fetchQuotationOptions,
+  updateQuotationOption,
+  deleteQuotationOption,
+} from "../../../../app/slices/quotationSlice";
 
 import AccommodationCell from "./AccommodationCell";
 
@@ -29,11 +41,67 @@ export default function AccommodationTableStep({
     { option_name: "Option 1", option_index: 0 },
   ]);
 
+  const [collapsedOptions, setCollapsedOptions] = useState({});
+  const [initialized, setInitialized] = useState(false);
+
+  const [editingOption, setEditingOption] = useState(null);
+  const [tempName, setTempName] = useState("");
+
   const { items: hotels } = useSelector((state) => state.hotels);
   const { options: apiOptions } = useSelector((state) => state.quotations);
 
+  /** =========================
+   * TOGGLE COLLAPSE
+   ========================== */
+  const toggleCollapse = (index) => {
+    setCollapsedOptions((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
+  /** =========================
+   * RENAME OPTION
+   ========================== */
+  const handleRename = async (opt) => {
+    if (!quotationShell?.id) return;
+
+    await dispatch(
+      updateQuotationOption({
+        quotationId: quotationShell.id,
+        optionIndex: opt.option_index,
+        payload: {
+          option_name: tempName,
+        },
+      })
+    );
+
+    setEditingOption(null);
+    dispatch(fetchQuotationOptions(quotationShell.id));
+  };
+
+  /** =========================
+   * DELETE OPTION
+   ========================== */
+  const handleDelete = async (opt) => {
+    if (!quotationShell?.id) return;
+
+    await dispatch(
+      deleteQuotationOption({
+        quotationId: quotationShell.id,
+        optionIndex: opt.option_index,
+      })
+    );
+
+    dispatch(fetchQuotationOptions(quotationShell.id));
+  };
+
+  /** =========================
+   * INITIAL POPULATION
+   ========================== */
   useEffect(() => {
-    if (!apiOptions?.length || !days?.length) return;
+    if (initialized) return;
+    if (!apiOptions?.length || !days?.length || !hotels.length) return;
 
     const updatedDays = days.map((day) => {
       const accommodation = [];
@@ -50,28 +118,47 @@ export default function AccommodationTableStep({
           option_name: opt.option_name,
           option_index: opt.option_index,
           itinerary_day_id: day.id,
-
           hotel_id: foundDay.hotel_id || null,
           hotel_name_override:
-            foundDay.hotel_name || "",
+            foundDay.hotel_name_override || "",
           meal_plan: foundDay.meal_plan || "BB",
           notes: foundDay.notes || "",
-          rooms: foundDay.rooms || [],
+          rooms: (foundDay.rooms || []).map((r) => {
+            const hotel = hotels.find(
+              (h) => Number(h.id) === Number(foundDay.hotel_id)
+            );
+            const categories = hotel?.room_categories || [];
+            const matchedCategory = categories.find(
+              (c) =>
+                c.name?.toLowerCase() ===
+                r.room_category?.toLowerCase()
+            );
+            const pax = matchedCategory?.pax || null;
+
+            return {
+              room_category_id: matchedCategory?.id || "",
+              room_category: r.room_category,
+              room_type:
+                r.room_type?.charAt(0).toUpperCase() +
+                r.room_type?.slice(1).toLowerCase() || "",
+              pax: pax,
+              count: r.room_count || 1,
+              unit_price: r.unit_price || 0,
+            };
+          }),
         };
       });
 
       return {
         ...day,
         accommodation,
-        is_customer_booked:
-          day.is_customer_booked ||
-          apiOptions.some((opt) =>
-            opt.days?.some(
-              (d) =>
-                Number(d.itinerary_day_id) === Number(day.id) &&
-                d.is_customer_booked
-            )
-          ),
+        is_customer_booked: apiOptions.some((opt) =>
+          opt.days?.some(
+            (d) =>
+              Number(d.itinerary_day_id) === Number(day.id) &&
+              d.is_customer_booked
+          )
+        ),
       };
     });
 
@@ -81,7 +168,9 @@ export default function AccommodationTableStep({
         is_customer_booked: d.is_customer_booked,
       });
     });
-  }, [apiOptions]);
+
+    setInitialized(true);
+  }, [apiOptions, days, initialized, onUpdateDay]);
 
   /** =========================
    * FETCH DATA
@@ -96,9 +185,7 @@ export default function AccommodationTableStep({
     }
   }, [quotationShell?.id, dispatch]);
 
-  /** =========================
-   * CITY MAP
-   ========================== */
+  /** ========================= */
   const cityMap = useMemo(() => {
     const map = {};
     cities.forEach((c) => {
@@ -107,18 +194,13 @@ export default function AccommodationTableStep({
     return map;
   }, [cities]);
 
-  /** =========================
-   * NORMALIZED HOTELS
-   ========================== */
   const normalizedHotels = hotels.map((h) => ({
     id: h.id,
     name: h.name,
     roomCategories: h.room_categories || [],
   }));
 
-  /** =========================
-   * ADD OPTION COLUMN
-   ========================== */
+  /** ========================= */
   const addOptionColumn = () => {
     setGlobalOptions((prev) => [
       ...prev,
@@ -129,8 +211,16 @@ export default function AccommodationTableStep({
     ]);
   };
 
+  /** ========================= */
   useEffect(() => {
-    if (!apiOptions?.length) return;
+    if (!apiOptions) return;
+
+    if (!apiOptions.length) {
+      setGlobalOptions([
+        { option_name: "Option 1", option_index: 0 },
+      ]);
+      return;
+    }
 
     const opts = apiOptions.map((opt) => ({
       option_name: opt.option_name,
@@ -140,13 +230,10 @@ export default function AccommodationTableStep({
     setGlobalOptions(opts);
   }, [apiOptions]);
 
-  /** =========================
-   * COPY OPTION (FIXED)
-   ========================== */
+  /** ========================= */
   const copyOptionColumn = (fromIndex) => {
     const newIndex = globalOptions.length;
 
-    // 1. Add new column
     setGlobalOptions((prev) => [
       ...prev,
       {
@@ -155,7 +242,6 @@ export default function AccommodationTableStep({
       },
     ]);
 
-    // 2. Copy data across all days
     days.forEach((day, i) => {
       const fromOption = day?.accommodation?.[fromIndex];
       if (!fromOption) return;
@@ -166,19 +252,28 @@ export default function AccommodationTableStep({
         ...fromOption,
         option_name: `Option ${newIndex + 1}`,
         option_index: newIndex,
+        rooms: JSON.parse(
+          JSON.stringify(fromOption.rooms || [])
+        ),
       };
 
       onUpdateDay(i, { accommodation: next });
     });
   };
 
-
+  /** ========================= */
   const handleSaveOptionColumn = async (optIndex) => {
     if (!quotationShell?.id) return;
 
+    const optionMeta = globalOptions.find(
+      (o) => o.option_index === optIndex
+    );
+
     const payload = {
       quotation_id: quotationShell.id,
-      option_name: `Option ${optIndex + 1}`,
+      option_name:
+        optionMeta?.option_name ||
+        `Option ${optIndex + 1}`,
       option_index: optIndex,
       hotesls: [],
     };
@@ -189,7 +284,9 @@ export default function AccommodationTableStep({
 
       payload.hotesls.push({
         itinerary_day_id: day.id,
-        hotel_id: Number(option.hotel_id),
+        hotel_id: option.hotel_id
+          ? Number(option.hotel_id)
+          : null,
         hotel_name_override: option.hotel_name_override,
         meal_plan: option.meal_plan,
         is_customer_booked: day.is_customer_booked || false,
@@ -201,147 +298,193 @@ export default function AccommodationTableStep({
     if (!payload.hotesls.length) return;
 
     await dispatch(bulkSaveQuotationOptions(payload));
-
     dispatch(fetchQuotationOptions(quotationShell.id));
   };
 
   return (
     <div className="space-y-4">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold">
-            Accommodation Planning
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Add multiple hotels, room categories, and pricing for each day.
-          </p>
-        </div>
-      </div>
+      <div className="rounded-xl border bg-background overflow-x-auto">
+        {/* <div className="overflow-x-auto"> */}
+        <Table>
+          <TableHeader className="sticky top-0 bg-muted z-10">
+            <TableRow>
+              <TableHead className="min-w-[240px]">
+                Day Info
+              </TableHead>
 
-      {/* TABLE */}
-      <div className="rounded-xl border bg-background overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            {/* ================= HEADER ================= */}
-            <TableHeader className="sticky top-0 bg-muted z-10">
-              <TableRow>
-                <TableHead className="min-w-[240px]">
-                  Day Info
-                </TableHead>
+              {globalOptions.map((opt) => {
+                const collapsed =
+                  collapsedOptions[opt.option_index];
 
-                {globalOptions.map((opt, i) => (
-                  <TableHead key={i} className="min-w-[420px]">
+                return (
+                  <TableHead
+                    key={opt.option_index}
+                    className={`transition-all duration-300 ${collapsed
+                      ? "w-[70px]"
+                      : "min-w-[420px]"
+                      }`}
+                  >
                     <div className="flex items-center justify-between">
-                      <span>{opt.option_name}</span>
+                      {!collapsed && (
+                        <div className="flex items-center gap-2">
+                          {/* ✏️ Rename */}
+                          {editingOption ===
+                            opt.option_index ? (
+                            <input
+                              autoFocus
+                              value={tempName}
+                              onChange={(e) =>
+                                setTempName(e.target.value)
+                              }
+                              onBlur={() =>
+                                handleRename(opt)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  handleRename(opt);
+                              }}
+                              className="border px-2 py-1 rounded text-sm"
+                            />
+                          ) : (
+                            <span
+                              onClick={() => {
+                                setEditingOption(
+                                  opt.option_index
+                                );
+                                setTempName(
+                                  opt.option_name
+                                );
+                              }}
+                              className="cursor-pointer hover:underline"
+                            >
+                              {opt.option_name}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => copyOptionColumn(i)}
+                          onClick={() =>
+                            toggleCollapse(
+                              opt.option_index
+                            )
+                          }
                         >
-                          <Copy className="h-4 w-4" />
+                          {collapsed ? (
+                            <>
+                              <span className="text-xs">
+                                {`O${opt.option_index + 1
+                                  }`}
+                              </span>
+                              <ChevronRight className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <ChevronLeft className="h-4 w-4" />
+                          )}
                         </Button>
 
-                        <Button
-                          onClick={() => handleSaveOptionColumn(i)}
-                          className="h-9 px-4 gap-2 rounded-lg"
-                        >
-                          <Save className="h-4 w-4" />
-                          Save Option
-                        </Button>
+                        {!collapsed && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                copyOptionColumn(
+                                  opt.option_index
+                                )
+                              }
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                handleSaveOptionColumn(
+                                  opt.option_index
+                                )
+                              }
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+
+                            {/* 🗑️ DELETE */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                handleDelete(opt)
+                              }
+                              className="text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </TableHead>
-                ))}
+                );
+              })}
 
-                <TableHead className="min-w-[200px]">
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={addOptionColumn}>
-                      + Add
-                    </Button>
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+              <TableHead className="min-w-[200px]">
+                <Button size="sm" onClick={addOptionColumn}>
+                  + Add
+                </Button>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
 
-            {/* ================= BODY ================= */}
-            <TableBody>
-              {days.map((day, idx) => (
-                <TableRow
-                  key={day.id || day.date || idx}
-                  className="align-top"
-                >
-                  {/* DAY INFO */}
-                  <TableCell>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-medium">
-                          {day.date || "-"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Day {day.day_number || idx + 1}
-                        </p>
-                      </div>
+          <TableBody>
+            {days.map((day, idx) => (
+              <TableRow key={day.id || idx}>
+                <TableCell>{day.date || "-"}</TableCell>
 
-                      <div className="text-sm">
-                        <span className="font-medium">City:</span>{" "}
-                        <span className="text-muted-foreground">
-                          {cityMap[day.destination_city_id] || "-"}
-                        </span>
-                      </div>
+                {globalOptions.map((opt) => {
+                  const collapsed =
+                    collapsedOptions[opt.option_index];
 
-                      <div className="text-sm">
-                        <span className="font-medium">
-                          Excursions:
-                        </span>{" "}
-                        <span className="text-muted-foreground">
-                          {(day.excursions || []).length} selected
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
+                  return (
+                    <TableCell key={opt.option_index}>
+                      {!collapsed && (
+                        <AccommodationCell
+                          day={day}
+                          optionIndex={opt.option_index}
+                          hotels={normalizedHotels}
+                          quotationshell={quotationShell}
+                          value={
+                            day?.accommodation?.[
+                            opt.option_index
+                            ]
+                          }
+                          onChange={(optionData) => {
+                            const next = [
+                              ...(day.accommodation ||
+                                []),
+                            ];
+                            next[opt.option_index] =
+                              optionData;
 
-                  {/* OPTIONS COLUMNS */}
-                  {globalOptions.map((opt, optIndex) => (
-                    <TableCell key={optIndex}>
-                      <AccommodationCell
-                        day={day}
-                        optionIndex={optIndex}
-                        hotels={normalizedHotels}
-                        quotationshell={quotationShell}
-                        value={day?.accommodation?.[optIndex]}
-                        onChange={(optionData) => {
-                          const next = [...(day.accommodation || [])];
-                          next[optIndex] = optionData;
-
-                          onUpdateDay(idx, {
-                            accommodation: next,
-                          });
-                        }}
-                      />
+                            onUpdateDay(idx, {
+                              accommodation: next,
+                            });
+                          }}
+                        />
+                      )}
                     </TableCell>
-                  ))}
+                  );
+                })}
 
-                  {/* EMPTY CELL FOR ADD COLUMN ALIGNMENT */}
-                  <TableCell />
-                </TableRow>
-              ))}
-
-              {!days.length && (
-                <TableRow>
-                  <TableCell
-                    colSpan={globalOptions.length + 2}
-                    className="text-center py-10"
-                  >
-                    No days available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                <TableCell />
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {/* </div> */}
       </div>
     </div>
   );

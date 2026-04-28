@@ -75,23 +75,25 @@ export default function QuotationWizardModernPage() {
     standardDescriptionsState,
   });
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      <ModernStepper
-        steps={QUOTATION_WIZARD_STEPS}
-        currentStep={step}
-        onStepChange={setStep}
-      />
+return (
+  <div className="h-full flex flex-col bg-muted/30">
+    {/* Sticky Stepper */}
+    <ModernStepper
+      steps={QUOTATION_WIZARD_STEPS}
+      currentStep={step}
+      onStepChange={setStep}
+    />
 
-      <div className="mx-auto flex flex-col gap-8 px-4 py-8 md:px-6">
+    {/* SCROLL CONTAINER */}
+    <div
+      data-scroll-container
+      className="flex-1 overflow-y-auto overflow-x-hidden"
+    >
+      <div className="mx-auto w-full max-w-[1400px] flex flex-col gap-6 px-4 py-6 md:px-6">
+        
         <Card className="overflow-hidden border-border/60 shadow-sm">
-          {/* <WizardHeader
-            daysCount={days.length}
-            totalExcursions={totalExcursions}
-            totalDescriptions={totalDescriptions}
-          /> */}
-
           <CardContent className="space-y-6 p-4 md:p-6">
+            
             {step === 0 && (
               <ScheduleTableStep
                 days={days}
@@ -126,16 +128,22 @@ export default function QuotationWizardModernPage() {
               />
             )}
 
-            {step === 2 && <ReviewStep formattedNotes={formattedNotes} quotationShell={quotationShell} cities={cities} />}
+            {step === 2 && (
+              <ReviewStep
+                formattedNotes={formattedNotes}
+                quotationShell={quotationShell}
+                cities={cities}
+              />
+            )}
 
-            {step === 3 && (<div>
+            {step === 3 && (
               <AccommodationTableStep
                 days={days}
                 cities={cities}
                 onUpdateDay={updateDay}
                 quotationShell={quotationShell}
               />
-            </div>)}
+            )}
 
             {step === 4 && id && (
               <FinalPreviewStep quotationId={id} />
@@ -143,6 +151,7 @@ export default function QuotationWizardModernPage() {
           </CardContent>
         </Card>
 
+        {/*  Footer actions */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
@@ -176,27 +185,29 @@ export default function QuotationWizardModernPage() {
           )}
         </div>
       </div>
-
-      <Dialog
-        open={openEditDialog}
-        onOpenChange={(value) => {
-          if (!value) {
-            setEditingDescription(null);
-          }
-          setOpenEditDialog(value);
-        }}
-      >
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit & Create New Standard Description</DialogTitle>
-          </DialogHeader>
-
-          <StandardDescriptionForm
-            initial={editingDescription}
-            onSubmit={handleCreateFromEdit}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
-  );
+
+    {/* Dialog */}
+    <Dialog
+      open={openEditDialog}
+      onOpenChange={(value) => {
+        if (!value) setEditingDescription(null);
+        setOpenEditDialog(value);
+      }}
+    >
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            Edit & Create New Standard Description
+          </DialogTitle>
+        </DialogHeader>
+
+        <StandardDescriptionForm
+          initial={editingDescription}
+          onSubmit={handleCreateFromEdit}
+        />
+      </DialogContent>
+    </Dialog>
+  </div>
+);
 }
