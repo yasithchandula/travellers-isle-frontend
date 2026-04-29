@@ -164,17 +164,50 @@ export default function AccommodationCell({
   /** =========================
    * DEPARTURE HANDLER
    ========================== */
-  const handleDepartureChange = (checked) => {
+  const handleDepartureChange = async (checked) => {
     setIsDeparture(checked);
 
     if (typeof day?.handleDeparture === "function") {
       day.handleDeparture(checked, day);
     }
 
-    onChange?.({
+    const updatedOption = {
       ...option,
       is_departure: checked,
-    });
+    };
+
+    onChange?.(updatedOption);
+
+    const payload = {
+      quotation_id: quotationId,
+      option_name:
+        option.option_name || `Option ${optionIndex + 1}`,
+      option_index: optionIndex,
+
+      hotesls: [
+        {
+          itinerary_day_id: day.id,
+          hotel_id: option.hotel_id
+            ? Number(option.hotel_id)
+            : null,
+          hotel_name_override: option.hotel_name_override,
+          meal_plan: option.meal_plan,
+          is_customer_booked: isCustomerBooked,
+          is_departure: checked, 
+          notes: option.notes,
+          rooms: option.rooms || [],
+        },
+      ],
+    };
+
+    await dispatch(bulkSaveQuotationOptions(payload));
+
+    if (quotationId) {
+      dispatch(fetchQuotationOptions(quotationId));
+    }
+
+    /** optional: sync dirty state */
+    setInitialOption(JSON.stringify(updatedOption));
   };
 
   /** =========================
@@ -236,11 +269,10 @@ export default function AccommodationCell({
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
-                  isCustomerBooked
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isCustomerBooked
                     ? "bg-muted text-muted-foreground"
                     : "bg-primary/5 text-primary"
-                }`}
+                  }`}
               >
                 {isCustomerBooked ? (
                   <UserCheck className="h-5 w-5" />
