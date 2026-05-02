@@ -152,3 +152,16 @@ export async function deleteQuotationOptionApi({
   );
   return data;
 }
+
+
+/**
+ * GENERATE PDF
+ * POST /pdf/generate/:id
+ */
+export async function generateQuotationPdfApi(quotationId) {
+  const { data } = await api.post(
+    `/pdf/generate/${quotationId}`
+  );
+
+  return data;
+}

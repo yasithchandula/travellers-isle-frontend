@@ -10,6 +10,7 @@ import {
   fetchQuotationOptionsApi,
   updateQuotationOptionApi,
   deleteQuotationOptionApi,
+  generateQuotationPdfApi,
 } from "../../api/mock/quotationApi";
 
 import { loadState, saveState, removeState } from "../../lib/storage";
@@ -139,6 +140,18 @@ export const deleteQuotationOption = createAsyncThunk(
   }
 );
 
+
+export const generateQuotationPdf = createAsyncThunk(
+  "quotation/generatePdf",
+  async (quotationId, { rejectWithValue }) => {
+    try {
+      return await generateQuotationPdfApi(quotationId);
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 /* ===============================
    INITIAL STATE
 ================================ */
@@ -155,6 +168,7 @@ const initialState = {
   previewHtml: null,
   options: [],
   optionsLoading: false,
+  pdfLoading: false,
 };
 
 /* ===============================
@@ -349,7 +363,21 @@ const quotationSlice = createSlice({
       .addCase(deleteQuotationOption.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      .addCase(generateQuotationPdf.pending, (state) => {
+        state.pdfLoading = true;
+      })
+
+      .addCase(generateQuotationPdf.fulfilled, (state) => {
+        state.pdfLoading = false;
+      })
+
+      .addCase(generateQuotationPdf.rejected, (state, action) => {
+        state.pdfLoading = false;
+        state.error = action.payload;
       });
+      
   },
 });
 

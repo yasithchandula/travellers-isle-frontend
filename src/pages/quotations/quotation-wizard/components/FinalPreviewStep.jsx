@@ -19,12 +19,12 @@ import {
   FileText,
 } from "lucide-react";
 
-import { fetchQuotationPreviewHtml } from "../../../../app/slices/quotationSlice";
+import { fetchQuotationPreviewHtml, generateQuotationPdf } from "../../../../app/slices/quotationSlice";
 
 export default function FinalPreviewStep({ quotationId }) {
   const dispatch = useDispatch();
 
-  const { previewHtml, loading, error } = useSelector(
+  const { previewHtml, loading, error, pdfLoading } = useSelector(
     (state) => state.quotations
   );
 
@@ -49,6 +49,34 @@ export default function FinalPreviewStep({ quotationId }) {
     typeof previewHtml === "string"
       ? previewHtml
       : previewHtml?.data || "";
+
+  const handleExportPdf = async () => {
+    if (!quotationId) return;
+
+    try {
+      const res = await dispatch(
+        generateQuotationPdf(quotationId)
+      ).unwrap();
+
+      const filePath = res?.data?.path;
+
+      if (!filePath) {
+        throw new Error("No PDF path returned");
+      }
+
+      const fileUrl = `${window.location.origin}/${filePath.replace("./", "")}`;
+
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = `quotation_${quotationId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -75,9 +103,17 @@ export default function FinalPreviewStep({ quotationId }) {
               Refresh
             </Button>
 
-            <Button size="sm">
-              <FileText className="w-4 h-4 mr-2" />
-              Export PDF
+            <Button
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={pdfLoading}
+            >
+              {pdfLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4 mr-2" />
+              )}
+              {pdfLoading ? "Generating..." : "Export PDF"}
             </Button>
           </div>
         </CardContent>
@@ -129,10 +165,10 @@ export default function FinalPreviewStep({ quotationId }) {
            ========================== */}
           {!loading && !error && safeHtml && (
             <div className="h-[650px] bg-muted/30 flex justify-center p-6">
-              
+
               {/* DOCUMENT FRAME */}
               <div className="w-full max-w-4xl bg-white rounded-2xl shadow-[0_25px_80px_rgba(0,0,0,0.15)] border overflow-hidden">
-                
+
                 {/* SINGLE SCROLL INSIDE IFRAME */}
                 <iframe
                   srcDoc={safeHtml}

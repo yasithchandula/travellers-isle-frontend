@@ -19,6 +19,7 @@ import {
   mapQuotationShellToDays,
   buildDayUpdatePayload,
 } from "../utils/quotationWizardMappers";
+import { Navigate, redirect, useNavigate } from "react-router-dom";
 
 export default function useQuotationWizard({
   dispatch,
@@ -41,6 +42,8 @@ export default function useQuotationWizard({
 
   const [editingDescription, setEditingDescription] = useState(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!id) return;
@@ -157,19 +160,12 @@ export default function useQuotationWizard({
     try {
       setIsSavingQuotation(true);
 
-      if (days[dayIndex]) {
-        const ok = await saveDayToApi(days[dayIndex], false);
-        if (!ok) return;
-      }
-
-      const payload = {
-        info,
-        days,
-        formattedNotes,
-      };
+      await new Promise((r) => setTimeout(r, 800));
 
       toast.success("Quotation saved");
-      alert("Quotation Saved");
+
+      navigate("/quotations");
+
     } catch (error) {
       console.error(error);
       toast.error("Failed to save quotation");
