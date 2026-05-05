@@ -259,7 +259,8 @@ export default function InquiryList() {
                 </TableCell>
 
                 <TableCell>
-                  {getAssignedName(i.assigned_to)}
+                  {/* {getAssignedName(i.assigned_to)} */}
+                  {i.assigned_to_name}
                 </TableCell>
 
                 <TableCell className="text-right">
