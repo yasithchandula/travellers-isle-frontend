@@ -4,6 +4,7 @@ import {
   BedDouble,
   Car,
   Check,
+  ChevronsUpDown,
   Copy,
   Hotel,
   Pencil,
@@ -29,6 +30,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
 import { fetchHotels } from "../../../../app/slices/hotelSlice";
 import {
   bulkSaveQuotationOptions,
@@ -39,7 +55,7 @@ import {
 
 /** =========================
  * HELPERS
- ========================== */
+========================== */
 const getRoomTypeFromPax = (pax) => {
   const n = Number(pax);
 
@@ -70,13 +86,9 @@ const createEmptyOption = (dayId, index, optionName) => ({
 
 const clone = (value) => JSON.parse(JSON.stringify(value || null));
 
-
 const getDayTotal = (dayOption) => {
   const roomTotal = (dayOption?.rooms || []).reduce((sum, room) => {
-    return (
-      sum +
-      (Number(room.unit_price) || 0) * (Number(room.count) || 0)
-    );
+    return sum + (Number(room.unit_price) || 0) * (Number(room.count) || 0);
   }, 0);
 
   const driverTotal =
@@ -100,16 +112,110 @@ const normalizeRoomFromApi = (room, hotel) => {
   return {
     room_category_id: matchedCategory?.id || room?.room_category_id || "",
     room_category: room?.room_category || matchedCategory?.name || "",
-    room_type:
-      room?.room_type
-        ? room.room_type.charAt(0).toUpperCase() +
-        room.room_type.slice(1).toLowerCase()
-        : getRoomTypeFromPax(pax),
+    room_type: room?.room_type
+      ? room.room_type.charAt(0).toUpperCase() +
+      room.room_type.slice(1).toLowerCase()
+      : getRoomTypeFromPax(pax),
     pax,
     count: room?.room_count || room?.count || 1,
     unit_price: room?.unit_price || 0,
   };
 };
+
+/** =========================
+ * SHADCN HOTEL COMBOBOX
+========================== */
+function HotelCombobox({
+  value,
+  hotels = [],
+  disabled = false,
+  onChange,
+  selectedOptionIndex,
+  dayId,
+}) {
+  const [open, setOpen] = useState(false);
+
+  const selectedHotel = hotels.find(
+    (hotel) => String(hotel.id) === String(value)
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className="h-7 w-full justify-between rounded-lg bg-background px-2 text-[11px] font-normal"
+        >
+          <span className="truncate">
+            {selectedHotel?.name || "Select hotel"}
+          </span>
+
+          <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        className="z-[10050] w-[280px] rounded-xl p-0"
+        key={`hotel-popover-${selectedOptionIndex}-${dayId}`}
+      >
+        <Command>
+          <CommandInput
+            placeholder="Search hotel..."
+            className="h-8 text-[11px]"
+          />
+
+          <CommandList>
+            <CommandEmpty>No hotel found.</CommandEmpty>
+
+            <CommandGroup>
+              {hotels.map((hotel) => {
+                const hotelId = String(hotel.id);
+                const active = hotelId === String(value);
+
+                return (
+                  <CommandItem
+                    key={hotelId}
+                    value={hotelId}
+                    keywords={[hotel.name || "", hotelId]}
+                    onSelect={() => {
+                      onChange(hotelId);
+                      setOpen(false);
+                    }}
+                    className="cursor-pointer text-[11px]"
+                  >
+                    <Check
+                      className={
+                        active
+                          ? "mr-2 h-3.5 w-3.5 opacity-100"
+                          : "mr-2 h-3.5 w-3.5 opacity-0"
+                      }
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[11px] leading-tight">
+                        {hotel.name}
+                      </p>
+
+                      <p className="text-[9px] leading-tight text-muted-foreground">
+                        ID: {hotelId}
+                      </p>
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function AccommodationTableStep({
   days = [],
@@ -120,10 +226,9 @@ export default function AccommodationTableStep({
   const dispatch = useDispatch();
 
   const { items: hotels = [] } = useSelector((state) => state.hotels);
-  const {
-    options: apiOptions = [],
-    loading,
-  } = useSelector((state) => state.quotations);
+  const { options: apiOptions = [], loading } = useSelector(
+    (state) => state.quotations
+  );
 
   const [optionMetas, setOptionMetas] = useState([
     {
@@ -136,20 +241,57 @@ export default function AccommodationTableStep({
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
   const [isFullscreenTable, setIsFullscreenTable] = useState(false);
 
   /** =========================
    * LOAD API DATA
-   ========================== */
+  ========================== */
   useEffect(() => {
     dispatch(fetchHotels({ page: 1, limit: 50 }));
   }, [dispatch]);
 
   useEffect(() => {
-    if (quotationShell?.id) {
-      dispatch(fetchQuotationOptions(quotationShell.id));
-    }
+    let active = true;
+
+    const loadQuotationOptions = async () => {
+      if (!quotationShell?.id) return;
+
+      setHydrated(false);
+      setOptionsLoaded(false);
+
+      try {
+        await dispatch(fetchQuotationOptions(quotationShell.id)).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch quotation options:", error);
+      } finally {
+        if (active) {
+          setOptionsLoaded(true);
+        }
+      }
+    };
+
+    loadQuotationOptions();
+
+    return () => {
+      active = false;
+    };
   }, [quotationShell?.id, dispatch]);
+
+  const refreshQuotationOptions = async () => {
+    if (!quotationShell?.id) return;
+
+    setOptionsLoaded(false);
+
+    try {
+      await dispatch(fetchQuotationOptions(quotationShell.id)).unwrap();
+      setHydrated(false);
+    } catch (error) {
+      console.error("Failed to refresh quotation options:", error);
+    } finally {
+      setOptionsLoaded(true);
+    }
+  };
 
   useEffect(() => {
     const handleEscape = (event) => {
@@ -167,7 +309,7 @@ export default function AccommodationTableStep({
 
   /** =========================
    * NORMALIZED DATA
-   ========================== */
+  ========================== */
   const normalizedHotels = useMemo(() => {
     return (hotels || []).map((hotel) => ({
       id: hotel.id,
@@ -181,7 +323,7 @@ export default function AccommodationTableStep({
     const map = {};
 
     (cities || []).forEach((city) => {
-      map[city.id] = city.name || city.city || "-";
+      map[String(city.id)] = city.name || city.city || "-";
     });
 
     return map;
@@ -195,13 +337,50 @@ export default function AccommodationTableStep({
     );
   }, [optionMetas, selectedOptionIndex]);
 
+  const quotationItineraryMap = useMemo(() => {
+    const map = {};
+
+    (quotationShell?.itinerary || []).forEach((item) => {
+      map[Number(item.id)] = item;
+    });
+
+    return map;
+  }, [quotationShell?.itinerary]);
+
+  const getMileageValue = (day) => {
+    const quotationDay = quotationItineraryMap[Number(day.id)];
+
+    const actualMileage =
+      Number(day?.actual_mileage) ||
+      Number(quotationDay?.actual_mileage) ||
+      Number(day?.standard_description?.mileage) ||
+      Number(quotationDay?.standard_description?.mileage) ||
+      0;
+
+    const bufferMileage =
+      Number(day?.buffer_mileage) || Number(quotationDay?.buffer_mileage) || 0;
+
+    return {
+      actualMileage,
+      bufferMileage,
+      totalMileage: actualMileage + bufferMileage,
+    };
+  };
+
   /** =========================
    * HYDRATE API OPTIONS INTO DAYS
-   ========================== */
+  ========================== */
   useEffect(() => {
     if (hydrated) return;
+    if (!optionsLoaded) return;
     if (!days?.length) return;
-    if (!normalizedHotels?.length) return;
+    if (loading) return;
+
+    const hasApiRooms = apiOptions?.some((option) =>
+      option.days?.some((apiDay) => (apiDay.rooms || []).length > 0)
+    );
+
+    if (hasApiRooms && !normalizedHotels?.length) return;
 
     if (!apiOptions?.length) {
       setOptionMetas([
@@ -218,21 +397,28 @@ export default function AccommodationTableStep({
 
     const metas = apiOptions
       .map((option) => ({
-        option_name: option.option_name || `Option ${option.option_index + 1}`,
-        option_index: option.option_index,
+        option_name:
+          option.option_name || `Option ${Number(option.option_index) + 1}`,
+        option_index: Number(option.option_index),
       }))
       .sort((a, b) => Number(a.option_index) - Number(b.option_index));
 
     setOptionMetas(metas);
 
-    if (!metas.some((m) => Number(m.option_index) === Number(selectedOptionIndex))) {
-      setSelectedOptionIndex(metas[0]?.option_index || 0);
+    if (
+      !metas.some(
+        (meta) => Number(meta.option_index) === Number(selectedOptionIndex)
+      )
+    ) {
+      setSelectedOptionIndex(Number(metas[0]?.option_index ?? 0));
     }
 
     days.forEach((day, dayIndex) => {
       const accommodation = [...(day.accommodation || [])];
 
       apiOptions.forEach((apiOption) => {
+        const optionIndex = Number(apiOption.option_index);
+
         const foundDay = apiOption.days?.find(
           (apiDay) => Number(apiDay.itinerary_day_id) === Number(day.id)
         );
@@ -240,12 +426,13 @@ export default function AccommodationTableStep({
         if (!foundDay) return;
 
         const hotel = normalizedHotels.find(
-          (h) => Number(h.id) === Number(foundDay.hotel_id)
+          (hotel) => Number(hotel.id) === Number(foundDay.hotel_id)
         );
 
-        accommodation[apiOption.option_index] = {
-          option_name: apiOption.option_name || `Option ${apiOption.option_index + 1}`,
-          option_index: apiOption.option_index,
+        accommodation[optionIndex] = {
+          option_name:
+            apiOption.option_name || `Option ${Number(optionIndex) + 1}`,
+          option_index: optionIndex,
           itinerary_day_id: day.id,
           hotel_id: foundDay.hotel_id || null,
           hotel_name_override: foundDay.hotel_name_override || "",
@@ -254,7 +441,8 @@ export default function AccommodationTableStep({
           is_customer_booked: !!foundDay.is_customer_booked,
           is_departure: !!foundDay.is_departure,
 
-          driver_accommodation_enabled: !!foundDay.driver_accommodation_enabled,
+          driver_accommodation_enabled:
+            !!foundDay.driver_accommodation_enabled,
           driver_is_free: !!foundDay.driver_is_free,
           driver_price: Number(foundDay.driver_price) || 0,
 
@@ -281,6 +469,8 @@ export default function AccommodationTableStep({
     setHydrated(true);
   }, [
     hydrated,
+    optionsLoaded,
+    loading,
     apiOptions,
     days,
     normalizedHotels,
@@ -290,7 +480,7 @@ export default function AccommodationTableStep({
 
   /** =========================
    * SELECTED GRID DAYS
-   ========================== */
+  ========================== */
   const gridDays = useMemo(() => {
     return (days || []).map((day, index) => {
       const option =
@@ -301,18 +491,42 @@ export default function AccommodationTableStep({
           selectedMeta?.option_name
         );
 
+      const mileageData = getMileageValue(day);
+
       return {
         ...option,
+
         id: day.id,
+        itinerary_day_id: day.id,
         day_number: day.day_number || index + 1,
         date: day.date,
-        start_city_id: day.start_city_id,
-        end_city_id: day.end_city_id,
+
+        starting_city_id: day.starting_city_id || day.start_city_id || "",
+        destination_city_id: day.destination_city_id || day.end_city_id || "",
+
+        start_city_id: day.starting_city_id || day.start_city_id || "",
+        end_city_id: day.destination_city_id || day.end_city_id || "",
+
+        start_city_name: day.start_city_name || day.starting_city_name || "",
+        end_city_name: day.end_city_name || day.destination_city_name || "",
+
+        start_city: day.start_city || day.starting_city || null,
+        end_city: day.end_city || day.destination_city || null,
+
+        standard_description: day.standard_description || null,
+        standard_description_id: day.standard_description_id || null,
+        stop_ids: day.stop_ids || [],
+        excursions: day.excursions || [],
+
+        actual_mileage: mileageData.actualMileage,
+        buffer_mileage: mileageData.bufferMileage,
+        total_mileage: mileageData.totalMileage,
+
         is_last_day: index === days.length - 1,
-        is_departure: option?.is_departure || day?.is_departure || false,
+        is_departure: !!(option?.is_departure || day?.is_departure),
       };
     });
-  }, [days, selectedOptionIndex, selectedMeta]);
+  }, [days, selectedOptionIndex, selectedMeta, quotationItineraryMap]);
 
   const grandTotal = useMemo(() => {
     return gridDays.reduce((sum, day) => sum + getDayTotal(day), 0);
@@ -320,7 +534,7 @@ export default function AccommodationTableStep({
 
   /** =========================
    * UPDATE HELPERS
-   ========================== */
+  ========================== */
   const updateDay = (dayIndex, patch) => {
     const sourceDay = days[dayIndex];
     if (!sourceDay) return;
@@ -336,7 +550,8 @@ export default function AccommodationTableStep({
     const nextOption = {
       ...currentOption,
       ...patch,
-      option_name: selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
+      option_name:
+        selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
       option_index: selectedOptionIndex,
       itinerary_day_id: sourceDay.id,
     };
@@ -344,9 +559,13 @@ export default function AccommodationTableStep({
     const nextAccommodation = [...(sourceDay.accommodation || [])];
     nextAccommodation[selectedOptionIndex] = nextOption;
 
+    const nextIsCustomerBooked = nextAccommodation.some(
+      (option) => !!option?.is_customer_booked
+    );
+
     onUpdateDay(dayIndex, {
       accommodation: nextAccommodation,
-      is_customer_booked: !!nextOption.is_customer_booked,
+      is_customer_booked: nextIsCustomerBooked,
     });
   };
 
@@ -422,7 +641,7 @@ export default function AccommodationTableStep({
 
   /** =========================
    * CUSTOMER BOOKED
-   ========================== */
+  ========================== */
   const handleCustomerBooked = async (dayIndex, checked) => {
     const sourceDay = days[dayIndex];
     if (!sourceDay) return;
@@ -447,7 +666,8 @@ export default function AccommodationTableStep({
 
       const payload = {
         quotation_id: quotationShell?.id,
-        option_name: selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
+        option_name:
+          selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
         option_index: selectedOptionIndex,
         hotesls: [
           {
@@ -466,19 +686,19 @@ export default function AccommodationTableStep({
         ],
       };
 
-      const promise = dispatch(bulkSaveQuotationOptions(payload));
+      try {
+        const promise = dispatch(bulkSaveQuotationOptions(payload)).unwrap();
 
-      toast.promise(promise, {
-        loading: "Updating customer booked status...",
-        success: "Marked as customer booked",
-        error: "Failed to update customer booked status",
-      });
+        toast.promise(promise, {
+          loading: "Updating customer booked status...",
+          success: "Marked as customer booked",
+          error: "Failed to update customer booked status",
+        });
 
-      await promise;
-
-      if (quotationShell?.id) {
-        setHydrated(false);
-        dispatch(fetchQuotationOptions(quotationShell.id));
+        await promise;
+        await refreshQuotationOptions();
+      } catch (error) {
+        console.error("Failed to update customer booked status:", error);
       }
 
       return;
@@ -491,7 +711,7 @@ export default function AccommodationTableStep({
 
   /** =========================
    * OPTION ACTIONS
-   ========================== */
+  ========================== */
   const handleAddOption = () => {
     const maxIndex = optionMetas.length
       ? Math.max(...optionMetas.map((option) => Number(option.option_index)))
@@ -602,26 +822,28 @@ export default function AccommodationTableStep({
       return;
     }
 
-    const promise = dispatch(
-      updateQuotationOption({
-        quotationId: quotationShell.id,
-        optionIndex: selectedOptionIndex,
-        payload: {
-          option_name: cleanName,
-        },
-      })
-    );
+    try {
+      const promise = dispatch(
+        updateQuotationOption({
+          quotationId: quotationShell.id,
+          optionIndex: selectedOptionIndex,
+          payload: {
+            option_name: cleanName,
+          },
+        })
+      ).unwrap();
 
-    toast.promise(promise, {
-      loading: "Renaming option...",
-      success: "Option renamed successfully",
-      error: "Failed to rename option",
-    });
+      toast.promise(promise, {
+        loading: "Renaming option...",
+        success: "Option renamed successfully",
+        error: "Failed to rename option",
+      });
 
-    await promise;
-
-    setHydrated(false);
-    dispatch(fetchQuotationOptions(quotationShell.id));
+      await promise;
+      await refreshQuotationOptions();
+    } catch (error) {
+      console.error("Failed to rename option:", error);
+    }
   };
 
   const handleDeleteOption = async () => {
@@ -636,7 +858,7 @@ export default function AccommodationTableStep({
       (option) => Number(option.option_index) !== Number(deletingIndex)
     );
 
-    const nextSelectedIndex = nextMetas[0]?.option_index || 0;
+    const nextSelectedIndex = Number(nextMetas[0]?.option_index ?? 0);
 
     setOptionMetas(nextMetas);
     setSelectedOptionIndex(nextSelectedIndex);
@@ -665,28 +887,30 @@ export default function AccommodationTableStep({
       return;
     }
 
-    const promise = dispatch(
-      deleteQuotationOption({
-        quotationId: quotationShell.id,
-        optionIndex: deletingIndex,
-      })
-    );
+    try {
+      const promise = dispatch(
+        deleteQuotationOption({
+          quotationId: quotationShell.id,
+          optionIndex: deletingIndex,
+        })
+      ).unwrap();
 
-    toast.promise(promise, {
-      loading: "Deleting option...",
-      success: "Option deleted",
-      error: "Delete failed",
-    });
+      toast.promise(promise, {
+        loading: "Deleting option...",
+        success: "Option deleted",
+        error: "Delete failed",
+      });
 
-    await promise;
-
-    setHydrated(false);
-    dispatch(fetchQuotationOptions(quotationShell.id));
+      await promise;
+      await refreshQuotationOptions();
+    } catch (error) {
+      console.error("Failed to delete option:", error);
+    }
   };
 
   /** =========================
    * SAVE OPTION
-   ========================== */
+  ========================== */
   const handleSaveOption = async () => {
     if (!quotationShell?.id) {
       toast.error("Quotation id not found");
@@ -695,7 +919,8 @@ export default function AccommodationTableStep({
 
     const payload = {
       quotation_id: quotationShell.id,
-      option_name: selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
+      option_name:
+        selectedMeta?.option_name || `Option ${selectedOptionIndex + 1}`,
       option_index: selectedOptionIndex,
       hotesls: [],
     };
@@ -723,7 +948,12 @@ export default function AccommodationTableStep({
         driver_price: Number(option.driver_price) || 0,
 
         rooms: (option.rooms || []).map((room) => ({
-          ...room,
+          room_category_id: room.room_category_id
+            ? Number(room.room_category_id)
+            : null,
+          room_category: room.room_category || "",
+          room_type: room.room_type || "",
+          pax: room.pax || "",
           room_count: Number(room.count) || 1,
           count: Number(room.count) || 1,
           unit_price: Number(room.unit_price) || 0,
@@ -731,18 +961,50 @@ export default function AccommodationTableStep({
       });
     });
 
-    const promise = dispatch(bulkSaveQuotationOptions(payload));
+    try {
+      const savePromise = dispatch(bulkSaveQuotationOptions(payload)).unwrap();
 
-    toast.promise(promise, {
-      loading: "Saving option...",
-      success: "Option saved successfully",
-      error: "Save failed",
-    });
+      toast.promise(savePromise, {
+        loading: "Saving option...",
+        success: "Option saved successfully",
+        error: "Save failed",
+      });
 
-    await promise;
+      await savePromise;
+      await refreshQuotationOptions();
+    } catch (error) {
+      console.error("Save option failed:", error);
+    }
+  };
 
-    setHydrated(false);
-    dispatch(fetchQuotationOptions(quotationShell.id));
+  const getCityName = (cityValue) => {
+    if (!cityValue) return "-";
+
+    if (typeof cityValue === "object") {
+      return cityValue.name || cityValue.city || cityValue.label || "-";
+    }
+
+    return cityMap[String(cityValue)] || "-";
+  };
+
+  const getDayStartCity = (day) => {
+    return (
+      day.start_city_name ||
+      day.starting_city_name ||
+      day.start_city?.name ||
+      day.start_city?.city ||
+      getCityName(day.starting_city_id || day.start_city_id)
+    );
+  };
+
+  const getDayEndCity = (day) => {
+    return (
+      day.end_city_name ||
+      day.destination_city_name ||
+      day.end_city?.name ||
+      day.end_city?.city ||
+      getCityName(day.destination_city_id || day.end_city_id)
+    );
   };
 
   return (
@@ -754,13 +1016,7 @@ export default function AccommodationTableStep({
       }
     >
       {/* TOP AIRTABLE BAR */}
-      <div
-        className={
-          isFullscreenTable
-            ? "sticky top-0 z-30 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur"
-            : "sticky top-0 z-30 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur"
-        }
-      >
+      <div className="sticky top-0 z-30 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select
@@ -774,7 +1030,7 @@ export default function AccommodationTableStep({
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
 
-              <SelectContent>
+              <SelectContent className="z-[10050]">
                 {optionMetas.map((option) => (
                   <SelectItem
                     key={option.option_index}
@@ -873,7 +1129,6 @@ export default function AccommodationTableStep({
               </p>
             </div>
 
-            {/* FULLSCREEN BUTTON */}
             <Button
               type="button"
               variant="outline"
@@ -896,7 +1151,7 @@ export default function AccommodationTableStep({
 
             <Button
               className="h-8 rounded-xl px-3 text-xs"
-              disabled={loading}
+              disabled={loading || !optionsLoaded}
               onClick={handleSaveOption}
             >
               <Save className="mr-1.5 h-3.5 w-3.5" />
@@ -907,7 +1162,10 @@ export default function AccommodationTableStep({
       </div>
 
       {/* COMPACT AIRTABLE GRID */}
-      <div className="overflow-hidden rounded-2xl border bg-background shadow-sm">
+      <div
+        className="overflow-hidden rounded-2xl border bg-background shadow-sm"
+        key={`table-shell-${selectedOptionIndex}`}
+      >
         <div
           className={
             isFullscreenTable
@@ -948,7 +1206,7 @@ export default function AccommodationTableStep({
               </tr>
             </thead>
 
-            <tbody>
+            <tbody key={`tbody-option-${selectedOptionIndex}`}>
               {gridDays.map((day, dayIndex) => {
                 const selectedHotel = normalizedHotels.find(
                   (hotel) => Number(hotel.id) === Number(day.hotel_id)
@@ -958,12 +1216,12 @@ export default function AccommodationTableStep({
 
                 return (
                   <tr
-                    key={day.id || dayIndex}
+                    key={`${selectedOptionIndex}-${day.id || dayIndex}`}
                     className="group transition-colors hover:bg-muted/20"
                   >
                     {/* DAY */}
                     <td className="sticky left-0 z-10 border-b border-r bg-background px-2.5 py-2 align-top group-hover:bg-muted/30">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
                           <p className="text-xs font-semibold leading-tight">
                             Day {day.day_number || dayIndex + 1}
@@ -980,15 +1238,35 @@ export default function AccommodationTableStep({
                           {day.date || "-"}
                         </p>
 
-                        {(day.start_city_id || day.end_city_id) && (
-                          <Badge
-                            variant="outline"
-                            className="max-w-[110px] truncate rounded-full px-1.5 py-0 text-[9px]"
-                          >
-                            {cityMap[day.start_city_id] || "-"} →{" "}
-                            {cityMap[day.end_city_id] || "-"}
-                          </Badge>
-                        )}
+                        <div className="max-w-[115px] rounded-lg border bg-muted/20 px-1.5 py-1">
+                          <p className="truncate text-[9px] font-medium leading-tight text-foreground">
+                            {getDayStartCity(day)}
+                          </p>
+
+                          <p className="truncate text-[9px] leading-tight text-muted-foreground">
+                            ↓ {getDayEndCity(day)}
+                          </p>
+
+                          <div className="mt-1 border-t pt-1">
+                            <p className="text-[9px] font-medium leading-tight text-foreground">
+                              {Number(day.total_mileage || 0).toLocaleString()}{" "}
+                              km
+                            </p>
+
+                            {!!Number(day.buffer_mileage || 0) && (
+                              <p className="text-[8px] leading-tight text-muted-foreground">
+                                Actual{" "}
+                                {Number(
+                                  day.actual_mileage || 0
+                                ).toLocaleString()}{" "}
+                                + Buffer{" "}
+                                {Number(
+                                  day.buffer_mileage || 0
+                                ).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -996,27 +1274,20 @@ export default function AccommodationTableStep({
                     <td className="border-b border-r px-2 py-2 align-top">
                       <div className="space-y-1.5 rounded-xl border bg-muted/10 p-1.5">
                         <div className="grid grid-cols-[1fr_64px] gap-1.5">
-                          <Select
+                          <HotelCombobox
+                            key={`hotel-${selectedOptionIndex}-${day.id}`}
                             value={day.hotel_id ? String(day.hotel_id) : ""}
-                            onValueChange={(value) =>
+                            hotels={normalizedHotels}
+                            disabled={disabled}
+                            selectedOptionIndex={selectedOptionIndex}
+                            dayId={day.id}
+                            onChange={(value) =>
                               handleHotelChange(dayIndex, value)
                             }
-                            disabled={disabled}
-                          >
-                            <SelectTrigger className="h-7 rounded-lg bg-background px-2 text-[11px]">
-                              <SelectValue placeholder="Select hotel" />
-                            </SelectTrigger>
-
-                            <SelectContent>
-                              {normalizedHotels.map((hotel) => (
-                                <SelectItem key={hotel.id} value={String(hotel.id)}>
-                                  {hotel.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          />
 
                           <Select
+                            key={`meal-${selectedOptionIndex}-${day.id}`}
                             value={day.meal_plan || "BB"}
                             onValueChange={(value) =>
                               updateDay(dayIndex, {
@@ -1029,7 +1300,7 @@ export default function AccommodationTableStep({
                               <SelectValue />
                             </SelectTrigger>
 
-                            <SelectContent>
+                            <SelectContent className="z-[10050]">
                               <SelectItem value="BB">BB</SelectItem>
                               <SelectItem value="HB">HB</SelectItem>
                               <SelectItem value="FB">FB</SelectItem>
@@ -1039,6 +1310,7 @@ export default function AccommodationTableStep({
                         </div>
 
                         <Input
+                          key={`override-${selectedOptionIndex}-${day.id}`}
                           value={day.hotel_name_override || ""}
                           disabled={disabled}
                           placeholder="Override name"
@@ -1063,6 +1335,7 @@ export default function AccommodationTableStep({
                             </span>
 
                             <Switch
+                              key={`customer-${selectedOptionIndex}-${day.id}`}
                               checked={!!day.is_customer_booked}
                               onCheckedChange={(value) =>
                                 handleCustomerBooked(dayIndex, value)
@@ -1084,10 +1357,11 @@ export default function AccommodationTableStep({
 
                         {(day.rooms || []).map((room, roomIndex) => (
                           <div
-                            key={roomIndex}
+                            key={`${selectedOptionIndex}-${day.id}-${roomIndex}`}
                             className="grid grid-cols-[minmax(120px,1fr)_58px_44px_68px_72px_54px] items-center gap-1 rounded-lg border bg-muted/10 p-1"
                           >
                             <Select
+                              key={`room-category-${selectedOptionIndex}-${day.id}-${roomIndex}`}
                               value={
                                 room.room_category_id
                                   ? String(room.room_category_id)
@@ -1116,7 +1390,7 @@ export default function AccommodationTableStep({
                                 <SelectValue placeholder="Category" />
                               </SelectTrigger>
 
-                              <SelectContent>
+                              <SelectContent className="z-[10050]">
                                 {(selectedHotel?.roomCategories || []).map(
                                   (category) => (
                                     <SelectItem
@@ -1177,7 +1451,9 @@ export default function AccommodationTableStep({
                                 variant="ghost"
                                 className="h-6 w-6 rounded-md"
                                 disabled={disabled}
-                                onClick={() => duplicateRoom(dayIndex, roomIndex)}
+                                onClick={() =>
+                                  duplicateRoom(dayIndex, roomIndex)
+                                }
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>
@@ -1202,14 +1478,13 @@ export default function AccommodationTableStep({
                             size="sm"
                             variant="outline"
                             disabled={disabled || !day.hotel_id}
-                            className="h-7 rounded-lg px-2 text-[10px]"
+                            className="h-7 rounded-lg border-dashed bg-background px-2.5 text-[10px] font-medium hover:bg-muted"
                             onClick={() => addRoom(dayIndex)}
                           >
-                            <BedDouble className="mr-1 h-3 w-3" />
+                            <Plus className="mr-1 h-3 w-3" />
                             Room
                           </Button>
 
-                          {/* COMPACT DRIVER ACCOMMODATION */}
                           <div className="flex min-h-7 flex-wrap items-center gap-1.5 rounded-lg border bg-muted/10 px-2 py-1">
                             <div className="flex items-center gap-1">
                               <Car className="h-3 w-3 text-muted-foreground" />
@@ -1219,6 +1494,7 @@ export default function AccommodationTableStep({
                             </div>
 
                             <Switch
+                              key={`driver-enabled-${selectedOptionIndex}-${day.id}`}
                               checked={!!day.driver_accommodation_enabled}
                               disabled={disabled}
                               onCheckedChange={(value) =>
@@ -1240,6 +1516,7 @@ export default function AccommodationTableStep({
                                   <span className="text-[9px]">Free</span>
 
                                   <Switch
+                                    key={`driver-free-${selectedOptionIndex}-${day.id}`}
                                     checked={!!day.driver_is_free}
                                     disabled={disabled}
                                     onCheckedChange={(value) =>
@@ -1254,6 +1531,7 @@ export default function AccommodationTableStep({
                                 </div>
 
                                 <Input
+                                  key={`driver-price-${selectedOptionIndex}-${day.id}`}
                                   type="number"
                                   min="0"
                                   value={day.driver_price || ""}
@@ -1274,6 +1552,7 @@ export default function AccommodationTableStep({
                                 <span className="text-[9px]">Dep.</span>
 
                                 <Switch
+                                  key={`departure-${selectedOptionIndex}-${day.id}`}
                                   checked={!!day.is_departure}
                                   disabled={disabled}
                                   onCheckedChange={(value) =>
@@ -1305,6 +1584,7 @@ export default function AccommodationTableStep({
                     {/* NOTES */}
                     <td className="border-b px-2 py-2 align-top">
                       <Input
+                        key={`notes-${selectedOptionIndex}-${day.id}`}
                         value={day.notes || ""}
                         disabled={disabled}
                         placeholder="Notes..."

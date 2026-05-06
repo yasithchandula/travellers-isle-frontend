@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MapPinned, NotebookPen, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,8 +11,13 @@ import StandardDescriptionSelector from "@/components/ui/standard-description-se
 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import {
@@ -54,22 +59,33 @@ export default function ItineraryStep({
     return cities.find((c) => String(c.id) === String(id))?.name || "";
   };
 
+  const stopsKey = useMemo(() => {
+    return (day.stop_ids || []).map(String).join(",");
+  }, [day.stop_ids]);
+
   // ===== Distance Fetch =====
-  async function handleFetchDistance() {
+  async function handleFetchDistance({ silent = false } = {}) {
     try {
       if (!day.starting_city_id || !day.destination_city_id) {
-        toast.error("Select start and destination cities first");
+        return;
+      }
+
+      const originCity = getCityName(day.starting_city_id);
+      const destinationCity = getCityName(day.destination_city_id);
+
+      if (!originCity || !destinationCity) {
         return;
       }
 
       setDistanceLoading(true);
 
-      const origin = `${getCityName(day.starting_city_id)}, Sri Lanka`;
-      const destination = `${getCityName(day.destination_city_id)}, Sri Lanka`;
+      const origin = `${originCity}, Sri Lanka`;
+      const destination = `${destinationCity}, Sri Lanka`;
 
-      const stops = (day.stop_ids || []).map(
-        (id) => `${getCityName(id)}, Sri Lanka`
-      );
+      const stops = (day.stop_ids || [])
+        .map((id) => getCityName(id))
+        .filter(Boolean)
+        .map((name) => `${name}, Sri Lanka`);
 
       const payload = {
         origin,
@@ -88,14 +104,36 @@ export default function ItineraryStep({
         travel_time_minutes: minutes,
       });
 
-      toast.success("Distance calculated 🚗");
+      if (!silent) {
+        toast.success("Distance calculated 🚗");
+      }
     } catch (err) {
       console.error(err);
-      toast.error(err || "Failed to fetch distance");
+
+      if (!silent) {
+        toast.error(err || "Failed to fetch distance");
+      }
     } finally {
       setDistanceLoading(false);
     }
   }
+
+  // ===== Auto Fetch Distance =====
+  useEffect(() => {
+    if (!day.starting_city_id || !day.destination_city_id) return;
+
+    const timer = setTimeout(() => {
+      handleFetchDistance({ silent: true });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    day.starting_city_id,
+    day.destination_city_id,
+    stopsKey,
+    cities,
+    dayIndex,
+  ]);
 
   return (
     <Card className="overflow-hidden border-border/60 shadow-none">
@@ -181,9 +219,7 @@ export default function ItineraryStep({
             <StopsMultiSelect
               cities={cities}
               selectedIds={day.stop_ids || []}
-              onChange={(value) =>
-                onUpdateDay(dayIndex, { stop_ids: value })
-              }
+              onChange={(value) => onUpdateDay(dayIndex, { stop_ids: value })}
             />
           </div>
 
@@ -198,15 +234,6 @@ export default function ItineraryStep({
                   Auto calculate route distance and duration
                 </p>
               </div>
-
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleFetchDistance}
-                disabled={distanceLoading}
-              >
-                {distanceLoading ? "Calculating..." : "Fetch"}
-              </Button>
             </div>
 
             {/* Inputs */}
@@ -251,9 +278,9 @@ export default function ItineraryStep({
             )}
 
             {/* Hint */}
-            {!day.mileage && (
+            {!day.mileage && !distanceLoading && (
               <p className="text-xs text-amber-500">
-                Tip: Click "Fetch" to auto-calculate route
+                Tip: Select start and destination cities to auto-calculate route
               </p>
             )}
 
