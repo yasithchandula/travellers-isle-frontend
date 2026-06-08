@@ -177,7 +177,7 @@ export default function ConvertInquiryForm({
 
       {/* ACTIONS */}
 
-      <div className="flex justify-end gap-2 pt-4 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
 
         <Button
           type="button"
@@ -187,7 +187,7 @@ export default function ConvertInquiryForm({
           Cancel
         </Button>
 
-        <Button type="submit">
+        <Button type="submit" className="min-w-[150px]">
           Create Quotation
         </Button>
 

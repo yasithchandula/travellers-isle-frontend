@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Input from "../common/Input";
 import Button from "../common/Button";
-import { Circle, CircleX, CircleXIcon, Delete, DeleteIcon, Trash } from "lucide-react";
+import { CircleXIcon } from "lucide-react";
 
 export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
@@ -117,9 +117,8 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Basic info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="Hotel Name"
@@ -128,10 +127,10 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
               setName(v);
               if (errors.name) setErrors((p) => ({ ...p, name: null }));
             }}
-            className={errors.name ? "border-red-500" : ""}
+            className={errors.name ? "border-destructive" : ""}
           />
           {errors.name && (
-            <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+            <p className="mt-1 text-xs text-destructive">{errors.name}</p>
           )}
         </div>
 
@@ -144,10 +143,10 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
               if (errors.address)
                 setErrors((p) => ({ ...p, address: null }));
             }}
-            className={errors.address ? "border-red-500" : ""}
+            className={errors.address ? "border-destructive" : ""}
           />
           {errors.address && (
-            <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+            <p className="mt-1 text-xs text-destructive">{errors.address}</p>
           )}
         </div>
       </div>
@@ -177,7 +176,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             ))}
         </select>
         {errors.cityId && (
-          <p className="text-xs text-red-500 mt-1">{errors.cityId}</p>
+          <p className="mt-1 text-xs text-destructive">{errors.cityId}</p>
         )}
       </div>
 
@@ -190,17 +189,16 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             if (errors.phoneNumber)
               setErrors((p) => ({ ...p, phoneNumber: null }));
           }}
-          className={errors.phoneNumber ? "border-red-500" : ""}
+          className={errors.phoneNumber ? "border-destructive" : ""}
         />
         {errors.phoneNumber && (
-          <p className="text-xs text-red-500 mt-1">
+          <p className="mt-1 text-xs text-destructive">
             {errors.phoneNumber}
           </p>
         )}
       </div>
 
-      {/* Registrations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input
           label="VAT Number (Optional)"
           value={vatNumber}
@@ -213,8 +211,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         />
       </div>
 
-      {/* Contact */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="Contact Name "
@@ -224,10 +221,10 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
               if (errors.contactName)
                 setErrors((p) => ({ ...p, contactName: null }));
             }}
-            className={errors.contactName ? "border-red-500" : ""}
+            className={errors.contactName ? "border-destructive" : ""}
           />
           {errors.contactName && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.contactName}
             </p>
           )}
@@ -242,24 +239,23 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
               if (errors.contactPhone)
                 setErrors((p) => ({ ...p, contactPhone: null }));
             }}
-            className={errors.contactPhone ? "border-red-500" : ""}
+            className={errors.contactPhone ? "border-destructive" : ""}
           />
           {errors.contactPhone && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.contactPhone}
             </p>
           )}
         </div>
       </div>
 
-      {/* Room Categories */}
-      <div className="p-3 border rounded space-y-2">
+      <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
         <h3 className="text-sm font-semibold">Room Categories</h3>
 
-        <table>
+        <table className="w-full">
           {roomCategories.map((r, i) => (
-            <tr key={i} className="text-sm hover:bg-gray-50 transition">
-              <td className="pr-3"><CircleXIcon onClick={() => removeRoom(i)} className="w-4 h-4 mt-1 hover:text-red-400 text-gray-500 cursor-pointer" /></td>
+            <tr key={i} className="text-sm transition hover:bg-background">
+              <td className="w-8 pr-3"><CircleXIcon onClick={() => removeRoom(i)} className="mt-1 h-4 w-4 cursor-pointer text-muted-foreground hover:text-destructive" /></td>
               <td>{r.name}</td>
               <td className="pl-3">{r.pax} pax</td>
             </tr>
@@ -275,20 +271,20 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         ))} */}
 
         {errors.roomCategories && (
-          <p className="text-xs text-red-500">
+          <p className="text-xs text-destructive">
             {errors.roomCategories}
           </p>
         )}
 
         <div className="grid grid-cols-12 gap-2 pt-2">
           <input
-            className="col-span-4 border px-2 py-1 rounded text-sm"
+            className="col-span-5 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
             placeholder="Room name"
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
           />
           <input
-            className="col-span-3 border px-2 py-1 rounded text-sm"
+            className="col-span-4 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
             placeholder="Pax"
             type="number"
             value={roomCount}
@@ -305,7 +301,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             type="button"
             variant="secondary"
             size="sm"
-            className="col-span-2"
+            className="col-span-3"
             onClick={addRoom}
           >
             Add
@@ -313,20 +309,19 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         </div>
       </div>
 
-      {/* Driver Accommodation */}
-      <div className="p-3 border rounded space-y-2">
+      <div className="space-y-2 rounded-lg border bg-muted/20 p-4">
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input
             type="checkbox"
             checked={hasDriverAccommodation}
             onChange={(e) => setHasDriverAccommodation(e.target.checked)}
+            className="accent-primary"
           />
           Driver Accommodation Available
         </label>
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-3 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
         <Button
           variant="outline"
           type="button"
@@ -334,7 +329,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
         >
           Cancel
         </Button>
-        <Button type="submit" >
+        <Button type="submit" className="min-w-[140px]">
           {initial ? "Save Changes" : "Add Hotel"}
         </Button>
       </div>

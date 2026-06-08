@@ -74,7 +74,7 @@ export default function AssignInquiryForm({
                 ]}
             />
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 border-t bg-card pt-4">
 
                 <Button
                     type="button"
@@ -84,7 +84,7 @@ export default function AssignInquiryForm({
                     Cancel
                 </Button>
 
-                <Button type="submit">
+                <Button type="submit" className="min-w-[150px]">
                     Assign Executive
                 </Button>
 

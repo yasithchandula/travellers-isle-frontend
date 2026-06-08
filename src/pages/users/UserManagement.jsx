@@ -51,6 +51,7 @@ import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
 import CardGrid from "@/components/common/CardGrid";
 import StatCard from "@/components/common/StatCard";
+import EntityDialog from "@/components/common/EntityDialog";
 
 /* ------------------------------------------------ */
 
@@ -436,28 +437,26 @@ export default function UserManagement() {
 
       {/* CREATE / EDIT MODAL */}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg bg-white">
-          <DialogHeader>
-            <DialogTitle>
-              {editing ? "Edit User" : "Create User"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <UserForm
-            initial={editing}
-            onSubmit={handleSubmit}
-            onCancel={closeModal}
-            submitting={loading}
-            error={error}
-          />
-        </DialogContent>
-      </Dialog>
+      <EntityDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Edit User" : "Create User"}
+        description="Set account identity, access role, and activation status."
+        className="sm:max-w-lg"
+      >
+        <UserForm
+          initial={editing}
+          onSubmit={handleSubmit}
+          onCancel={closeModal}
+          submitting={loading}
+          error={error}
+        />
+      </EntityDialog>
 
       {/* DELETE CONFIRM */}
 
       <Dialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>

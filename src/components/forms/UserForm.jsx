@@ -16,15 +16,24 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { User, ShieldCheck } from "lucide-react";
 
-import { User, Mail, ShieldCheck } from "lucide-react";
+function FormSection({ icon: Icon, title, description, children }) {
+  return (
+    <section className="rounded-lg border bg-muted/20 p-4">
+      <div className="mb-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Icon className="h-4 w-4 text-primary" />
+          {title}
+        </div>
+        {description ? (
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
 
 export default function UserForm({
   initial,
@@ -86,23 +95,12 @@ export default function UserForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-
-      {/* ================= BASIC INFO ================= */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4" />
-            Basic Information
-          </CardTitle>
-          <CardDescription>
-            Define the user’s display name and email identity.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-
-          {/* Name */}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <FormSection
+        icon={User}
+        title="Basic Information"
+        description="Define the user's display name and email identity."
+      >
           <div className="space-y-2">
             <Label>Display Name</Label>
             <Input
@@ -116,7 +114,6 @@ export default function UserForm({
             )}
           </div>
 
-          {/* Email */}
           <div className="space-y-2">
             <Label>Email Address</Label>
             <Input
@@ -131,24 +128,13 @@ export default function UserForm({
             )}
           </div>
 
-        </CardContent>
-      </Card>
+      </FormSection>
 
-      {/* ================= ACCESS CONTROL ================= */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="h-4 w-4" />
-            Access & Status
-          </CardTitle>
-          <CardDescription>
-            Assign user role and control account status.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-
-          {/* Role */}
+      <FormSection
+        icon={ShieldCheck}
+        title="Access & Status"
+        description="Assign user role and control account status."
+      >
           <div className="space-y-2">
             <Label>User Role</Label>
             <Select value={role} onValueChange={setRole}>
@@ -170,7 +156,6 @@ export default function UserForm({
             )}
           </div>
 
-          {/* Status */}
           <div className="space-y-2">
             <Label>Account Status</Label>
 
@@ -193,11 +178,10 @@ export default function UserForm({
             )}
           </div>
 
-        </CardContent>
-      </Card>
+      </FormSection>
 
       {/* ================= ACTIONS ================= */}
-      <div className="sticky bottom-0 z-10 border-t bg-background/95 px-1 py-4 backdrop-blur">
+      <div className="sticky bottom-0 z-10 border-t bg-card py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           
           <div className="text-sm text-muted-foreground">

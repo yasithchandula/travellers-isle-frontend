@@ -120,9 +120,9 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       : null;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* NAME */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="First Name"
@@ -132,10 +132,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.firstName)
                 setErrors((p) => ({ ...p, firstName: null }));
             }}
-            className={errors.firstName ? "border-red-500" : ""}
+            className={errors.firstName ? "border-destructive" : ""}
           />
           {errors.firstName && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.firstName}
             </p>
           )}
@@ -150,10 +150,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.lastName)
                 setErrors((p) => ({ ...p, lastName: null }));
             }}
-            className={errors.lastName ? "border-red-500" : ""}
+            className={errors.lastName ? "border-destructive" : ""}
           />
           {errors.lastName && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.lastName}
             </p>
           )}
@@ -161,7 +161,7 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       </div>
 
       {/* CONTACT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="Email"
@@ -171,10 +171,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.email)
                 setErrors((p) => ({ ...p, email: null }));
             }}
-            className={errors.email ? "border-red-500" : ""}
+            className={errors.email ? "border-destructive" : ""}
           />
           {errors.email && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.email}
             </p>
           )}
@@ -189,10 +189,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.phone)
                 setErrors((p) => ({ ...p, phone: null }));
             }}
-            className={errors.phone ? "border-red-500" : ""}
+            className={errors.phone ? "border-destructive" : ""}
           />
           {errors.phone && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.phone}
             </p>
           )}
@@ -200,7 +200,7 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       </div>
 
       {/* DATES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             type="date"
@@ -211,10 +211,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.arrivalDate)
                 setErrors((p) => ({ ...p, arrivalDate: null }));
             }}
-            className={errors.arrivalDate ? "border-red-500" : ""}
+            className={errors.arrivalDate ? "border-destructive" : ""}
           />
           {errors.arrivalDate && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.arrivalDate}
             </p>
           )}
@@ -230,10 +230,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.departureDate)
                 setErrors((p) => ({ ...p, departureDate: null }));
             }}
-            className={errors.departureDate ? "border-red-500" : ""}
+            className={errors.departureDate ? "border-destructive" : ""}
           />
           {errors.departureDate && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.departureDate}
             </p>
           )}
@@ -247,7 +247,7 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       )}
 
       {/* PAX */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="Adults"
@@ -258,10 +258,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.adults)
                 setErrors((p) => ({ ...p, adults: null }));
             }}
-            className={errors.adults ? "border-red-500" : ""}
+            className={errors.adults ? "border-destructive" : ""}
           />
           {errors.adults && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.adults}
             </p>
           )}
@@ -277,10 +277,10 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
               if (errors.children)
                 setErrors((p) => ({ ...p, children: null }));
             }}
-            className={errors.children ? "border-red-500" : ""}
+            className={errors.children ? "border-destructive" : ""}
           />
           {errors.children && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-1 text-xs text-destructive">
               {errors.children}
             </p>
           )}
@@ -293,7 +293,7 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
           Notes
         </label>
         <textarea
-          className="w-full border rounded px-2 py-1.5 text-sm h-24 focus:ring-1 focus:ring-ti-teal"
+          className="h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Describe the inquiry..."
@@ -301,12 +301,12 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       </div>
 
       {/* ACTIONS */}
-      <div className="flex justify-end gap-2 pt-3 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
         <Button variant="outline" type="button" onClick={onCancel}>
           Cancel
         </Button>
 
-        <Button type="submit">
+        <Button type="submit" className="min-w-[140px]">
           {initial ? "Save Changes" : "Create Inquiry"}
         </Button>
       </div>

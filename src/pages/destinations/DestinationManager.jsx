@@ -19,13 +19,6 @@ import {
 } from "../../app/slices/citySlice";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import {
   TableRow,
   TableHead,
   TableCell,
@@ -48,6 +41,7 @@ import ManagerToolbar from "@/components/common/ManagerToolbar";
 import CardGrid from "@/components/common/CardGrid";
 import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
+import EntityDialog from "@/components/common/EntityDialog";
 
 export default function DestinationManager() {
   const dispatch = useDispatch();
@@ -374,21 +368,18 @@ export default function DestinationManager() {
 
       {/* MODAL */}
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-xl bg-white">
-          <DialogHeader>
-            <DialogTitle>
-              {editItem ? "Edit City" : "Add City"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <CityForm
-            initial={editItem}
-            onSubmit={handleSubmit}
-            onCancel={() => setModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <EntityDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editItem ? "Edit City" : "Add City"}
+        description="Define destination details, route code, and itinerary role."
+      >
+        <CityForm
+          initial={editItem}
+          onSubmit={handleSubmit}
+          onCancel={() => setModalOpen(false)}
+        />
+      </EntityDialog>
 
       {/* CONFIRM */}
 

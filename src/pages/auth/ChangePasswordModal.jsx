@@ -60,56 +60,59 @@ export default function ChangePasswordModal({ onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-lg w-full max-w-sm"
+        className="w-full max-w-sm overflow-hidden rounded-lg border bg-card shadow-xl"
       >
-        <h2 className="text-lg font-semibold mb-4">
-          Change Password
-        </h2>
-
-        {/* Old Password */}
-        <input
-          type="password"
-          placeholder="Current Password"
-          value={oldPw}
-          onChange={(e) => setOldPw(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-3"
-        />
-
-        {/* New Password */}
-        <input
-          type="password"
-          placeholder="New Password"
-          value={newPw}
-          onChange={(e) => setNewPw(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-3"
-        />
-
-        {/* Confirm Password */}
-        <input
-          type="password"
-          placeholder="Confirm New Password"
-          value={confirmPw}
-          onChange={(e) => setConfirmPw(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-3"
-        />
-
-        {/* Inline validation / API error */}
-        {error && (
-          <p className="text-red-500 text-sm mb-2">
-            {error}
+        <div className="border-b px-6 py-4">
+          <h2 className="text-lg font-semibold">Change Password</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Update your account password to continue.
           </p>
-        )}
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-2 rounded disabled:opacity-50"
-        >
-          {loading ? "Saving..." : "Update Password"}
-        </button>
+        <div className="space-y-3 px-6 py-5">
+          <input
+            type="password"
+            placeholder="Current Password"
+            value={oldPw}
+            onChange={(e) => setOldPw(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
+          />
+
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPw}
+            onChange={(e) => setNewPw(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
+          />
+
+          <input
+            type="password"
+            placeholder="Confirm New Password"
+            value={confirmPw}
+            onChange={(e) => setConfirmPw(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
+          />
+
+          {error && (
+            <p className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+        </div>
+
+        <div className="border-t bg-card px-6 py-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+          >
+            {loading ? "Saving..." : "Update Password"}
+          </button>
+        </div>
       </form>
     </div>
   );

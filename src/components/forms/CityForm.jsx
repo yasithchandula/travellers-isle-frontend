@@ -72,9 +72,8 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Main fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <Input
             label="City Name"
@@ -83,10 +82,10 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
               setName(v);
               if (errors.name) setErrors((p) => ({ ...p, name: null }));
             }}
-            className={errors.name ? "border-red-500" : ""}
+            className={errors.name ? "border-destructive" : ""}
           />
           {errors.name && (
-            <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+            <p className="mt-1 text-xs text-destructive">{errors.name}</p>
           )}
         </div>
 
@@ -99,16 +98,16 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
               if (errors.country)
                 setErrors((p) => ({ ...p, country: null }));
             }}
-            className={errors.country ? "border-red-500" : ""}
+            className={errors.country ? "border-destructive" : ""}
           />
           {errors.country && (
-            <p className="text-xs text-red-500 mt-1">{errors.country}</p>
+            <p className="mt-1 text-xs text-destructive">{errors.country}</p>
           )}
         </div>
       </div>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
         <div>
           <Input
@@ -119,21 +118,20 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
               if (errors.code)
                 setErrors((p) => ({ ...p, code: null }));
             }}
-            className={errors.code ? "border-red-500" : ""}
+            className={errors.code ? "border-destructive" : ""}
           />
           {errors.code && (
-            <p className="text-xs text-red-500 mt-1">{errors.code}</p>
+            <p className="mt-1 text-xs text-destructive">{errors.code}</p>
           )}
         </div>
       </div>
 
-      {/* City Type */}
-      <div>
+      <div className="rounded-lg border bg-muted/20 p-4">
         <label className="mb-1 block text-xs font-medium text-foreground">
           City Type
         </label>
 
-        <div className="flex gap-6">
+        <div className="mt-3 flex flex-wrap gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -164,14 +162,13 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
         </div>
 
         {errors.cityType && (
-          <p className="text-xs text-red-500 mt-1">
+          <p className="mt-3 text-xs text-destructive">
             {errors.cityType}
           </p>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-3 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
         <Button
           variant="outline"
           type="button"
@@ -180,7 +177,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
           Cancel
         </Button>
 
-        <Button type="submit">
+        <Button type="submit" className="min-w-[120px]">
           {initial ? "Save" : "Add City"}
         </Button>
       </div>

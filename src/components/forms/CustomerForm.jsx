@@ -132,8 +132,7 @@ export default function CustomerForm({ initial, onSubmit, onCancel }) {
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-3 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
         <Button
           variant="outline"
           size="md"
@@ -142,7 +141,7 @@ export default function CustomerForm({ initial, onSubmit, onCancel }) {
         >
           Cancel
         </Button>
-        <Button size="md" type="submit">
+        <Button size="md" type="submit" className="min-w-[150px]">
           {initial ? "Save Changes" : "Create Customer"}
         </Button>
       </div>

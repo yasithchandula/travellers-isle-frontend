@@ -18,13 +18,6 @@ import { fetchCities } from "../../app/slices/citySlice";
 import { cn } from "@/lib/utils";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import {
   TableRow,
   TableCell,
   TableHead,
@@ -50,6 +43,7 @@ import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
 import CardGrid from "@/components/common/CardGrid";
 import StatCard from "@/components/common/StatCard";
+import EntityDialog from "@/components/common/EntityDialog";
 
 export default function HotelManager() {
 
@@ -432,30 +426,21 @@ export default function HotelManager() {
 
       {/* CREATE / EDIT */}
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-
-        <DialogContent
-          className="max-w-3xl bg-white"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-
-          <DialogHeader>
-            <DialogTitle>
-              {editItem ? "Edit Hotel" : "Add Hotel"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <HotelForm
-            initial={editItem}
-            cities={cities}
-            onSubmit={handleSubmit}
-            onCancel={() => setModalOpen(false)}
-          />
-
-        </DialogContent>
-
-      </Dialog>
+      <EntityDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editItem ? "Edit Hotel" : "Add Hotel"}
+        description="Manage hotel profile, destination, contact details, and room categories."
+        className="sm:max-w-3xl"
+        preventOutsideClose
+      >
+        <HotelForm
+          initial={editItem}
+          cities={cities}
+          onSubmit={handleSubmit}
+          onCancel={() => setModalOpen(false)}
+        />
+      </EntityDialog>
 
       {/* DISABLE CONFIRM */}
 

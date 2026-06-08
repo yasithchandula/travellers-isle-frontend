@@ -522,12 +522,12 @@ export default function StandardDescriptionManager() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
 
         <DialogContent
-          className="max-w-6xl h-[90vh] p-0 flex flex-col bg-white"
+          className="flex h-[90vh] max-w-6xl flex-col overflow-hidden rounded-lg border bg-card p-0 shadow-xl"
           onInteractOutside={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
 
-          <DialogHeader className="px-6 py-4 border-b">
+          <DialogHeader className="border-b px-6 py-4">
             <DialogTitle>
               <div className="px-1 pt-2">
 
@@ -541,7 +541,7 @@ export default function StandardDescriptionManager() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4" ref={scrollRef}>
+          <div className="flex-1 overflow-y-auto px-6 py-5" ref={scrollRef}>
 
             <StandardDescriptionForm
               key={editItem?.id || "new"}
@@ -552,7 +552,7 @@ export default function StandardDescriptionManager() {
 
           </div>
 
-          <div className="px-6 py-4 border-t flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t bg-card px-6 py-4">
 
             <Button
               variant="outline"
@@ -564,6 +564,7 @@ export default function StandardDescriptionManager() {
             <Button
               type="submit"
               form="standard-description-form"
+              className="min-w-[160px]"
             >
               {editItem ? "Save Changes" : "Add Description"}
             </Button>
@@ -581,7 +582,7 @@ export default function StandardDescriptionManager() {
         onOpenChange={() => setDeleteItem(null)}
       >
 
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent>
 
           <AlertDialogHeader>
 
@@ -618,7 +619,7 @@ export default function StandardDescriptionManager() {
         onOpenChange={() => setApproveItem(null)}
       >
 
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent>
 
           <AlertDialogHeader>
 

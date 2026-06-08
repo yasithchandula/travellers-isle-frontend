@@ -1,4 +1,4 @@
-import { use, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   MapPinned,
@@ -43,7 +43,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -570,10 +569,10 @@ export default function ExcursionManager() {
           if (!open) setEditItem(null);
         }}
       >
-        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col overflow-hidden">
+        <DialogContent className="flex h-[90vh] max-w-6xl flex-col overflow-hidden rounded-lg border bg-card p-0 shadow-xl">
 
           {/* HEADER */}
-          <div className="px-6 py-4 border-b bg-background shrink-0">
+          <div className="shrink-0 border-b bg-card px-6 py-4">
             <DialogTitle className="text-lg font-semibold">
               {editItem ? "Edit Excursion" : "Create Excursion"}
             </DialogTitle>
@@ -596,11 +595,11 @@ export default function ExcursionManager() {
           </div>
 
           {/* FOOTER */}
-          <div className="px-6 py-4 border-t bg-background flex justify-end gap-2 shrink-0">
+          <div className="flex shrink-0 justify-end gap-2 border-t bg-card px-6 py-4">
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" form="excursion-form">
+            <Button type="submit" form="excursion-form" className="min-w-[150px]">
               {editItem ? "Save Changes" : "Create Excursion"}
             </Button>
           </div>

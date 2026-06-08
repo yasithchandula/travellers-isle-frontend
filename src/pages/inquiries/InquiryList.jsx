@@ -20,13 +20,6 @@ import {
 import { createQuotationFromInquiry } from "../../app/slices/quotationSlice";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import {
   TableRow,
   TableHead,
   TableCell,
@@ -48,6 +41,7 @@ import ManagerToolbar from "@/components/common/ManagerToolbar";
 import CardGrid from "@/components/common/CardGrid";
 import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
+import EntityDialog from "@/components/common/EntityDialog";
 
 export default function InquiryList() {
 
@@ -325,77 +319,75 @@ export default function InquiryList() {
       />
 
       {/* CREATE */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-xl bg-white">
-          <DialogHeader>
-            <DialogTitle>Create Inquiry</DialogTitle>
-          </DialogHeader>
-
-          <InquiryForm
-            onSubmit={handleCreate}
-            onCancel={() => setModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <EntityDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title="Create Inquiry"
+        description="Capture customer travel intent, dates, passengers, and source details."
+      >
+        <InquiryForm
+          onSubmit={handleCreate}
+          onCancel={() => setModalOpen(false)}
+        />
+      </EntityDialog>
 
       {/* ASSIGN */}
-      <Dialog open={!!assignModal} onOpenChange={() => setAssignModal(null)}>
-        <DialogContent className="max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Assign Executive</DialogTitle>
-          </DialogHeader>
+      <EntityDialog
+        open={!!assignModal}
+        onOpenChange={() => setAssignModal(null)}
+        title="Assign Executive"
+        description="Choose the team member responsible for this inquiry."
+        className="sm:max-w-md"
+      >
+        <AssignInquiryForm
+          inquiryId={assignModal}
+          onSubmit={({ inquiry_id, user_id }) => {
 
-          <AssignInquiryForm
-            inquiryId={assignModal}
-            onSubmit={({ inquiry_id, user_id }) => {
+            dispatch(assignToExecutive({
+              id: inquiry_id,
+              userId: user_id,
+            }));
 
-              dispatch(assignToExecutive({
-                id: inquiry_id,
-                userId: user_id,
-              }));
-
-              setAssignModal(null);
-            }}
-            onCancel={() => setAssignModal(null)}
-          />
-        </DialogContent>
-      </Dialog>
+            setAssignModal(null);
+          }}
+          onCancel={() => setAssignModal(null)}
+        />
+      </EntityDialog>
 
       {/* CONVERT */}
-      <Dialog open={!!convertModal} onOpenChange={() => setConvertModal(null)}>
-        <DialogContent className="max-w-lg bg-white">
-          <DialogHeader>
-            <DialogTitle>Create Quotation</DialogTitle>
-          </DialogHeader>
+      <EntityDialog
+        open={!!convertModal}
+        onOpenChange={() => setConvertModal(null)}
+        title="Create Quotation"
+        description="Convert this inquiry into a quotation workspace."
+        className="sm:max-w-lg"
+      >
+        {convertModal && (
+          <ConvertInquiryForm
+            inquiry={convertModal}
+            onSubmit={(payload) => {
 
-          {convertModal && (
-            <ConvertInquiryForm
-              inquiry={convertModal}
-              onSubmit={(payload) => {
+              dispatch(createQuotationFromInquiry(payload))
+                .unwrap()
+                .then((res) => {
 
-                dispatch(createQuotationFromInquiry(payload))
-                  .unwrap()
-                  .then((res) => {
+                  const id = res?.data?.quotation_id;
 
-                    const id = res?.data?.quotation_id;
+                  if (!id) {
+                    toast.error("Invalid quotation response");
+                    return;
+                  }
 
-                    if (!id) {
-                      toast.error("Invalid quotation response");
-                      return;
-                    }
+                  setConvertModal(null);
 
-                    setConvertModal(null);
+                  navigate(`/quotations/${id}`);
+                });
 
-                    navigate(`/quotations/${id}`);
-                  });
-
-              }}
-              onCancel={() => setConvertModal(null)}
-            />
-          )}
-
-        </DialogContent>
-      </Dialog>
+            }}
+            onCancel={() => setConvertModal(null)}
+          />
+        )}
+      </EntityDialog>
 
     </div>
   );

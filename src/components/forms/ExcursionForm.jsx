@@ -8,13 +8,26 @@ import {
   calcBoatCost,
 } from "../../utils/excursionCalc";
 
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "../ui/card";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { Badge } from "../ui/badge";
 
 const PRICING_TYPES = ["PER_PERSON", "SAFARI", "BOAT", "CUSTOM", "FREE"];
+
+function FormSection({ title, description, children, contentClassName = "space-y-4" }) {
+  return (
+    <section className="rounded-lg border bg-muted/20 p-4">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        {description ? (
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      <div className={contentClassName}>{children}</div>
+    </section>
+  );
+}
 
 function toTagsText(tags) {
   if (!tags) return "";
@@ -358,24 +371,19 @@ return (
   <form
     id="excursion-form"
     onSubmit={handleSubmit}
-    className="space-y-6 max-w-5xl mx-auto"
+    className="mx-auto max-w-5xl space-y-5"
   >
 
     {/* ================= BASIC ================= */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
-        <CardDescription>
-          Main excursion details and metadata
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
+    <FormSection
+      title="Basic Information"
+      description="Main excursion details and metadata."
+    >
 
         <div className="space-y-2">
           <Label>Excursion Name</Label>
           <Input value={name} onChange={setName} />
-          {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
 
         <div className="space-y-2">
@@ -386,7 +394,7 @@ return (
             className="min-h-[100px]"
           />
           {errors.description && (
-            <p className="text-xs text-red-500">{errors.description}</p>
+            <p className="text-xs text-destructive">{errors.description}</p>
           )}
         </div>
 
@@ -398,17 +406,10 @@ return (
             onChange={setTagsText}
           />
         </div>
-
-      </CardContent>
-    </Card>
+    </FormSection>
 
     {/* ================= SETTINGS ================= */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Configuration</CardTitle>
-      </CardHeader>
-
-      <CardContent className="grid grid-cols-2 gap-4">
+    <FormSection title="Configuration" contentClassName="grid grid-cols-1 gap-4 md:grid-cols-2">
 
         <div className="space-y-2">
           <Label>Pricing Type</Label>
@@ -438,20 +439,13 @@ return (
             </SelectContent>
           </Select>
         </div>
-
-      </CardContent>
-    </Card>
+    </FormSection>
 
     {/* ================= PRICING ================= */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Pricing</CardTitle>
-        <CardDescription>
-          Configure pricing rules based on selected type
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
+    <FormSection
+      title="Pricing"
+      description="Configure pricing rules based on the selected type."
+    >
 
         {pricingType === "PER_PERSON" && (
           <div className="space-y-3">
@@ -529,17 +523,10 @@ return (
             Free excursion
           </p>
         )}
-
-      </CardContent>
-    </Card>
+    </FormSection>
 
     {/* ================= CITIES ================= */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Cities</CardTitle>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
+    <FormSection title="Cities">
 
         <div className="flex gap-2">
           <Select value={citySelect} onValueChange={setCitySelect}>
@@ -579,17 +566,10 @@ return (
             </span>
           )}
         </div>
-
-      </CardContent>
-    </Card>
+    </FormSection>
 
     {/* ================= SETTINGS ================= */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Additional Settings</CardTitle>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
+    <FormSection title="Additional Settings">
 
         <Input
           label="Optional Supplement"
@@ -613,16 +593,14 @@ return (
         <div className="text-xs text-muted-foreground">
           {renderPreview()}
         </div>
-
-      </CardContent>
-    </Card>
+    </FormSection>
 
     {!hideActions && (
-      <div className="flex justify-end gap-2 pt-4 border-t">
+      <div className="flex justify-end gap-2 border-t bg-card pt-4">
         <Button variant="outline" type="button" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" className="min-w-[150px]">
           {initial ? "Save Changes" : "Add Excursion"}
         </Button>
       </div>
