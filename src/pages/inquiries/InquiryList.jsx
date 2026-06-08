@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { MoreHorizontal, Users, CheckCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -77,12 +77,6 @@ export default function InquiryList() {
       limit
     }));
   }, [dispatch, query, labelFilter, page, limit]);
-
-
-  /* FILTER */
-
-  const filtered = useMemo(() => items, [items]);
-
 
   /* CREATE */
 
@@ -323,7 +317,7 @@ export default function InquiryList() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         title="Create Inquiry"
-        description="Capture customer travel intent, dates, passengers, and source details."
+        description="Capture customer details and tour requirements."
       >
         <InquiryForm
           onSubmit={handleCreate}
