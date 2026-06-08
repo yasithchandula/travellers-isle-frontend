@@ -33,6 +33,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 /* reusable */
 import EntityHeroHeader from "@/components/common/EntityHeroHeader";
@@ -42,6 +47,62 @@ import CardGrid from "@/components/common/CardGrid";
 import EntityTable from "@/components/common/EntityTable";
 import PaginationBar from "@/components/common/PaginationBar";
 import EntityDialog from "@/components/common/EntityDialog";
+
+function TourDescriptionCell({ description }) {
+  const text = description?.trim();
+
+  if (!text) {
+    return "-";
+  }
+
+  const isLong = text.length > 80;
+
+  if (!isLong) {
+    return (
+      <span className="block max-w-xs truncate text-sm text-foreground">
+        {text}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex max-w-sm items-center gap-2">
+      <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+        {text}
+      </span>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="shrink-0 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            aria-label="View full tour description"
+          >
+            View
+          </button>
+        </PopoverTrigger>
+
+        <PopoverContent
+          align="start"
+          className="w-96 max-w-[calc(100vw-2rem)] p-0"
+        >
+          <div className="border-b px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">
+              Tour Description
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Full inquiry details
+            </p>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto whitespace-pre-wrap px-4 py-3 text-sm leading-6 text-foreground">
+            {text}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export default function InquiryList() {
 
@@ -212,8 +273,7 @@ export default function InquiryList() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>Arrival Date</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead>Tour Description</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assigned</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -235,11 +295,7 @@ export default function InquiryList() {
                 <TableCell>{i.phone || "-"}</TableCell>
 
                 <TableCell>
-                  {i.arrival_date ? new Date(i.arrival_date).toLocaleDateString() : "-"}
-                </TableCell>
-
-                <TableCell>
-                  <Badge>{i.source}</Badge>
+                  <TourDescriptionCell description={i.notes} />
                 </TableCell>
 
                 <TableCell>
