@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function StatCard({ title, value, icon: Icon, hint }) {
   return (
-    <Card className="rounded-2xl border shadow-sm">
+    <Card>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -12,8 +12,8 @@ export default function StatCard({ title, value, icon: Icon, hint }) {
             <p className="text-xs text-muted-foreground">{hint}</p>
           </div>
 
-          <div className="rounded-2xl border bg-muted/40 p-3">
-            <Icon className="h-5 w-5 text-muted-foreground" />
+          <div className="rounded-md border bg-accent p-3">
+            <Icon className="h-5 w-5 text-primary" />
           </div>
         </div>
       </CardContent>

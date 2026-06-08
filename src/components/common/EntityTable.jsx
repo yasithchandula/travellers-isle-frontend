@@ -8,16 +8,16 @@ import {
 
 export default function EntityTable({ header, body }) {
   return (
-    <div className="rounded-3xl border shadow-sm">
-    <Table>
-      <TableHeader>
-        {header}
-      </TableHeader>
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <Table>
+        <TableHeader className="bg-muted/50">
+          {header}
+        </TableHeader>
 
-      <TableBody>
-        {body}
-      </TableBody>
-    </Table>
+        <TableBody>
+          {body}
+        </TableBody>
+      </Table>
     </div>
   );
 }

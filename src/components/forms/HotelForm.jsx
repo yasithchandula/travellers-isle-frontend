@@ -154,11 +154,11 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
 
       {/* City */}
       <div>
-        <label className="text-sm text-ti-forest">
+        <label className="text-sm font-medium text-foreground">
           City (Destination)
         </label>
         <select
-          className={`w-full border rounded px-2 py-1.5 text-sm ${errors.cityId ? "border-red-500" : ""
+          className={`h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring ${errors.cityId ? "border-destructive" : ""
             }`}
           value={cityId}
           onChange={(e) => {

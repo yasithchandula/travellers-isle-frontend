@@ -1,7 +1,7 @@
 export default function ChartCard({ title, children }) {
   return (
-    <div className="card p-6">
-      <h3 className="font-serif text-xl text-ti-forest mb-4">{title}</h3>
+    <div className="rounded-lg border bg-card p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-foreground">{title}</h3>
       {children}
     </div>
   );

@@ -128,11 +128,11 @@ function ModernStepper({ steps, currentStep, onStepChange }) {
               type="button"
               onClick={() => onStepChange(index)}
               className={cn(
-                "group flex min-w-fit items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all",
+                "group flex min-w-fit items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-all",
                 isActive &&
-                "border-ti-forest bg-ti-forest text-white shadow-sm",
+                "border-primary bg-primary text-primary-foreground shadow-sm",
                 isDone &&
-                "border-ti-forest/20 bg-ti-forest/10 text-ti-forest hover:bg-ti-forest/15",
+                "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15",
                 !isActive &&
                 !isDone &&
                 "border-border bg-card text-muted-foreground hover:bg-muted/50"
@@ -142,7 +142,7 @@ function ModernStepper({ steps, currentStep, onStepChange }) {
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all",
                   isActive && "bg-white/20 text-white",
-                  isDone && "bg-ti-forest text-white",
+                  isDone && "bg-primary text-primary-foreground",
                   !isActive && !isDone && "bg-muted text-foreground"
                 )}
               >
@@ -1075,7 +1075,7 @@ export default function QuotationWizardModernPage() {
           ) : (
             <Button
               size="lg"
-              className="min-w-[180px] bg-ti-forest text-white hover:bg-ti-forest/90"
+              className="min-w-[180px] bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handleSaveQuotation}
               disabled={isSavingQuotation}
             >

@@ -10,7 +10,7 @@ export default function ExplorerHeader({
   setExplorerInnerView,
 }) {
   return (
-    <Card className="rounded-2xl border shadow-sm">
+    <Card>
       <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -32,7 +32,7 @@ export default function ExplorerHeader({
           </p>
         </div>
 
-        <div className="inline-flex rounded-xl border bg-muted/30 p-1">
+        <div className="inline-flex rounded-lg border bg-muted/30 p-1">
           <ToolbarToggleButton
             active={explorerInnerView === "table"}
             onClick={() => setExplorerInnerView("table")}

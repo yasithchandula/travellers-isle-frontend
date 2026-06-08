@@ -385,20 +385,15 @@ export default function QuotationManagerPage() {
     drivePath.monthKey && isMonthLoading(drivePath.monthKey);
 
   return (
-    <div className="space-y-6 p-6">
-      <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-background via-background to-muted/40 shadow-sm">
-        <div className="relative flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+    <div className="space-y-6">
+      <section className="border-b pb-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-              <FileText className="h-3.5 w-3.5" />
-              Quotation Workspace
-            </div>
-
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight">
                 Quotation Manager
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground md:text-base">
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                 Browse quotations by year and month in explorer mode, switch to a
                 Drive-style folder experience, or use flat table and card views.
               </p>
@@ -406,7 +401,7 @@ export default function QuotationManagerPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button className="gap-2 rounded-xl" onClick={() => navigate(`/inquiries/`)}>
+            <Button className="gap-2" onClick={() => navigate(`/inquiries/`)}>
               <Plus className="h-4 w-4" />
               New Quotation
             </Button>
@@ -451,7 +446,7 @@ export default function QuotationManagerPage() {
         />
       </section>
 
-      <Card className="rounded-2xl border shadow-sm">
+      <Card>
         <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative w-full lg:max-w-sm">

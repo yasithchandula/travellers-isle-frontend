@@ -311,9 +311,9 @@ export default function ExcursionManager() {
 
       {view === "card" ? (
         !loading && filtered.length === 0 ? (
-          <div className="rounded-3xl border border-dashed bg-background py-20">
+          <div className="rounded-lg border border-dashed bg-card py-20">
             <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-4 rounded-2xl bg-muted p-4">
+              <div className="mb-4 rounded-md bg-muted p-4">
                 <MapPinned className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold">No excursions found</h3>
@@ -340,9 +340,9 @@ export default function ExcursionManager() {
               return (
                 <div
                   key={item.id}
-                  className="group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-colors duration-200 hover:bg-muted/20"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/50">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                     {item.featuredImage ? (
                       <img
                         src={item.featuredImage}
@@ -352,10 +352,10 @@ export default function ExcursionManager() {
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <div className="flex flex-col items-center gap-3 text-center">
-                          <div className="rounded-2xl bg-background/70 p-4 backdrop-blur">
+                          <div className="rounded-md bg-background/70 p-4 backdrop-blur">
                             <PricingIcon className="h-8 w-8 text-muted-foreground" />
                           </div>
-                          <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                          <span className="text-xs font-medium uppercase text-muted-foreground">
                             {getPricingLabel(item.pricingType)}
                           </span>
                         </div>
@@ -365,7 +365,7 @@ export default function ExcursionManager() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
 
                     <div className="absolute left-3 top-3">
-                      <div className="rounded-2xl bg-background/90 px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur">
+                      <div className="rounded-md bg-background/90 px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur">
                         {formatCurrency(item.price, item.currency)}
                       </div>
                     </div>
@@ -386,7 +386,7 @@ export default function ExcursionManager() {
                     <div className="absolute bottom-3 right-3 opacity-100 md:opacity-0 md:transition md:group-hover:opacity-100">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="secondary" className="rounded-xl shadow-sm">
+                          <Button size="icon" variant="secondary" className="shadow-sm">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -413,7 +413,7 @@ export default function ExcursionManager() {
                         <PricingIcon className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-white/75">
+                        <p className="text-xs uppercase text-white/75">
                           Pricing Model
                         </p>
                         <p className="text-sm font-semibold">
@@ -446,8 +446,8 @@ export default function ExcursionManager() {
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3">
-                      <div className="rounded-xl bg-background p-3 shadow-sm">
+                    <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/40 p-3">
+                      <div className="rounded-md bg-background p-3 shadow-sm">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
                           Base Price
                         </p>
@@ -456,7 +456,7 @@ export default function ExcursionManager() {
                         </p>
                       </div>
 
-                      <div className="rounded-xl bg-background p-3 shadow-sm">
+                      <div className="rounded-md bg-background p-3 shadow-sm">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
                           Child Price
                         </p>

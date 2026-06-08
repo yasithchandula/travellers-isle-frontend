@@ -123,10 +123,10 @@ export default function Login() {
     >
 
       {/* subtle overlay glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-ti-forest/20 via-transparent to-ti-teal/20" />
+      <div className="absolute inset-0 bg-background/25" />
 
       {/* CARD */}
-      <Card className="relative w-full max-w-md rounded-3xl border bg-white/90 backdrop-blur-xl shadow-2xl animate-in fade-in-0 zoom-in-95">
+      <Card className="relative w-full max-w-md border bg-card/95 shadow-xl backdrop-blur animate-in fade-in-0 zoom-in-95">
 
         <CardHeader className="text-center space-y-4 pb-2">
 
@@ -137,7 +137,7 @@ export default function Login() {
           />
 
           <div>
-            <CardTitle className="text-2xl font-semibold text-ti-forest">
+            <CardTitle className="text-2xl font-semibold text-foreground">
               Welcome back
             </CardTitle>
 
@@ -164,7 +164,7 @@ export default function Login() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 h-11 rounded-xl focus-visible:ring-2 ${
+                  className={`h-11 pl-10 focus-visible:ring-1 ${
                     errors.email ? "border-red-500" : ""
                   }`}
                 />
@@ -187,7 +187,7 @@ export default function Login() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`pl-10 pr-10 h-11 rounded-xl ${
+                  className={`h-11 pl-10 pr-10 ${
                     errors.password ? "border-red-500" : ""
                   }`}
                 />
@@ -210,7 +210,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl bg-ti-forest hover:bg-ti-forest/90"
+              className="h-11 w-full bg-primary hover:bg-primary/90"
             >
               {loading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

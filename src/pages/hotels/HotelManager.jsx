@@ -248,8 +248,8 @@ export default function HotelManager() {
             <Card
               key={h.id}
               className={cn(
-                "group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300",
-                "hover:-translate-y-1 hover:shadow-lg",
+                "group overflow-hidden bg-card transition-colors duration-200",
+                "hover:bg-muted/20",
                 "animate-in fade-in-0 slide-in-from-bottom-2"
               )}
               style={{ animationDelay: `${index * 40}ms` }}
@@ -274,8 +274,8 @@ export default function HotelManager() {
                     className={cn(
                       "rounded-full border",
                       h.is_active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-700"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-muted text-muted-foreground"
                     )}
                   >
                     {h.is_active ? "Active" : "Inactive"}
@@ -307,7 +307,7 @@ export default function HotelManager() {
                 {/* Actions */}
                 <div className="flex gap-2 pt-1">
                   <Button
-                    className="flex-1 rounded-xl"
+                    className="flex-1"
                     onClick={() => openEdit(h)}
                   >
                     Edit

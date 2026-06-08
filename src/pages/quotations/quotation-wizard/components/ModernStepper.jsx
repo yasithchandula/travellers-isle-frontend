@@ -126,14 +126,14 @@ export default function ModernStepper({
                   type="button"
                   onClick={() => onStepChange(index)}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl border px-4 py-2 text-sm transition-all duration-200",
+                    "group flex items-center gap-3 rounded-lg border px-4 py-2 text-sm transition-all duration-200",
                     "hover:scale-[1.02] active:scale-[0.98]",
 
                     isActive &&
-                      "border-ti-forest bg-ti-forest text-white shadow-md",
+                      "border-primary bg-primary text-primary-foreground shadow-sm",
 
                     isDone &&
-                      "border-ti-forest/20 bg-ti-forest/10 text-ti-forest hover:bg-ti-forest/15",
+                      "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15",
 
                     !isActive &&
                       !isDone &&
@@ -145,7 +145,7 @@ export default function ModernStepper({
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
                       isActive && "bg-white/20 text-white",
-                      isDone && "bg-ti-forest text-white",
+                      isDone && "bg-primary text-primary-foreground",
                       !isActive && !isDone && "bg-muted text-foreground"
                     )}
                   >
@@ -165,7 +165,7 @@ export default function ModernStepper({
                       className={cn(
                         "absolute inset-0 rounded-full transition-all duration-300",
                         currentStep > index
-                          ? "bg-ti-forest"
+                          ? "bg-primary"
                           : "bg-border"
                       )}
                     />

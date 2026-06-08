@@ -1,21 +1,14 @@
 import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
 
 export default function Layout({ children }) {
   return (
-    <div className="h-screen w-screen flex overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       <Sidebar />
 
-      {/* Main Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Topbar (optional) */}
-        {/* <Topbar /> */}
-
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6 pt-4">
+        <main className="flex-1 overflow-auto px-5 py-5 md:px-6 lg:px-8">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

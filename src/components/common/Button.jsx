@@ -9,31 +9,29 @@ import {
  */
 const COLOR_VARIANTS = {
   primary: `
-    bg-ti-teal text-white shadow
-    hover:bg-[#31685f]
-    focus-visible:ring-2 focus-visible:ring-ti-mint
+    bg-primary text-primary-foreground shadow-sm
+    hover:bg-primary/90
+    focus-visible:ring-2 focus-visible:ring-ring
   `,
   secondary: `
-    border border-ti-teal
-    text-ti-teal bg-white
-    hover:bg-ti-sky hover:text-ti-forest
-    focus-visible:ring-2 focus-visible:ring-ti-teal
+    bg-secondary text-secondary-foreground shadow-sm
+    hover:bg-secondary/80
+    focus-visible:ring-2 focus-visible:ring-ring
   `,
   outline: `
-    border border-ti-forest
-    text-ti-forest bg-white
-    hover:bg-ti-sky hover:text-ti-teal
-    focus-visible:ring-2 focus-visible:ring-ti-teal
+    border border-input bg-background text-foreground shadow-sm
+    hover:bg-accent hover:text-accent-foreground
+    focus-visible:ring-2 focus-visible:ring-ring
   `,
   ghost: `
-    text-ti-forest bg-transparent
-    hover:bg-ti-sky/60 hover:text-ti-teal
-    focus-visible:ring-2 focus-visible:ring-ti-mint
+    bg-transparent text-foreground
+    hover:bg-accent hover:text-accent-foreground
+    focus-visible:ring-2 focus-visible:ring-ring
   `,
   danger: `
-    bg-ti-red text-white shadow
-    hover:bg-[#d05d5d]
-    focus-visible:ring-2 focus-visible:ring-red-300
+    bg-destructive text-destructive-foreground shadow-sm
+    hover:bg-destructive/90
+    focus-visible:ring-2 focus-visible:ring-destructive/30
   `,
 };
 

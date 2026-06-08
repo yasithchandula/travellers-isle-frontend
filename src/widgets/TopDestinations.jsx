@@ -13,7 +13,7 @@ export default function TopDestinations() {
           key={d.name}
           className="flex items-center justify-between rounded-md border p-3"
         >
-          <span className="font-medium text-ti-forest">
+          <span className="font-medium text-foreground">
             {d.name}
           </span>
           <span className="text-sm text-muted-foreground">

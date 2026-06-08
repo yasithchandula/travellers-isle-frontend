@@ -2,10 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function StatCard({ title, value, icon: Icon, subtle }) {
   return (
-    <Card className="rounded-2xl border bg-background/80 shadow-sm">
+    <Card>
       <CardContent className="flex items-center justify-between p-5">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium uppercase text-muted-foreground">
             {title}
           </p>
 
@@ -18,8 +18,8 @@ export default function StatCard({ title, value, icon: Icon, subtle }) {
           )}
         </div>
 
-        <div className="rounded-2xl border bg-muted/60 p-3">
-          <Icon className="h-5 w-5 text-muted-foreground" />
+        <div className="rounded-md border bg-accent p-3">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
       </CardContent>
     </Card>

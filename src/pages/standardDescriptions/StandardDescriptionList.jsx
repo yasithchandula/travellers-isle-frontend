@@ -257,8 +257,8 @@ export default function StandardDescriptionManager() {
               <Card
                 key={d.id}
                 className={cn(
-                  "group overflow-hidden rounded-3xl border bg-background shadow-sm transition-all duration-300",
-                  "hover:-translate-y-1 hover:shadow-xl",
+                  "group overflow-hidden bg-card transition-colors duration-200",
+                  "hover:bg-muted/20",
                   "animate-in fade-in-0 slide-in-from-bottom-2"
                 )}
                 style={{ animationDelay: `${index * 40}ms` }}
@@ -294,8 +294,8 @@ export default function StandardDescriptionManager() {
                       className={cn(
                         "rounded-full px-2 py-1 text-xs",
                         d.status === "DRAFT"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-green-100 text-green-800"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-100 text-emerald-800"
                       )}
                     >
                       {d.status}
@@ -308,9 +308,9 @@ export default function StandardDescriptionManager() {
                   {/* Distance + Time */}
                   {(d.mileage || d.travel_time_minutes) && (
                     <div className="flex gap-4 text-xs text-muted-foreground">
-                      {d.mileage ? <span>🚗 {d.mileage} km</span> : null}
+                      {d.mileage ? <span>{d.mileage} km</span> : null}
                       {d.travel_time_minutes ? (
-                        <span>⏱ {d.travel_time_minutes} mins</span>
+                        <span>{d.travel_time_minutes} mins</span>
                       ) : null}
                     </div>
                   )}
@@ -345,7 +345,7 @@ export default function StandardDescriptionManager() {
                   {/* Excursions */}
                   {d.excursions?.length > 0 && (
                     <div className="text-xs text-muted-foreground line-clamp-1">
-                      ✨ {d.excursions[0].name}
+                      {d.excursions[0].name}
                       {d.excursions.length > 1 &&
                         ` +${d.excursions.length - 1} more`}
                     </div>
@@ -354,7 +354,7 @@ export default function StandardDescriptionManager() {
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
                     <Button
-                      className="flex-1 rounded-xl"
+                      className="flex-1"
                       onClick={() => {
                         setEditItem(d);
                         setModalOpen(true);
@@ -365,7 +365,6 @@ export default function StandardDescriptionManager() {
 
                     <Button
                       variant="outline"
-                      className="rounded-xl"
                       onClick={() => {
                         setViewItem(d); // not implemnted yet - ******
                       }}

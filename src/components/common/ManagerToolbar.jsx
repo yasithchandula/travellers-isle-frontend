@@ -29,15 +29,15 @@ export default function ManagerToolbar({
   resultCount = 0,
 }) {
   return (
-    <Card className="rounded-3xl border shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">{title}</CardTitle>
+    <Card>
+      <CardHeader className="p-5 pb-3">
+        <CardTitle className="text-base">{title}</CardTitle>
         {description && (
           <CardDescription>{description}</CardDescription>
         )}
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-5 pt-0">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row">
             {/* SEARCH */}
@@ -48,7 +48,7 @@ export default function ManagerToolbar({
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search..."
-                className="h-11 rounded-xl pl-9"
+                className="h-10 pl-9"
               />
             </div>
 
@@ -57,7 +57,7 @@ export default function ManagerToolbar({
               <select
                 value={tagFilter}
                 onChange={(e) => onTagChange(e.target.value)}
-                className="h-11 rounded-xl border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+                className="h-10 rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-1 focus:ring-ring"
               >
                 <option value="all">All tags</option>
 
@@ -73,7 +73,7 @@ export default function ManagerToolbar({
             <select
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="h-11 rounded-xl border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+              className="h-10 rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-1 focus:ring-ring"
             >
               {limitOptions.map((value) => (
                 <option key={value} value={value}>
@@ -85,11 +85,11 @@ export default function ManagerToolbar({
 
           {/* VIEW SWITCH */}
           {setView && (
-            <div className="inline-flex rounded-2xl border bg-muted/40 p-1">
+            <div className="inline-flex rounded-lg border bg-muted/40 p-1">
               <Button
                 variant={view === "card" ? "default" : "ghost"}
                 size="sm"
-                className="rounded-xl"
+                className="rounded-md"
                 onClick={() => setView("card")}
               >
                 <Grid3X3 className="mr-2 h-4 w-4" />
@@ -99,7 +99,7 @@ export default function ManagerToolbar({
               <Button
                 variant={view === "table" ? "default" : "ghost"}
                 size="sm"
-                className="rounded-xl"
+                className="rounded-md"
                 onClick={() => setView("table")}
               >
                 <List className="mr-2 h-4 w-4" />

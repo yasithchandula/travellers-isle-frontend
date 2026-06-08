@@ -9,7 +9,7 @@ export default function FollowupsTable() {
 
   return (
     <Card>
-      <h3 className="font-serif text-xl mb-4 text-ti-forest">Upcoming Follow-ups</h3>
+      <h3 className="mb-4 text-lg font-semibold text-foreground">Upcoming Follow-ups</h3>
 
       <table className="w-full">
         <thead>
@@ -27,11 +27,11 @@ export default function FollowupsTable() {
               <td>{f.due}</td>
               <td>
                 {f.status === "Urgent" ? (
-                  <span className="px-2 py-1 bg-ti-red/20 text-ti-red text-sm rounded">
+                  <span className="rounded bg-destructive/10 px-2 py-1 text-sm text-destructive">
                     Urgent
                   </span>
                 ) : (
-                  <span className="px-2 py-1 bg-ti-mint/20 text-ti-forest text-sm rounded">
+                  <span className="rounded bg-accent px-2 py-1 text-sm text-accent-foreground">
                     Pending
                   </span>
                 )}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Sparkles,
   Mail,
   Users,
   MapPinned,
@@ -50,11 +49,11 @@ function EnterpriseStatCard({
   tone = "default",
 }) {
   return (
-    <Card className="rounded-3xl border bg-background/80 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="transition hover:bg-muted/20">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase text-muted-foreground">
               {title}
             </p>
             <p className="text-3xl font-semibold tracking-tight">{value}</p>
@@ -65,14 +64,14 @@ function EnterpriseStatCard({
 
           <div
             className={cn(
-              "rounded-2xl border p-3",
-              tone === "success" && "bg-emerald-500/10",
-              tone === "warning" && "bg-amber-500/10",
-              tone === "info" && "bg-sky-500/10",
-              tone === "default" && "bg-muted/60"
+              "rounded-md border p-3",
+              tone === "success" && "bg-emerald-500/10 text-emerald-700",
+              tone === "warning" && "bg-amber-500/10 text-amber-700",
+              tone === "info" && "bg-sky-500/10 text-sky-700",
+              tone === "default" && "bg-accent text-primary"
             )}
           >
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <Icon className="h-5 w-5" />
           </div>
         </div>
 
@@ -96,8 +95,8 @@ function EnterpriseStatCard({
 
 function SectionCard({ title, description, action, children, className }) {
   return (
-    <Card className={cn("rounded-3xl border shadow-sm", className)}>
-      <CardHeader className="pb-3">
+    <Card className={className}>
+      <CardHeader className="p-5 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>{title}</CardTitle>
@@ -108,15 +107,15 @@ function SectionCard({ title, description, action, children, className }) {
           {action ? action : null}
         </div>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-5 pt-0">{children}</CardContent>
     </Card>
   );
 }
 
 function EmptyState({ title, description, icon: Icon = FolderKanban }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-12 text-center">
-      <div className="rounded-2xl border bg-muted/50 p-3">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-12 text-center">
+      <div className="rounded-md border bg-muted/50 p-3">
         <Icon className="h-5 w-5 text-muted-foreground" />
       </div>
       <h3 className="mt-4 text-base font-semibold">{title}</h3>
@@ -215,7 +214,7 @@ function LatestInquiriesCard({ inquiries }) {
           {inquiries.slice(0, 6).map((item) => (
             <div
               key={item.id}
-              className="group flex items-center justify-between rounded-2xl border p-4 transition hover:bg-muted/40"
+              className="group flex items-center justify-between rounded-lg border p-4 transition hover:bg-muted/40"
             >
               <div className="min-w-0 space-y-1">
                 <div className="truncate font-medium">
@@ -302,10 +301,10 @@ function TopDestinationsCard({ inquiries }) {
           {destinations.map((item, index) => (
             <div
               key={item.name}
-              className="flex items-center justify-between rounded-2xl border p-3"
+              className="flex items-center justify-between rounded-lg border p-3"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl border bg-muted/50 text-sm font-semibold">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-muted/50 text-sm font-semibold">
                   {index + 1}
                 </div>
                 <div>
@@ -370,7 +369,7 @@ function RecentActivityCard({ inquiries, excursions, hotels, cities }) {
             const Icon = item.icon;
             return (
               <div key={item.id} className="flex gap-3">
-                <div className="mt-0.5 rounded-2xl border bg-muted/50 p-2">
+                <div className="mt-0.5 rounded-md border bg-muted/50 p-2">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
@@ -483,10 +482,10 @@ function EnterpriseInsightsCard({
     <SectionCard
       title="Executive Insights"
       description="High-signal business and operational indicators"
-      className="bg-gradient-to-br from-background via-background to-muted/40"
+      className="bg-card"
     >
       <div className="space-y-3 text-sm">
-        <div className="rounded-2xl border bg-background/70 p-4">
+        <div className="rounded-lg border bg-background/70 p-4">
           <div className="flex items-center gap-2 font-medium">
             <TrendingUp className="h-4 w-4" />
             Lead conversion
@@ -496,7 +495,7 @@ function EnterpriseInsightsCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-background/70 p-4">
+        <div className="rounded-lg border bg-background/70 p-4">
           <div className="flex items-center gap-2 font-medium">
             <BadgeCheck className="h-4 w-4" />
             Handling efficiency
@@ -506,7 +505,7 @@ function EnterpriseInsightsCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-background/70 p-4">
+        <div className="rounded-lg border bg-background/70 p-4">
           <div className="flex items-center gap-2 font-medium">
             <ShieldCheck className="h-4 w-4" />
             Content readiness
@@ -516,7 +515,7 @@ function EnterpriseInsightsCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-background/70 p-4">
+        <div className="rounded-lg border bg-background/70 p-4">
           <div className="flex items-center gap-2 font-medium">
             <TriangleAlert className="h-4 w-4" />
             Watch area
@@ -537,20 +536,20 @@ function QuickActionsCard() {
       description="Jump into the most frequent workflows"
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button className="h-11 rounded-xl justify-start">+ New Inquiry</Button>
-        <Button variant="secondary" className="h-11 rounded-xl justify-start">
+        <Button className="h-10 justify-start">+ New Inquiry</Button>
+        <Button variant="secondary" className="h-10 justify-start">
           + Add City
         </Button>
-        <Button variant="secondary" className="h-11 rounded-xl justify-start">
+        <Button variant="secondary" className="h-10 justify-start">
           + Add Hotel
         </Button>
-        <Button variant="secondary" className="h-11 rounded-xl justify-start">
+        <Button variant="secondary" className="h-10 justify-start">
           + Add Excursion
         </Button>
-        <Button variant="outline" className="h-11 rounded-xl justify-start">
+        <Button variant="outline" className="h-10 justify-start">
           View Quotations
         </Button>
-        <Button variant="outline" className="h-11 rounded-xl justify-start">
+        <Button variant="outline" className="h-10 justify-start">
           Review Descriptions
         </Button>
       </div>
@@ -590,10 +589,10 @@ function OperationsSummaryCard({
           return (
             <div
               key={row.label}
-              className="flex items-center justify-between rounded-2xl border p-4"
+              className="flex items-center justify-between rounded-lg border p-4"
             >
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl border bg-muted/50 p-2">
+                <div className="rounded-md border bg-muted/50 p-2">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <span className="text-sm font-medium">{row.label}</span>
@@ -729,17 +728,11 @@ export default function EnterpriseDashboardPage() {
   }, [standardDescriptions]);
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      {/* HERO */}
-      <div className="flex flex-col gap-4 rounded-[28px] border bg-gradient-to-br from-background via-background to-muted/40 p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 border-b pb-5 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5" />
-            Enterprise control center
-          </div>
-
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight">
               Executive Dashboard
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -750,8 +743,8 @@ export default function EnterpriseDashboardPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button className="h-11 rounded-xl px-5">+ New Inquiry</Button>
-          <Button variant="outline" className="h-11 rounded-xl px-5">
+          <Button className="h-10 px-4">+ New Inquiry</Button>
+          <Button variant="outline" className="h-10 px-4">
             View Reports
           </Button>
         </div>

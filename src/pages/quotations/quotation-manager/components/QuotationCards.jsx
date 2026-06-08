@@ -24,7 +24,7 @@ export default function QuotationCards({ items, showTimeline = true }) {
       {items.map((item) => (
         <Card
           key={item.id}
-          className="group rounded-2xl border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          className="group transition-colors duration-200 hover:bg-muted/20"
         >
           <CardContent className="p-5">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -50,8 +50,8 @@ export default function QuotationCards({ items, showTimeline = true }) {
                 <div className="text-sm text-muted-foreground">{item.company}</div>
               </div>
 
-              <div className="rounded-xl border bg-muted/20 p-3">
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
                   <MapPinned className="h-3.5 w-3.5" />
                   Route
                 </div>

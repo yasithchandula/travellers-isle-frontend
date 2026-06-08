@@ -30,12 +30,12 @@ export default function ExcursionSelector({
         {selected.map((item) => (
           <span
             key={item.id}
-            className="px-2 py-1 text-xs rounded bg-ti-mint/60 flex items-center gap-1"
+            className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-xs text-accent-foreground"
           >
             {item.name}
             <X
               size={14}
-              className="cursor-pointer text-ti-red"
+              className="cursor-pointer text-destructive"
               onClick={() => removeItem(item.id)}
             />
           </span>
@@ -44,7 +44,7 @@ export default function ExcursionSelector({
 
       {/* Search input */}
       <input
-        className="w-full border rounded px-3 py-2 text-sm"
+        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:ring-1 focus-visible:ring-ring"
         placeholder="Search excursions..."
         value={query}
         onChange={(e) => {
@@ -57,7 +57,7 @@ export default function ExcursionSelector({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow max-h-80 overflow-auto">
+        <div className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-md border bg-popover shadow-lg">
           {items.length === 0 && (
             <div className="p-3 text-sm text-gray-500">
               No excursions found
@@ -68,7 +68,7 @@ export default function ExcursionSelector({
             <div
               key={item.id}
               onClick={() => addItem(item)}
-              className="flex gap-3 p-3 cursor-pointer hover:bg-ti-sky/10 border-b"
+              className="flex cursor-pointer gap-3 border-b p-3 hover:bg-accent"
             >
               {item.gallery?.[0] && (
                 <img
@@ -87,11 +87,11 @@ export default function ExcursionSelector({
                 </div>
 
                 <div className="flex gap-2 pt-1 text-[10px]">
-                  <span className="px-2 py-0.5 rounded bg-ti-sky/30">
+                  <span className="rounded bg-muted px-2 py-0.5">
                     {item.pricing_type}
                   </span>
 
-                  <span className="px-2 py-0.5 rounded bg-ti-mint/40">
+                  <span className="rounded bg-accent px-2 py-0.5 text-accent-foreground">
                     {item.is_full_day ? "Full Day" : "Half Day"}
                   </span>
 

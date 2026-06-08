@@ -129,7 +129,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
 
       {/* City Type */}
       <div>
-        <label className="block mb-1 text-xs font-medium text-ti-forest">
+        <label className="mb-1 block text-xs font-medium text-foreground">
           City Type
         </label>
 
@@ -143,7 +143,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
                 if (errors.cityType)
                   setErrors((p) => ({ ...p, cityType: null }));
               }}
-              className="accent-ti-teal"
+              className="accent-primary"
             />
             Destination
           </label>
@@ -157,7 +157,7 @@ export default function CityForm({ initial, onSubmit, onCancel }) {
                 if (errors.cityType)
                   setErrors((p) => ({ ...p, cityType: null }));
               }}
-              className="accent-ti-teal"
+              className="accent-primary"
             />
             Stop
           </label>

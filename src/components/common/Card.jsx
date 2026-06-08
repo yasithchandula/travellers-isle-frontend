@@ -2,8 +2,8 @@ export default function Card({ children, className = "" }) {
   return (
     <div
       className={`
-        bg-white p-4 rounded-xl border border-ti-sky 
-        shadow-sm hover-soft
+        rounded-lg border bg-card p-4 text-card-foreground shadow-sm
+        transition-colors hover:bg-muted/20
         ${className}
       `}
     >

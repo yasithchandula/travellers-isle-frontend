@@ -241,7 +241,7 @@ export default function InquiryForm({ initial, onSubmit, onCancel }) {
       </div>
 
       {tripDays && (
-        <div className="text-sm text-ti-forest font-medium">
+        <div className="text-sm font-medium text-foreground">
           Trip Duration: {tripDays} days
         </div>
       )}

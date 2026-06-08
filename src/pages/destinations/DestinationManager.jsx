@@ -201,8 +201,8 @@ export default function DestinationManager() {
             <div
               key={c.id}
               className={cn(
-                "group rounded-3xl border bg-background p-5 shadow-sm transition-all duration-300",
-                "hover:-translate-y-1 hover:shadow-lg",
+                "group rounded-lg border bg-card p-5 shadow-sm transition-colors duration-200",
+                "hover:bg-muted/20",
                 "animate-in fade-in-0 slide-in-from-bottom-2"
               )}
               style={{ animationDelay: `${index * 40}ms` }}
@@ -219,14 +219,14 @@ export default function DestinationManager() {
                 </div>
 
                 {/* Status */}
-                <Badge
-                  className={cn(
-                    "rounded-full",
-                    c.status
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  )}
-                >
+                  <Badge
+                    className={cn(
+                      "rounded-full",
+                      c.status
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
                   {c.status ? "Active" : "Inactive"}
                 </Badge>
               </div>
@@ -234,8 +234,8 @@ export default function DestinationManager() {
               {/* Tags */}
               <div className="mt-4 flex flex-wrap gap-2">
                 {c.isDestination === 1 && (
-                  <Badge className="rounded-full bg-blue-100 text-blue-700">
-                    🌍 Destination
+                  <Badge className="rounded-full bg-accent text-accent-foreground">
+                    Destination
                   </Badge>
                 )}
 
@@ -244,7 +244,7 @@ export default function DestinationManager() {
                     variant="secondary"
                     className="rounded-full"
                   >
-                    📍 Stop
+                    Stop
                   </Badge>
                 )}
 
@@ -263,7 +263,6 @@ export default function DestinationManager() {
 
                 <Button
                   size="sm"
-                  className="rounded-xl"
                   onClick={() => openEdit(c)}
                 >
                   Edit

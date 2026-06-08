@@ -24,7 +24,7 @@ export default function FilterBar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search..."
-            className="h-11 rounded-xl pl-9"
+            className="h-10 pl-9"
           />
         </div>
 
@@ -32,7 +32,7 @@ export default function FilterBar({
         <select
           value={tag}
           onChange={(e) => onTagChange(e.target.value)}
-          className="h-11 rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
         >
           {tags.map((t) => (
             <option key={t} value={t}>
@@ -45,7 +45,7 @@ export default function FilterBar({
         <select
           value={limit}
           onChange={(e) => onLimitChange(Number(e.target.value))}
-          className="h-11 rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-ring"
         >
           {limitOptions.map((value) => (
             <option key={value} value={value}>

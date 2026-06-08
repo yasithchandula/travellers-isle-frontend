@@ -9,7 +9,7 @@ export default function PaginationBar({
   onPageChange
 }) {
   return (
-      <Card className="rounded-3xl border shadow-sm">
+      <Card>
         <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-muted-foreground">
             Showing Page <span className="font-medium">{page}</span> of{" "}
@@ -20,6 +20,7 @@ export default function PaginationBar({
 
             <Button
               variant="outline"
+              size="sm"
               disabled={page <= 1 || loading}
               onClick={() => onPageChange(page - 1)}
             >
@@ -33,6 +34,7 @@ export default function PaginationBar({
 
             <Button
               variant="outline"
+              size="sm"
               disabled={page >= totalPages || loading}
               onClick={() => onPageChange(page + 1)}
             >

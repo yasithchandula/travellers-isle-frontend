@@ -47,15 +47,14 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 flex flex-col border-r bg-white/80 backdrop-blur-xl transition-all duration-300",
+        "sticky top-0 flex h-screen flex-col border-r bg-card transition-all duration-300",
         collapsed ? "w-[78px]" : "w-[270px]"
       )}
     >
-      {/* HEADER */}
-      <div className="flex h-16 items-center justify-between px-4 border-b">
+      <div className="flex h-16 items-center justify-between border-b px-4">
         {!collapsed && (
-          <div className="flex items-center gap-2 font-semibold text-ti-forest">
-            <div className="h-8 w-8 rounded-lg bg-ti-teal text-white flex items-center justify-center text-sm font-bold">
+          <div className="flex items-center gap-2 font-semibold text-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
               TI
             </div>
             Travellers Isle
@@ -64,7 +63,8 @@ export default function Sidebar() {
 
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-md p-1.5 hover:bg-muted transition"
+          className="rounded-md p-1.5 transition hover:bg-muted"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -74,14 +74,13 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* NAVIGATION */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {navItems.map((item, i) => {
           if (item.divider) {
             return !collapsed ? (
               <div
                 key={i}
-                className="pt-4 pb-1 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                className="px-3 pb-1 pt-4 text-xs font-semibold uppercase text-muted-foreground"
               >
                 {item.label}
               </div>
@@ -99,7 +98,7 @@ export default function Sidebar() {
                   "relative group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
                   "text-muted-foreground hover:bg-muted hover:text-foreground",
                   isActive &&
-                    "bg-ti-sky text-ti-teal shadow-sm"
+                    "bg-primary/10 text-primary"
                 )
               }
             >
@@ -109,18 +108,15 @@ export default function Sidebar() {
                 <span className="truncate">{item.label}</span>
               )}
 
-              {/* ACTIVE INDICATOR */}
-              <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-ti-teal opacity-0 group-[.active]:opacity-100"></span>
             </NavLink>
           );
         })}
       </nav>
 
-      {/* FOOTER */}
       <div className="border-t p-3">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive transition hover:bg-destructive/10"
         >
           <LogOut className="w-5 h-5" />
           {!collapsed && "Logout"}

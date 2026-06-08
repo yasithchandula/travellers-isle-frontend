@@ -13,7 +13,7 @@ export default function RecentQuotations() {
           className="flex items-center justify-between rounded-md border p-3"
         >
           <div>
-            <p className="font-medium text-ti-forest">{q.ref}</p>
+            <p className="font-medium text-foreground">{q.ref}</p>
             <p className="text-sm text-muted-foreground">{q.client}</p>
           </div>
 
