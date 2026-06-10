@@ -30,7 +30,6 @@ export default function useQuotationWizard({
 }) {
   const { items: standardDescriptions = [], search: descriptionSearch = "" } =
     standardDescriptionsState || {};
-
   const { cities, isLoadingCities } = useCitiesLoader(dispatch);
 
   const [step, setStep] = useState(0);
@@ -64,7 +63,7 @@ export default function useQuotationWizard({
       fetchStandardDescriptions({
         search: descriptionSearch,
         page: 1,
-        limit: 20,
+        limit: 30,
       })
     );
   }, [dispatch, descriptionSearch]);
@@ -90,7 +89,7 @@ export default function useQuotationWizard({
   );
 
   const totalDescriptions = useMemo(
-    () => days.reduce((sum, d) => sum + (d.standard_description ? 1 : 0), 0),
+    () => days.reduce((sum, day) => sum + (day.standard_description ? 1 : 0), 0),
     [days]
   );
 
@@ -217,18 +216,16 @@ export default function useQuotationWizard({
         throw new Error("Invalid response");
       }
 
+      const day = days[dayIndex] || {};
+
       updateDay(dayIndex, {
         standard_description: newDescription,
         standard_description_id: newDescription.id,
+        auto_standard_description_id:
+          day.auto_standard_description_id === editingDescription?.id
+            ? null
+            : day.auto_standard_description_id,
       });
-
-      dispatch(
-        fetchStandardDescriptions({
-          search: "",
-          page: 1,
-          limit: 20,
-        })
-      );
 
       toast.success("New description created from edit");
 
@@ -263,7 +260,6 @@ export default function useQuotationWizard({
     totalDescriptions,
     currentDay,
     standardDescriptions,
-    descriptionSearch,
     updateDay,
     saveDayToApi,
     saveAllDaysToApi,

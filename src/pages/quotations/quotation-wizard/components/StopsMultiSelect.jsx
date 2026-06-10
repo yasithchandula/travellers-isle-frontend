@@ -22,20 +22,27 @@ export default function StopsMultiSelect({
   cities = [],
   selectedIds = [],
   onChange,
+  compact = false,
 }) {
   return (
-    <div className="space-y-2">
-      <Label className="inline-flex items-center gap-2">
-        <MapPinned className="h-4 w-4 text-muted-foreground" />
-        Stops
-      </Label>
+    <div className={compact ? "" : "space-y-2"}>
+      {!compact && (
+        <Label className="inline-flex items-center gap-2">
+          <MapPinned className="h-4 w-4 text-muted-foreground" />
+          Stops
+        </Label>
+      )}
 
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            type="button"
             variant="outline"
             role="combobox"
-            className="w-full justify-between bg-background"
+            className={cn(
+              "w-full justify-between bg-background",
+              compact && "h-9 px-2.5 font-normal"
+            )}
           >
             {selectedIds?.length
               ? `${selectedIds.length} stop${selectedIds.length > 1 ? "s" : ""} selected`
@@ -84,7 +91,7 @@ export default function StopsMultiSelect({
         </PopoverContent>
       </Popover>
 
-      {selectedIds?.length > 0 && (
+      {!compact && selectedIds?.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2">
           {selectedIds.map((id) => {
             const city = cities.find((c) => String(c.id) === String(id));

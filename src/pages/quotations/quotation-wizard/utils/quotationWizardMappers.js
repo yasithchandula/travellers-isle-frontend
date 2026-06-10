@@ -12,6 +12,10 @@ export function mapQuotationShellToDays(quotationShell) {
 
   const mappedDays = dates.map((date, index) => {
     const apiDay = apiDays[index] || {};
+    const standardDescription =
+      apiDay.standard_description ||
+      apiDay.standard_descriptions?.[0] ||
+      null;
 
     return {
       id: apiDay.id || null,
@@ -28,9 +32,21 @@ export function mapQuotationShellToDays(quotationShell) {
       stop_ids: Array.isArray(apiDay.stop_ids)
         ? apiDay.stop_ids.map(String)
         : [],
-      excursions: Array.isArray(apiDay.excursions) ? apiDay.excursions : [],
-      standard_description: apiDay.standard_description || null,
-      standard_description_id: apiDay.standard_description_id || null,
+      excursions: Array.isArray(apiDay.excursions)
+        ? apiDay.excursions.map((excursion) => ({
+            ...excursion,
+            id: excursion.id ?? excursion.excursion_id,
+          }))
+        : [],
+      standard_description: standardDescription,
+      standard_description_id:
+        standardDescription?.id || apiDay.standard_description_id || null,
+      auto_standard_description_id: null,
+      auto_excursion_ids: [],
+      actual_mileage:
+        apiDay.actual_mileage ?? standardDescription?.mileage ?? "",
+      buffer_mileage: apiDay.buffer_mileage ?? "",
+      travel_time_minutes: apiDay.travel_time_minutes ?? "",
       note: apiDay.note || "",
     };
   });

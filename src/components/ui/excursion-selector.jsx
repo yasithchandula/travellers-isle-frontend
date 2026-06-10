@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 import {
   Command,
@@ -151,6 +152,8 @@ export default function ExcursionSelector({
   selected = [],
   setSelected,
   onSearch,
+  compact = false,
+  recommendedIds = [],
 }) {
   const id = useId();
 
@@ -179,6 +182,10 @@ export default function ExcursionSelector({
     });
     return map;
   }, [selected]);
+  const recommendedIdSet = useMemo(
+    () => new Set(recommendedIds.map(String)),
+    [recommendedIds]
+  );
 
   /* =========================
      LOCAL FILTER
@@ -248,12 +255,12 @@ export default function ExcursionSelector({
   /* =========================
      SELECTED BADGES
   ========================= */
-  const maxShown = 4;
+  const maxShown = compact ? 1 : 4;
   const visibleSelections = expanded ? selected : selected.slice(0, maxShown);
   const hiddenCount = selected.length - visibleSelections.length;
 
   return (
-    <div className="w-full space-y-3 z-[9999]">
+    <div className={compact ? "w-full z-[9999]" : "w-full space-y-3 z-[9999]"}>
       <Popover open={open} onOpenChange={setOpen} className="z-[9999]">
         <PopoverTrigger asChild>
           <Button
@@ -262,10 +269,28 @@ export default function ExcursionSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="min-h-11 h-auto w-full items-start justify-between rounded-xl px-3 py-2"
+            className={cn(
+              "w-full justify-between",
+              compact
+                ? "h-9 px-2.5 font-normal"
+                : "min-h-11 h-auto items-start rounded-xl px-3 py-2"
+            )}
           >
             <div className="flex min-w-0 flex-1 flex-wrap items-start gap-2 pr-3 text-left">
-              {selected.length > 0 ? (
+              {compact ? (
+                <span
+                  className={cn(
+                    "truncate text-sm",
+                    !selected.length && "text-muted-foreground"
+                  )}
+                >
+                  {selected.length
+                    ? `${selected.length} excursion${
+                        selected.length === 1 ? "" : "s"
+                      } selected`
+                    : "Select excursions"}
+                </span>
+              ) : selected.length > 0 ? (
                 <>
                   {visibleSelections.map((item) => (
                     <Badge
@@ -447,6 +472,12 @@ export default function ExcursionSelector({
                                           <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
                                             <CheckIcon className="mr-1 h-3 w-3" />
                                             Selected
+                                          </span>
+                                        )}
+                                        {recommendedIdSet.has(String(item.id)) && (
+                                          <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+                                            <Sparkles className="mr-1 h-3 w-3" />
+                                            Stop match
                                           </span>
                                         )}
                                       </div>

@@ -36,12 +36,12 @@ export default function QuotationWizardModernPage() {
   const standardDescriptionsState = useSelector(
     (state) => state.standardDescriptions || {}
   );
-
   const {
     cities,
     isLoadingCities,
     step,
     setStep,
+    setDayIndex,
     days,
     excursionSearch,
     setExcursionSearch,
@@ -106,6 +106,7 @@ export default function QuotationWizardModernPage() {
                   isSavingDay={isSavingDay}
                   onUpdateDay={updateDay}
                   onSaveDay={saveDayToApi}
+                  onSetDayIndex={setDayIndex}
                   onSetEditingDescription={setEditingDescription}
                   onOpenEditDialog={setOpenEditDialog}
                   onExcursionSearch={setExcursionSearch}

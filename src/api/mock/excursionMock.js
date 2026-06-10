@@ -14,6 +14,18 @@ export async function getExcursions({ search = "", page = 1, limit = 10 }) {
 }
 
 /**
+ * POST /excursions/all-no-pages
+ */
+export async function getExcursionsByCity({ search = "", city }) {
+  const { data } = await api.post("/excursions/all-no-pages", {
+    search,
+    city,
+  });
+
+  return data;
+}
+
+/**
  * PUT /excursions/create/
  */
 export async function createExcursion(payload) {

@@ -51,9 +51,9 @@ export default function StandardDescriptionSelector({
         >
 
           {selected ? (
-            <>
+            <span className="truncate">
               {selected.start_city?.name} → {selected.end_city?.name}
-            </>
+            </span>
           ) : (
             <span className="text-muted-foreground">
               Select standard description
@@ -128,4 +128,3 @@ export default function StandardDescriptionSelector({
     </Popover>
   );
 }
-

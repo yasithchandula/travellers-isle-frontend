@@ -6,6 +6,7 @@ import {
   deleteStandardDescription,
   approveStandardDescription,
   fetchDistanceApi,
+  searchStandardDescriptionsApi,
 } from "../../api/mock/standardDescriptionMock";
 
 /**
@@ -117,6 +118,34 @@ export const fetchDistance = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+export const searchStandardDescriptions = createAsyncThunk(
+  "standardDescriptions/searchMatches",
+  async (
+    { start_city = null, end_city = null, excursions = [] },
+    { rejectWithValue }
+  ) => {
+    try {
+      const result = await searchStandardDescriptionsApi({
+        start_city,
+        end_city,
+        excursions,
+      });
+
+      return {
+        exact_match: result?.exact_match || null,
+        found: result?.found === true,
+        suggestions: Array.isArray(result?.suggestions)
+          ? result.suggestions
+          : [],
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || error.message
       );
     }
   }

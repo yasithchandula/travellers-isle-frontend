@@ -20,6 +20,14 @@ export async function getStandardDescriptions({
 }
 
 /**
+ * POST /standard-descriptions/search
+ */
+export async function searchStandardDescriptionsApi(payload) {
+  const { data } = await api.post("/standard-descriptions/search", payload);
+  return data;
+}
+
+/**
  * PUT /standard-descriptions/create/
  */
 export async function createStandardDescription(payload) {

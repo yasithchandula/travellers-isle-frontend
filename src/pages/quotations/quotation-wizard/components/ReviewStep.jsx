@@ -137,7 +137,7 @@ export default function ReviewStep({
               {!!day.excursions?.length && (
                 <div className="flex flex-wrap gap-2">
                   {day.excursions.map((ex) => (
-                    <Badge key={ex.excursion_id} variant="secondary">
+                    <Badge key={ex.id ?? ex.excursion_id} variant="secondary">
                       {ex.name}
                     </Badge>
                   ))}

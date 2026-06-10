@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getExcursions,
+  getExcursionsByCity,
   createExcursion,
   updateExcursion,
 } from "../../api/mock/excursionMock";
@@ -10,7 +11,7 @@ import {
  */
 export const fetchExcursions = createAsyncThunk(
   "excursions/fetch",
-  async ({ search = "", page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ search = "", page = 1, limit = 10 } = {}, { rejectWithValue }) => {
     try {
       const res = await getExcursions({ search, page, limit });
 
@@ -23,6 +24,20 @@ export const fetchExcursions = createAsyncThunk(
       };
     } catch (e) {
       return rejectWithValue(e.response?.data || e.message);
+    }
+  }
+);
+
+export const fetchExcursionsByCity = createAsyncThunk(
+  "excursions/fetchByCity",
+  async ({ search = "", city }, { rejectWithValue }) => {
+    try {
+      const result = await getExcursionsByCity({ search, city });
+      return Array.isArray(result?.data?.data) ? result.data.data : [];
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || error.message
+      );
     }
   }
 );
