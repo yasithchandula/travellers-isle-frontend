@@ -276,10 +276,10 @@ export default function ExcursionManager() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Excursions" value={total || normalizedItems.length} icon={MapPinned} />
-        <StatCard title="Published" value={publishedCount} icon={Eye} />
-        <StatCard title="Featured" value={featuredCount} icon={Sparkles} />
-        <StatCard title="Boat Tours" value={boatCount} icon={Sailboat} />
+        <StatCard title="Total Excursions" value={total || normalizedItems.length} icon={MapPinned} loading={loading} />
+        <StatCard title="Published" value={publishedCount} icon={Eye} loading={loading} />
+        <StatCard title="Featured" value={featuredCount} icon={Sparkles} loading={loading} />
+        <StatCard title="Boat Tours" value={boatCount} icon={Sailboat} loading={loading} />
       </div>
 
       <ManagerToolbar
@@ -332,7 +332,7 @@ export default function ExcursionManager() {
             </div>
           </div>
         ) : (
-          <CardGrid>
+          <CardGrid loading={loading} skeletonVariant="media">
             {filtered.map((item) => {
               const PricingIcon = getPricingIcon(item.pricingType);
 
@@ -483,6 +483,8 @@ export default function ExcursionManager() {
         )
       ) : (
         <EntityTable
+          loading={loading}
+          columns={6}
           header={
             <TableRow>
               <TableHead>Excursion</TableHead>

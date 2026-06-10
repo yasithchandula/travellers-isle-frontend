@@ -7,6 +7,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
 import CustomerForm from "../../components/forms/CustomerForm";
+import { Skeleton } from "@/components/common/LoadingStates";
 
 import {
   fetchCustomers,
@@ -86,7 +87,25 @@ export default function CustomerManager() {
     </thead>
 
     <tbody>
-      {items.map((c) => (
+      {loading ? (
+        Array.from({ length: 6 }).map((_, rowIndex) => (
+          <tr key={rowIndex} className="border-b">
+            {Array.from({ length: 5 }).map((__, columnIndex) => (
+              <td key={columnIndex} className="p-3">
+                <Skeleton
+                  className={
+                    columnIndex === 0
+                      ? "h-4 w-28"
+                      : columnIndex === 4
+                        ? "h-8 w-32"
+                        : "h-4 w-20"
+                  }
+                />
+              </td>
+            ))}
+          </tr>
+        ))
+      ) : items.map((c) => (
         <tr
           key={c.id}
           className="border-b hover:bg-gray-50 transition"

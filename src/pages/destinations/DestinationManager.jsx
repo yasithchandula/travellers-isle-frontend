@@ -153,18 +153,21 @@ export default function DestinationManager() {
           title="Total Cities"
           value={total}
           icon={MapPinned}
+          loading={loading}
         />
 
         <StatCard
           title="Active"
           value={items.filter((c) => c.status).length}
           icon={CheckCircle}
+          loading={loading}
         />
 
         <StatCard
           title="Destinations"
           value={items.filter((c) => c.isDestination).length}
           icon={MapPinned}
+          loading={loading}
         />
 
       </div>
@@ -190,7 +193,7 @@ export default function DestinationManager() {
       {/* VIEW SWITCH */}
 
       {view === "card" ? (
-        <CardGrid>
+        <CardGrid loading={loading} skeletonVariant="compact">
           {items.map((c, index) => (
             <div
               key={c.id}
@@ -269,6 +272,8 @@ export default function DestinationManager() {
       ) : (
 
         <EntityTable
+          loading={loading}
+          columns={6}
 
           header={
             <TableRow>
@@ -284,14 +289,7 @@ export default function DestinationManager() {
           }
 
           body={
-
-            loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-10">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : items.map((c) => (
+            items.map((c) => (
 
               <TableRow key={c.id}>
 

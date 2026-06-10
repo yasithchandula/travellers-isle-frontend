@@ -188,18 +188,21 @@ export default function InquiryList() {
           title="Total"
           value={total}
           icon={FileText}
+          loading={loading}
         />
 
         <StatCard
           title="Assigned"
           value={items.filter(i => i.status === "ASSIGNED").length}
           icon={Users}
+          loading={loading}
         />
 
         <StatCard
           title="Converted"
           value={items.filter(i => i.status === "CONVERTED").length}
           icon={CheckCircle}
+          loading={loading}
         />
 
       </div>
@@ -230,7 +233,7 @@ export default function InquiryList() {
 
       {view === "card" ? (
 
-        <CardGrid>
+        <CardGrid loading={loading} skeletonVariant="compact">
 
           {items.map((i) => (
 
@@ -267,6 +270,8 @@ export default function InquiryList() {
       ) : (
 
         <EntityTable
+          loading={loading}
+          columns={7}
 
           header={
             <TableRow>

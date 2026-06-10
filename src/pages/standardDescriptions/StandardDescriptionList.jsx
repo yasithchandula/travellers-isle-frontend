@@ -208,18 +208,21 @@ export default function StandardDescriptionManager() {
           title="Total"
           value={total}
           icon={FileText}
+          loading={loading}
         />
 
         <StatCard
           title="Approved"
           value={items.filter((i) => i.status === "APPROVED").length}
           icon={CheckCircle}
+          loading={loading}
         />
 
         <StatCard
           title="Routes"
           value={items.length}
           icon={MapPinned}
+          loading={loading}
         />
 
       </div>
@@ -248,7 +251,7 @@ export default function StandardDescriptionManager() {
       {/* VIEW */}
 
       {view === "card" ? (
-        <CardGrid>
+        <CardGrid loading={loading} skeletonVariant="media">
           {items.map((d, index) => {
             const image =
               d.featured_image || d.gallery?.[0] || "/placeholder.jpg";
@@ -381,6 +384,8 @@ export default function StandardDescriptionManager() {
       ) : (
 
         <EntityTable
+          loading={loading}
+          columns={5}
 
           header={
             <TableRow>

@@ -3,6 +3,7 @@ import { Search, Grid3X3, List, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { InlineLoading } from "@/components/common/LoadingStates";
 
 import {
   Card,
@@ -112,7 +113,11 @@ export default function ManagerToolbar({
         {/* RESULT INFO */}
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span className="font-medium text-foreground">
-            {loading ? "Loading..." : `${resultCount} results`}
+            {loading ? (
+              <InlineLoading label="Updating results" />
+            ) : (
+              `${resultCount} results`
+            )}
           </span>
 
           {tagFilter !== "all" && (

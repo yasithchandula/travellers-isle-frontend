@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader2, MoreHorizontal, Users, Shield, Briefcase } from "lucide-react";
+import { MoreHorizontal, Users, Shield, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 
 import UserForm from "../../components/forms/UserForm";
@@ -202,24 +202,28 @@ export default function UserManagement() {
           title="Total Users"
           value={items.length}
           icon={Users}
+          loading={loading}
         />
 
         <StatCard
           title="Admins"
           value={items.filter((u) => u.role === "ADMIN").length}
           icon={Shield}
+          loading={loading}
         />
 
         <StatCard
           title="Front Desk"
           value={items.filter((u) => u.role === "FRONT_DESK").length}
           icon={Users}
+          loading={loading}
         />
 
         <StatCard
           title="Executives"
           value={items.filter((u) => u.role === "EXECUTIVE").length}
           icon={Briefcase}
+          loading={loading}
         />
       </div>
 
@@ -285,7 +289,7 @@ export default function UserManagement() {
       {/* VIEW SWITCH */}
 
       {view === "card" ? (
-        <CardGrid>
+        <CardGrid loading={loading} skeletonVariant="compact">
           {paginatedUsers.map((u, index) => (
             <Card
               key={u.id}
@@ -357,6 +361,8 @@ export default function UserManagement() {
         </CardGrid>
       ) : (
         <EntityTable
+          loading={loading}
+          columns={6}
           header={
             <TableRow>
               <TableHead>ID</TableHead>
@@ -368,13 +374,7 @@ export default function UserManagement() {
             </TableRow>
           }
           body={
-            loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-                </TableCell>
-              </TableRow>
-            ) : paginatedUsers.map((u) => (
+            paginatedUsers.map((u) => (
               <TableRow key={u.id}>
                 <TableCell>{u.id}</TableCell>
 

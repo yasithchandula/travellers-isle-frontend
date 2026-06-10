@@ -194,18 +194,21 @@ export default function HotelManager() {
           title="Total Hotels"
           value={items.length}
           icon={Building2}
+          loading={loading}
         />
 
         <StatCard
           title="Active Hotels"
           value={items.filter((h) => h.is_active).length}
           icon={CheckCircle}
+          loading={loading}
         />
 
         <StatCard
           title="Cities"
           value={cities.length}
           icon={MapPinned}
+          loading={loading}
         />
 
       </div>
@@ -237,7 +240,7 @@ export default function HotelManager() {
 
       {view === "card" ? (
 
-        <CardGrid>
+        <CardGrid loading={loading} skeletonVariant="media">
           {paginatedHotels.map((h, index) => (
             <Card
               key={h.id}
@@ -322,6 +325,8 @@ export default function HotelManager() {
       ) : (
 
         <EntityTable
+          loading={loading}
+          columns={6}
 
           header={
             <TableRow>

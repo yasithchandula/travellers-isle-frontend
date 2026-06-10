@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Mail,
@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { DashboardSkeleton } from "@/components/common/LoadingStates";
 
 import { fetchUsers } from "@/app/slices/userSlice";
 import { fetchCities } from "@/app/slices/citySlice";
@@ -613,6 +614,7 @@ function OperationsSummaryCard({
 
 export default function EnterpriseDashboardPage() {
   const dispatch = useDispatch();
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const usersState = useSelector((s) => s.users || {});
   const citiesState = useSelector((s) => s.cities || {});
@@ -631,12 +633,22 @@ export default function EnterpriseDashboardPage() {
   const standardDescriptions = standardDescriptionsState.items || [];
 
   useEffect(() => {
-    dispatch(fetchUsers());
-    dispatch(fetchCities({ page: 1, limit: 50 }));
-    dispatch(fetchHotels({ page: 1, limit: 50 }));
-    dispatch(fetchExcursions({ page: 1, limit: 50 }));
-    dispatch(fetchInquiries({ page: 1, limit: 50 }));
-    dispatch(fetchStandardDescriptions({ page: 1, limit: 50 }));
+    let active = true;
+
+    Promise.allSettled([
+      dispatch(fetchUsers()),
+      dispatch(fetchCities({ page: 1, limit: 50 })),
+      dispatch(fetchHotels({ page: 1, limit: 50 })),
+      dispatch(fetchExcursions({ page: 1, limit: 50 })),
+      dispatch(fetchInquiries({ page: 1, limit: 50 })),
+      dispatch(fetchStandardDescriptions({ page: 1, limit: 50 })),
+    ]).finally(() => {
+      if (active) setInitialLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
   }, [dispatch]);
 
   const cityStats = useMemo(() => {
@@ -750,6 +762,10 @@ export default function EnterpriseDashboardPage() {
         </div>
       </div>
 
+      {initialLoading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
       {/* TOP KPIS */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <EnterpriseStatCard
@@ -888,6 +904,8 @@ export default function EnterpriseDashboardPage() {
           subtle="Aggregate readiness across core modules"
         />
       </div>
+        </>
+      )}
     </div>
   );
 }
