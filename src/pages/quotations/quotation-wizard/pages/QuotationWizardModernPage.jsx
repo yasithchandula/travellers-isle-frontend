@@ -17,9 +17,7 @@ import {
 import StandardDescriptionForm from "@/components/forms/StandardDescriptionForm";
 
 import ModernStepper from "../components/ModernStepper";
-import WizardHeader from "../components/WizardHeader";
 import ScheduleTableStep from "../components/ScheduleTableStep";
-import ItineraryStep from "../components/ItineraryStep";
 import ReviewStep from "../components/ReviewStep";
 import AccommodationTableStep from "../components/AccommodationTableStep";
 
@@ -44,7 +42,6 @@ export default function QuotationWizardModernPage() {
     isLoadingCities,
     step,
     setStep,
-    dayIndex,
     days,
     excursionSearch,
     setExcursionSearch,
@@ -57,13 +54,11 @@ export default function QuotationWizardModernPage() {
     formattedNotes,
     totalExcursions,
     totalDescriptions,
-    currentDay,
     standardDescriptions,
     updateDay,
+    saveDayToApi,
     nextStep,
     prevStep,
-    nextDay,
-    prevDay,
     handleSaveQuotation,
     handleCreateFromEdit,
     setStandardDescriptionSearchAction,
@@ -82,6 +77,9 @@ export default function QuotationWizardModernPage() {
         steps={QUOTATION_WIZARD_STEPS}
         currentStep={step}
         onStepChange={setStep}
+        daysCount={days.length}
+        totalExcursions={totalExcursions}
+        totalDescriptions={totalDescriptions}
       />
 
       {/* SCROLL CONTAINER */}
@@ -99,44 +97,32 @@ export default function QuotationWizardModernPage() {
                   days={days}
                   cities={cities}
                   excursions={excursions}
-                  isLoadingCities={isLoadingCities}
-                  onUpdateDay={updateDay}
-                  onExcursionSearch={setExcursionSearch}
-                  excursionSearch={excursionSearch}
-                />
-              )}
-
-              {step === 1 && currentDay && (
-                <ItineraryStep
-                  day={currentDay}
-                  dayIndex={dayIndex}
-                  daysLength={days.length}
-                  cities={cities}
-                  excursions={excursions}
                   standardDescriptions={standardDescriptions}
                   dispatch={dispatch}
                   setStandardDescriptionSearchAction={
                     setStandardDescriptionSearchAction
                   }
+                  isLoadingCities={isLoadingCities}
+                  isSavingDay={isSavingDay}
                   onUpdateDay={updateDay}
+                  onSaveDay={saveDayToApi}
                   onSetEditingDescription={setEditingDescription}
                   onOpenEditDialog={setOpenEditDialog}
                   onExcursionSearch={setExcursionSearch}
-                  onPrevDay={prevDay}
-                  onNextDay={nextDay}
-                  isSavingDay={isSavingDay}
+                  excursionSearch={excursionSearch}
                 />
               )}
 
-              {step === 2 && (
+              {step === 1 && (
                 <ReviewStep
                   formattedNotes={formattedNotes}
                   quotationShell={quotationShell}
                   cities={cities}
+                  days={days}
                 />
               )}
 
-              {step === 3 && (
+              {step === 2 && (
                 <AccommodationTableStep
                   days={days}
                   cities={cities}
@@ -145,7 +131,7 @@ export default function QuotationWizardModernPage() {
                 />
               )}
 
-              {step === 4 && id && (
+              {step === 3 && id && (
                 <FinalPreviewStep quotationId={id} />
               )}
             </CardContent>
@@ -162,9 +148,20 @@ export default function QuotationWizardModernPage() {
               Back
             </Button>
 
-            {step < 4 ? (
-              <Button onClick={nextStep} className="min-w-[140px]">
-                Continue
+            {step < QUOTATION_WIZARD_STEPS.length - 1 ? (
+              <Button
+                onClick={nextStep}
+                className="min-w-[140px]"
+                disabled={isSavingDay || isSavingQuotation}
+              >
+                {isSavingDay ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  "Continue"
+                )}
               </Button>
             ) : (
               <Button

@@ -1,6 +1,5 @@
 export const QUOTATION_WIZARD_STEPS = [
-  { id: "schedule", label: "Schedule" },
-  { id: "itinerary", label: "Itinerary" },
+  { id: "schedule-itinerary", label: "Schedule & Itinerary" },
   { id: "review", label: "Review" },
   { id: "accommodation", label: "Accommodation" },
   { id: "preview", label: "Preview" },

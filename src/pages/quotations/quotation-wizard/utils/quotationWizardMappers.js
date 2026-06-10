@@ -10,7 +10,7 @@ export function mapQuotationShellToDays(quotationShell) {
 
   const apiDays = quotationShell.itinerary || [];
 
-  return dates.map((date, index) => {
+  const mappedDays = dates.map((date, index) => {
     const apiDay = apiDays[index] || {};
 
     return {
@@ -34,6 +34,16 @@ export function mapQuotationShellToDays(quotationShell) {
       note: apiDay.note || "",
     };
   });
+
+  return mappedDays.map((day, index) => {
+    if (index === 0) return day;
+
+    return {
+      ...day,
+      starting_city_id:
+        mappedDays[index - 1]?.destination_city_id || day.starting_city_id,
+    };
+  });
 }
 
 export function buildDayUpdatePayload(dayData) {
@@ -49,7 +59,8 @@ export function buildDayUpdatePayload(dayData) {
       ? Number(dayData.destination_city_id)
       : null,
     stop_ids: (dayData.stop_ids || []).map((id) => Number(id)),
-    standard_description_id: dayData.standard_description?.id || null,
+    standard_description_id:
+      dayData.standard_description?.id || dayData.standard_description_id || null,
     note: dayData.note || "",
   };
 }

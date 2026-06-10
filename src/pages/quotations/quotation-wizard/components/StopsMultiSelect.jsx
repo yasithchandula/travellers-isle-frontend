@@ -51,7 +51,9 @@ export default function StopsMultiSelect({
 
               <CommandGroup>
                 {cities.map((city) => {
-                  const selected = selectedIds?.includes(city.id);
+                  const selected = selectedIds
+                    ?.map(String)
+                    .includes(String(city.id));
 
                   return (
                     <CommandItem
@@ -60,8 +62,8 @@ export default function StopsMultiSelect({
                       onSelect={() => {
                         const current = selectedIds || [];
                         const updated = selected
-                          ? current.filter((id) => id !== city.id)
-                          : [...current, city.id];
+                          ? current.filter((id) => String(id) !== String(city.id))
+                          : [...current, String(city.id)];
 
                         onChange(updated);
                       }}
@@ -85,7 +87,7 @@ export default function StopsMultiSelect({
       {selectedIds?.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2">
           {selectedIds.map((id) => {
-            const city = cities.find((c) => c.id === id);
+            const city = cities.find((c) => String(c.id) === String(id));
 
             return (
               <Badge key={id} variant="secondary">

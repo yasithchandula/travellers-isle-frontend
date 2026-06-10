@@ -11,8 +11,22 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { BedDouble, MapPin, Wallet, Calendar } from "lucide-react";
 
-export default function ReviewStep({ formattedNotes, quotationShell, cities }) {
-  const days = quotationShell?.itinerary || [];
+export default function ReviewStep({
+  formattedNotes,
+  quotationShell,
+  cities,
+  days: wizardDays = [],
+}) {
+  const days = useMemo(() => {
+    if (!wizardDays.length) return quotationShell?.itinerary || [];
+
+    return wizardDays.map((day) => ({
+      ...day,
+      start_city_id: day.start_city_id ?? day.starting_city_id,
+      end_city_id: day.end_city_id ?? day.destination_city_id,
+      options: day.options || [],
+    }));
+  }, [quotationShell, wizardDays]);
 
   /** =========================
    * CALCULATIONS

@@ -19,13 +19,13 @@ import {
   mapQuotationShellToDays,
   buildDayUpdatePayload,
 } from "../utils/quotationWizardMappers";
-import { Navigate, redirect, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { QUOTATION_WIZARD_STEPS } from "../utils/quotationWizardConstants";
 
 export default function useQuotationWizard({
   dispatch,
   id,
   quotationShell,
-  excursions,
   standardDescriptionsState,
 }) {
   const { items: standardDescriptions = [], search: descriptionSearch = "" } =
@@ -135,8 +135,39 @@ export default function useQuotationWizard({
     }
   }
 
-  function nextStep() {
-    setStep((prev) => Math.min(4, prev + 1));
+  async function saveAllDaysToApi() {
+    const daysToSave = days.filter((day) => day?.id);
+
+    if (!daysToSave.length) return true;
+
+    try {
+      setIsSavingDay(true);
+
+      for (const day of daysToSave) {
+        const payload = buildDayUpdatePayload(day);
+        await dispatch(updateQuotationDay(payload)).unwrap();
+      }
+
+      toast.success("Schedule and itinerary saved");
+      return true;
+    } catch (error) {
+      console.error("Failed to update quotation days:", error);
+      toast.error("Failed to save itinerary");
+      return false;
+    } finally {
+      setIsSavingDay(false);
+    }
+  }
+
+  async function nextStep() {
+    if (step === 0) {
+      const ok = await saveAllDaysToApi();
+      if (!ok) return;
+    }
+
+    setStep((prev) =>
+      Math.min(QUOTATION_WIZARD_STEPS.length - 1, prev + 1)
+    );
   }
 
   function prevStep() {
@@ -235,6 +266,7 @@ export default function useQuotationWizard({
     descriptionSearch,
     updateDay,
     saveDayToApi,
+    saveAllDaysToApi,
     nextStep,
     prevStep,
     nextDay,
