@@ -532,9 +532,9 @@ export default function StandardDescriptionManager() {
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
 
-          <DialogHeader className="border-b px-6 py-4">
+          <DialogHeader className="border-b px-5 py-3">
             <DialogTitle>
-              <div className="px-1 pt-2">
+              <div className="px-1">
 
                 <StandardDescriptionHeader
                   initial={editItem}
@@ -546,7 +546,7 @@ export default function StandardDescriptionManager() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-5" ref={scrollRef}>
+          <div className="flex-1 overflow-y-auto px-5 py-4" ref={scrollRef}>
 
             <StandardDescriptionForm
               key={editItem?.id || "new"}
@@ -557,7 +557,7 @@ export default function StandardDescriptionManager() {
 
           </div>
 
-          <div className="flex justify-end gap-2 border-t bg-card px-6 py-4">
+          <div className="flex justify-end gap-2 border-t bg-card px-5 py-3">
 
             <Button
               variant="outline"

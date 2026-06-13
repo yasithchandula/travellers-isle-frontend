@@ -145,10 +145,6 @@ export default function ExcursionManager() {
     dispatch(fetchExcursions({ search, page, limit }));
   }, [dispatch, search, page, limit]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, limit]);
-
   const normalizedItems = useMemo(() => {
     return items.map((item) => {
       const derivedTags = [
@@ -286,7 +282,10 @@ export default function ExcursionManager() {
         title="Browse excursions"
         description="Search, filter, and switch between a premium card layout and a clean table view."
         search={search}
-        onSearchChange={(value) => dispatch(setExcursionSearch(value))}
+        onSearchChange={(value) => {
+          setPage(1);
+          dispatch(setExcursionSearch(value));
+        }}
         tagFilter={tagFilter}
         onTagChange={setTagFilter}
         tags={allTags}
@@ -574,7 +573,7 @@ export default function ExcursionManager() {
         <DialogContent className="flex h-[90vh] max-w-6xl flex-col overflow-hidden rounded-lg border bg-card p-0 shadow-xl">
 
           {/* HEADER */}
-          <div className="shrink-0 border-b bg-card px-6 py-4">
+          <div className="shrink-0 border-b bg-card px-5 py-3">
             <DialogTitle className="text-lg font-semibold">
               {editItem ? "Edit Excursion" : "Create Excursion"}
             </DialogTitle>
@@ -585,8 +584,9 @@ export default function ExcursionManager() {
 
           {/* SCROLLABLE BODY */}
           <div className="flex-1 overflow-y-auto relative">
-            <div className="px-6 py-6">
+            <div className="px-5 py-4">
               <ExcursionForm
+                key={editItem?.id || "new"}
                 initial={editItem}
                 cities={cities}
                 onSubmit={handleSubmit}
@@ -597,7 +597,7 @@ export default function ExcursionManager() {
           </div>
 
           {/* FOOTER */}
-          <div className="flex shrink-0 justify-end gap-2 border-t bg-card px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t bg-card px-5 py-3">
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>

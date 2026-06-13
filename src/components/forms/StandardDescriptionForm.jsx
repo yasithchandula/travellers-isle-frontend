@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import {
   ImagePlus,
-  MapPin,
   Route,
   Clock3,
   Trash2,
@@ -17,8 +16,8 @@ import {
   Mountain,
   CheckCircle2,
   Loader2,
-  GalleryHorizontal,
   Car,
+  WandSparkles,
 } from "lucide-react";
 
 import RichTextEditor from "../common/RichTextEditor";
@@ -35,7 +34,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -44,6 +42,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const MAX_GALLERY_IMAGE_SIZE = 3 * 1024 * 1024;
+const EMPTY_STANDARD_DESCRIPTION_FORM = {
+  title: "",
+  start_city_id: "",
+  end_city_id: "",
+  stops: [],
+  starting_paragraph: "[]",
+  description: "",
+  tags: [],
+  gallery: [],
+  featuredPreview: null,
+  mileage: "",
+  travel_time_minutes: "",
+};
+
 export default function StandardDescriptionForm({
   initial,
   onSubmit,
@@ -51,10 +64,10 @@ export default function StandardDescriptionForm({
 }) {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
-  const titleRef = useRef(null);
 
   const [cities, setCities] = useState([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isTitleManual, setIsTitleManual] = useState(Boolean(initial?.title));
   const [stopSelect, setStopSelect] = useState("");
   const [tagSelect, setTagSelect] = useState("");
 
@@ -95,8 +108,8 @@ export default function StandardDescriptionForm({
         const formatted = allCities.map((c) => ({
           id: String(c.id),
           city: c.city,
-          is_stop: c.is_stop,
-          is_destination: c.is_destination,
+          is_stop: c.is_stop ?? c.isStop,
+          is_destination: c.is_destination ?? c.isDestination,
         }));
 
         setCities(formatted);
@@ -116,34 +129,10 @@ export default function StandardDescriptionForm({
     dispatch(fetchExcursions({ search: excursionSearch }));
   }, [excursionSearch, dispatch]);
 
-  useEffect(() => {
-    const el = titleRef.current;
-
-    if (el) {
-      requestAnimationFrame(() => {
-        el.focus({ preventScroll: true }); // ✅ KEY FIX
-      });
-    }
-  }, [initial]);
-
   /* =====================
      FORM STATE
   ===================== */
-  const emptyForm = {
-    title: "",
-    start_city_id: "",
-    end_city_id: "",
-    stops: [],
-    starting_paragraph: "[]",
-    description: "",
-    tags: [],
-    gallery: [],
-    featuredPreview: null,
-    mileage: "",
-    travel_time_minutes: "",
-  };
-
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(EMPTY_STANDARD_DESCRIPTION_FORM);
   const [errors, setErrors] = useState({});
 
   /* =====================
@@ -151,9 +140,10 @@ export default function StandardDescriptionForm({
   ===================== */
   useEffect(() => {
     if (!initial) {
-      setForm(emptyForm);
+      setForm(EMPTY_STANDARD_DESCRIPTION_FORM);
       setSelectedExcursions([]);
       setErrors({});
+      setIsTitleManual(false);
       return;
     }
 
@@ -212,6 +202,7 @@ export default function StandardDescriptionForm({
     } else {
       setSelectedExcursions([]);
     }
+    setIsTitleManual(Boolean(initial.title));
     setErrors({});
   }, [initial]);
 
@@ -219,6 +210,49 @@ export default function StandardDescriptionForm({
     setForm((f) => ({ ...f, [field]: value }));
     setErrors((e) => ({ ...e, [field]: null }));
   }
+
+  function updateRouteEndpoint(field, value) {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      stops: current.stops.filter((stopId) => String(stopId) !== String(value)),
+    }));
+    setErrors((current) => ({ ...current, [field]: null }));
+  }
+
+  const cityNames = useMemo(
+    () => new Map(cities.map((city) => [String(city.id), city.city])),
+    [cities]
+  );
+
+  function getCityName(id) {
+    return cityNames.get(String(id)) || "";
+  }
+
+  const generatedTitle = useMemo(() => {
+    const start = cityNames.get(String(form.start_city_id)) || "";
+    const destination = cityNames.get(String(form.end_city_id)) || "";
+    const stops = form.stops
+      .map((id) => cityNames.get(String(id)) || "")
+      .filter(Boolean);
+
+    if (!start || !destination) return "";
+
+    return stops.length
+      ? `${start} to ${destination} via ${stops.join(", ")}`
+      : `${start} to ${destination}`;
+  }, [cityNames, form.end_city_id, form.start_city_id, form.stops]);
+
+  useEffect(() => {
+    if (isTitleManual || !generatedTitle) return;
+
+    setForm((current) =>
+      current.title === generatedTitle
+        ? current
+        : { ...current, title: generatedTitle }
+    );
+    setErrors((current) => ({ ...current, title: null }));
+  }, [generatedTitle, isTitleManual]);
 
   /* =====================
      VALIDATION
@@ -265,7 +299,14 @@ export default function StandardDescriptionForm({
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    files.forEach((file) => {
+    const validFiles = files.filter((file) => {
+      if (file.size <= MAX_GALLERY_IMAGE_SIZE) return true;
+
+      toast.error(`${file.name} must be 3 MB or smaller`);
+      return false;
+    });
+
+    validFiles.forEach((file) => {
       const preview = URL.createObjectURL(file);
 
       setForm((prev) => ({
@@ -407,11 +448,6 @@ export default function StandardDescriptionForm({
     );
   }
 
-  function getCityName(id) {
-    const city = cities.find((c) => String(c.id) === String(id));
-    return city?.city || "";
-  }
-
   async function handleFetchDistance() {
     try {
       if (!form.start_city_id || !form.end_city_id) {
@@ -448,50 +484,192 @@ export default function StandardDescriptionForm({
     }
   }
 
-  const stopCities = (cities || []).filter((c) => c.is_stop);
-  const totalImages = form.gallery.length;
-  const uploadedImages = form.gallery.filter((g) => g.status === "done").length;
+  const stopCities = (cities || []).filter(
+    (city) =>
+      city.is_stop &&
+      String(city.id) !== String(form.start_city_id) &&
+      String(city.id) !== String(form.end_city_id)
+  );
 
   return (
     <form
       id="standard-description-form"
       onSubmit={handleSubmit}
-      className="space-y-6"
+      className="space-y-4"
     >
 
-      {/* Basic Info */}
+      {/* Route and title */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4" />
-            Basic Information
+            <Route className="h-4 w-4" />
+            Route & Title
           </CardTitle>
           <CardDescription>
-            Define the title and core identity of this standard description.
+            Set the route first. The title follows the selected cities and remains editable.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-2">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title / Name</Label>
-            <Input
-              id="title"
-              value={form.title}
-              onChange={(e) => updateField("title", e.target.value)}
-              placeholder="e.g. Scenic South Coast Journey"
-              className="h-11"
-              ref={titleRef}
-            />
-            {errors.title && (
-              <p className="text-xs font-medium text-destructive">{errors.title}</p>
+        <CardContent className="space-y-4 p-4 pt-0">
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label>Starting City</Label>
+              <Select
+                key={`start-${form.start_city_id}-${cities.length}`}
+                value={form.start_city_id || undefined}
+                onValueChange={(value) => updateRouteEndpoint("start_city_id", value)}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue
+                    placeholder={isLoadingCities ? "Loading cities..." : "Select starting city"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem
+                      key={city.id}
+                      value={String(city.id)}
+                      disabled={String(city.id) === String(form.end_city_id)}
+                    >
+                      {city.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.start_city_id && (
+                <p className="text-xs font-medium text-destructive">
+                  {errors.start_city_id}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Destination City</Label>
+              <Select
+                key={`end-${form.end_city_id}-${cities.length}`}
+                value={form.end_city_id || undefined}
+                onValueChange={(value) => updateRouteEndpoint("end_city_id", value)}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue
+                    placeholder={isLoadingCities ? "Loading cities..." : "Select destination city"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem
+                      key={city.id}
+                      value={String(city.id)}
+                      disabled={String(city.id) === String(form.start_city_id)}
+                    >
+                      {city.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.end_city_id && (
+                <p className="text-xs font-medium text-destructive">
+                  {errors.end_city_id}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Intermediate Stops</Label>
+              <Select
+                value={stopSelect || undefined}
+                onValueChange={(value) => {
+                  setStopSelect("");
+                  if (value && !form.stops.includes(value)) {
+                    updateField("stops", [...form.stops, value]);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Add a stop" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stopCities.map((city) => (
+                    <SelectItem key={city.id} value={String(city.id)}>
+                      {city.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex min-h-9 flex-wrap items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2">
+            <Badge variant="outline" className="rounded-md">
+              {getCityName(form.start_city_id) || "Start"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">→</span>
+            {form.stops.map((id) => (
+              <Badge key={id} variant="secondary" className="gap-1 rounded-md">
+                {getCityName(id) || id}
+                <button
+                  type="button"
+                  onClick={() => removeStop(id)}
+                  className="ml-1 text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove ${getCityName(id) || "stop"}`}
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+            {form.stops.length > 0 && (
+              <span className="text-xs text-muted-foreground">→</span>
             )}
+            <Badge variant="outline" className="rounded-md">
+              {getCityName(form.end_city_id) || "Destination"}
+            </Badge>
+          </div>
+
+          <div className="grid gap-2 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="title">Title</Label>
+                {!isTitleManual && (
+                  <Badge variant="secondary" className="rounded-md text-[10px]">
+                    Auto-generated
+                  </Badge>
+                )}
+              </div>
+              <Input
+                id="title"
+                value={form.title}
+                onChange={(e) => {
+                  setIsTitleManual(true);
+                  updateField("title", e.target.value);
+                }}
+                placeholder="Select a start and destination to generate a title"
+                className="h-10"
+              />
+              {errors.title && (
+                <p className="text-xs font-medium text-destructive">{errors.title}</p>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10"
+              disabled={!generatedTitle}
+              onClick={() => {
+                setIsTitleManual(false);
+                updateField("title", generatedTitle);
+              }}
+            >
+              <WandSparkles className="mr-2 h-4 w-4" />
+              Use Route Title
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Gallery */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <ImagePlus className="h-4 w-4" />
             Gallery Management
@@ -501,9 +679,9 @@ export default function StandardDescriptionForm({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4 p-4 pt-0">
           <div
-            className="rounded-2xl border border-dashed bg-muted/30 p-6 transition hover:bg-muted/40"
+            className="cursor-pointer rounded-lg border border-dashed bg-muted/30 p-4 transition hover:bg-muted/40"
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -515,21 +693,23 @@ export default function StandardDescriptionForm({
               className="hidden"
             />
 
-            <div className="flex flex-col items-center justify-center gap-3 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border bg-background shadow-sm">
-                <UploadCloud className="h-6 w-6 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:justify-between sm:text-left">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background shadow-sm">
+                  <UploadCloud className="h-5 w-5 text-muted-foreground" />
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">
+                    Upload gallery images
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Multiple images supported · Maximum 3 MB per image
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  Click to upload gallery images
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Supports multiple image uploads. First image becomes featured until changed.
-                </p>
-              </div>
-
-              <Button type="button" variant="secondary" className="rounded-xl">
+              <Button type="button" variant="secondary">
                 Choose Images
               </Button>
             </div>
@@ -548,7 +728,7 @@ export default function StandardDescriptionForm({
                 return (
                   <div
                     key={i}
-                    className={`group overflow-hidden rounded-2xl border bg-background shadow-sm transition ${isFeatured ? "ring-2 ring-primary/30" : "hover:shadow-md"
+                    className={`group overflow-hidden rounded-lg border bg-background shadow-sm transition ${isFeatured ? "ring-2 ring-primary/30" : "hover:shadow-md"
                       }`}
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -627,155 +807,9 @@ export default function StandardDescriptionForm({
         </CardContent>
       </Card>
 
-      {/* Route */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Route className="h-4 w-4" />
-            Route Configuration
-          </CardTitle>
-          <CardDescription>
-            Select the origin, destination, and intermediate stops for this itinerary path.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Starting City</Label>
-              <Select
-                key={`start-${form.start_city_id}-${cities.length}`}
-                value={form.start_city_id || undefined}
-                onValueChange={(v) => updateField("start_city_id", v)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue
-                    placeholder={isLoadingCities ? "Loading cities..." : "Select starting city"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.start_city_id && (
-                <p className="text-xs font-medium text-destructive">
-                  {errors.start_city_id}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Destination City</Label>
-              <Select
-                key={`end-${form.end_city_id}-${cities.length}`}
-                value={form.end_city_id || undefined}
-                onValueChange={(v) => updateField("end_city_id", v)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue
-                    placeholder={isLoadingCities ? "Loading cities..." : "Select destination city"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.end_city_id && (
-                <p className="text-xs font-medium text-destructive">
-                  {errors.end_city_id}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <div>
-              <Label>Intermediate Stops</Label>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Add optional stop points between the start and destination cities.
-              </p>
-            </div>
-
-            <Select
-              value={stopSelect || undefined}
-              onValueChange={(val) => {
-                setStopSelect("");
-                if (!val) return;
-                if (!form.stops.includes(val)) {
-                  updateField("stops", [...form.stops, val]);
-                }
-              }}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select city to add as a stop" />
-              </SelectTrigger>
-              <SelectContent>
-                {stopCities.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {form.stops.length ? (
-                form.stops.map((id, index) => {
-                  const city = cities.find((c) => String(c.id) === String(id));
-
-                  return (
-                    <div key={id} className="flex items-center gap-2">
-                      {index > 0 && (
-                        <div className="rounded-full border bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground">
-                          → Route
-                        </div>
-                      )}
-
-                      <div className="inline-flex items-center gap-2 rounded-2xl border bg-background px-3 py-2 shadow-sm">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <MapPin className="h-3.5 w-3.5" />
-                        </div>
-
-                        <span className="text-sm font-medium">
-                          {city?.city || id}
-                        </span>
-
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
-                          onClick={() => removeStop(id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="w-full rounded-2xl border border-dashed bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
-                  No intermediate stops added yet
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Distance */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Car className="h-4 w-4" />
             Distance & Travel Details
@@ -785,7 +819,7 @@ export default function StandardDescriptionForm({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4 p-4 pt-0">
           <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
             <div className="space-y-2">
               <Label>Mileage (KM)</Label>
@@ -793,7 +827,7 @@ export default function StandardDescriptionForm({
                 value={form.mileage}
                 onChange={(e) => updateField("mileage", e.target.value)}
                 placeholder="Auto or manual"
-                className="h-11"
+                className="h-10"
               />
             </div>
 
@@ -803,7 +837,7 @@ export default function StandardDescriptionForm({
                 value={form.travel_time_minutes}
                 onChange={(e) => updateField("travel_time_minutes", e.target.value)}
                 placeholder="Auto calculated"
-                className="h-11"
+                className="h-10"
               />
             </div>
 
@@ -812,7 +846,7 @@ export default function StandardDescriptionForm({
                 type="button"
                 onClick={handleFetchDistance}
                 disabled={distanceLoading}
-                className="h-11 w-full rounded-xl lg:w-auto"
+                className="h-10 w-full lg:w-auto"
               >
                 {distanceLoading ? (
                   <>
@@ -854,7 +888,7 @@ export default function StandardDescriptionForm({
 
       {/* Excursions */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Mountain className="h-4 w-4" />
             Linked Excursions
@@ -864,7 +898,7 @@ export default function StandardDescriptionForm({
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-4 pt-0">
           <ExcursionSelector
             items={excursions}
             selected={selectedExcursions}
@@ -876,7 +910,7 @@ export default function StandardDescriptionForm({
 
       {/* Content */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4" />
             Content Editor
@@ -886,7 +920,7 @@ export default function StandardDescriptionForm({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4 pt-0">
           <div className="space-y-2">
             <Label>Description</Label>
             <div className="rounded-2xl border bg-background p-2 shadow-sm">
@@ -906,7 +940,7 @@ export default function StandardDescriptionForm({
 
       {/* Tags */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Tag className="h-4 w-4" />
             Audience Tags
@@ -916,7 +950,7 @@ export default function StandardDescriptionForm({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4 pt-0">
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="space-y-2">
               <Label>Select Tag</Label>
@@ -924,7 +958,7 @@ export default function StandardDescriptionForm({
                 value={tagSelect || undefined}
                 onValueChange={(value) => setTagSelect(value)}
               >
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Choose a tag" />
                 </SelectTrigger>
                 <SelectContent>
@@ -941,7 +975,7 @@ export default function StandardDescriptionForm({
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 rounded-xl"
+                className="h-10"
                 onClick={addTag}
               >
                 <Sparkles className="mr-2 h-4 w-4" />

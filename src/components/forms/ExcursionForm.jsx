@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Input from "../common/Input";
 import Button from "../common/Button";
 import { toast } from "sonner";
@@ -12,16 +12,17 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { Badge } from "../ui/badge";
+import { Checkbox } from "../ui/checkbox";
 
 const PRICING_TYPES = ["PER_PERSON", "SAFARI", "BOAT", "CUSTOM", "FREE"];
 
 function FormSection({ title, description, children, contentClassName = "space-y-4" }) {
   return (
-    <section className="rounded-lg border bg-muted/20 p-4">
-      <div className="mb-4">
+    <section className="rounded-lg border bg-muted/20 p-3.5">
+      <div className="mb-3">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {description ? (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
         ) : null}
       </div>
       <div className={contentClassName}>{children}</div>
@@ -29,18 +30,10 @@ function FormSection({ title, description, children, contentClassName = "space-y
   );
 }
 
-function toTagsText(tags) {
-  if (!tags) return "";
-  if (Array.isArray(tags)) return tags.join(", ");
-  if (typeof tags === "string") return tags;
-  return "";
-}
-
 export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hideActions = false, }) {
   // ===== Base =====
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
-  const [tagsText, setTagsText] = useState(toTagsText(initial?.tags));
   const [pricingType, setPricingType] = useState(
     initial?.pricing_type || initial?.pricingType || "PER_PERSON"
   );
@@ -53,6 +46,9 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hid
   const [optional_supplement_price, setOptionalSupplementPrice] = useState(
     initial?.optional_supplement_price || 0
   );
+  const [hasOptionalSupplement, setHasOptionalSupplement] = useState(
+    Number(initial?.optional_supplement_price || 0) > 0
+  );
   const [enableReminder, setEnableReminder] = useState(
     !!(initial?.enable_reminder ?? initial?.reminder?.enabled)
   );
@@ -60,14 +56,6 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hid
   // backend field present in examples (FREE/CUSTOM); safe to send for all
   const [allowZeroAtQuotation, setAllowZeroAtQuotation] = useState(
     !!initial?.allow_zero_at_quotation
-  );
-
-  // present in examples (boat/safari/custom/per_person)
-  const [infantAgeTo, setInfantAgeTo] = useState(
-    initial?.infant_age_to ?? 2
-  );
-  const [childAgeTo, setChildAgeTo] = useState(
-    initial?.child_age_to ?? 11
   );
 
   // ===== PER_PERSON (flat backend fields) =====
@@ -98,13 +86,13 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hid
 
   // docs example also sends adult/child/infant_price as 0 for safari.
   // Keep them controllable but default to 0.
-  const [safariAdultPrice, setSafariAdultPrice] = useState(
+  const [safariAdultPrice] = useState(
     initial?.adult_price ?? 0
   );
-  const [safariChildPrice, setSafariChildPrice] = useState(
+  const [safariChildPrice] = useState(
     initial?.child_price ?? 0
   );
-  const [safariInfantPrice, setSafariInfantPrice] = useState(
+  const [safariInfantPrice] = useState(
     initial?.infant_price ?? 0
   );
 
@@ -218,6 +206,10 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hid
           "Amount must be greater than 0 or enable Allow Zero at Quotation";
     }
 
+    if (hasOptionalSupplement && optional_supplement_price <= 0) {
+      e.optionalSupplement = "Enter an optional supplement amount";
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -244,9 +236,11 @@ export default function ExcursionForm({ initial, cities, onSubmit, onCancel, hid
       description,
       pricing_type: pricingType,
       currency: currency,
-      tags: tagsText,
+      tags: [],
       city_ids: cityIds.map(Number),
-      optional_supplement_price: optional_supplement_price,
+      optional_supplement_price: hasOptionalSupplement
+        ? Number(optional_supplement_price)
+        : 0,
       enable_reminder: !!enableReminder,
       allow_zero_at_quotation: !!allowZeroAtQuotation,
       infant_age_to: Number(pp.infant.to),
@@ -371,50 +365,25 @@ return (
   <form
     id="excursion-form"
     onSubmit={handleSubmit}
-    className="mx-auto max-w-5xl space-y-5"
+    className="mx-auto max-w-5xl space-y-4"
   >
 
     {/* ================= BASIC ================= */}
     <FormSection
-      title="Basic Information"
-      description="Main excursion details and metadata."
+      title="Excursion Details"
+      description="Core details and pricing configuration."
     >
-
-        <div className="space-y-2">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_minmax(120px,0.6fr)]">
+        <div className="space-y-1.5">
           <Label>Excursion Name</Label>
           <Input value={name} onChange={setName} />
           {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label>Description</Label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[100px]"
-          />
-          {errors.description && (
-            <p className="text-xs text-destructive">{errors.description}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label>Tags</Label>
-          <Input
-            placeholder="family, adventure, culture"
-            value={tagsText}
-            onChange={setTagsText}
-          />
-        </div>
-    </FormSection>
-
-    {/* ================= SETTINGS ================= */}
-    <FormSection title="Configuration" contentClassName="grid grid-cols-1 gap-4 md:grid-cols-2">
-
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Pricing Type</Label>
           <Select value={pricingType} onValueChange={setPricingType}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Select pricing type" />
             </SelectTrigger>
             <SelectContent>
@@ -427,10 +396,10 @@ return (
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Currency</Label>
           <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -439,46 +408,59 @@ return (
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Description</Label>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="min-h-[76px] resize-y"
+        />
+        {errors.description && (
+          <p className="text-xs text-destructive">{errors.description}</p>
+        )}
+      </div>
     </FormSection>
 
     {/* ================= PRICING ================= */}
     <FormSection
       title="Pricing"
-      description="Configure pricing rules based on the selected type."
+      description="Only fields relevant to the selected pricing type are shown."
     >
 
         {pricingType === "PER_PERSON" && (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
 
-            <div className="grid grid-cols-4 gap-3 text-xs text-muted-foreground font-medium">
+            <div className="grid grid-cols-4 gap-2 text-xs font-medium text-muted-foreground">
               <div>Category</div>
               <div>Age From</div>
               <div>Age To</div>
               <div>Price</div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 items-center">
+            <div className="grid grid-cols-4 items-center gap-2">
               <span>Infant</span>
               <Input value={pp.infant.from} disabled />
               <Input value={pp.infant.to} onChange={(v)=>updateInfantTo(v)} />
               <Input value={infantPrice} onChange={(v)=>setInfantPrice(v)} />
             </div>
 
-            <div className="grid grid-cols-4 gap-3 items-center">
+            <div className="grid grid-cols-4 items-center gap-2">
               <span>Child</span>
               <Input value={pp.child.from} disabled />
               <Input value={pp.child.to} onChange={(v)=>updateChildTo(v)} />
               <Input value={childPrice} onChange={(v)=>setChildPrice(v)} />
             </div>
 
-            <div className="grid grid-cols-4 gap-3 items-center">
+            <div className="grid grid-cols-4 items-center gap-2">
               <span>Adult</span>
               <Input value={pp.adult.from} disabled />
               <div className="text-muted-foreground">∞</div>
               <Input value={adultPrice} onChange={(v)=>setAdultPrice(v)} />
             </div>
 
-            <div className="grid grid-cols-4 gap-3 items-center">
+            <div className="grid grid-cols-4 items-center gap-2">
               <span>Guide Fee</span>
               <div />
               <div />
@@ -489,21 +471,21 @@ return (
         )}
 
         {pricingType === "SAFARI" && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid gap-3 md:grid-cols-3">
             <Input label="Entrance / Pax" value={entrancePerPax} onChange={(v)=>setEntrancePerPax(toNumberSafe(v))} />
             <Input label="Jeep Rent" value={jeepRentPrice} onChange={(v)=>setJeepRentPrice(+v)} />
             <Input label="Jeep Entrance" value={jeepEntranceFee} onChange={(v)=>setJeepEntranceFee(+v)} />
             <Input label="Capacity" value={jeepCapacity} onChange={(v)=>setJeepCapacity(+v)} />
 
-            <label className="flex items-center gap-2 text-sm mt-6">
-              <input type="checkbox" checked={isFullDay} onChange={(e)=>setIsFullDay(e.target.checked)} />
+            <label className="mt-6 flex items-center gap-2 text-sm">
+              <Checkbox checked={isFullDay} onCheckedChange={(checked) => setIsFullDay(checked === true)} />
               Full Day
             </label>
           </div>
         )}
 
         {pricingType === "BOAT" && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid gap-3 md:grid-cols-3">
             <Input label="Boat Price" value={boatPrice} onChange={(v)=>setBoatPrice(+v)} />
             <Input label="Capacity" value={boatCapacity} onChange={(v)=>setBoatCapacity(+v)} />
             <Input label="Guide Fee" value={guideFee} onChange={(v)=>setGuideFee(+v)} />
@@ -526,11 +508,14 @@ return (
     </FormSection>
 
     {/* ================= CITIES ================= */}
-    <FormSection title="Cities">
+    <FormSection
+      title="Available Cities"
+      description="Select the destinations where this excursion can be offered."
+    >
 
         <div className="flex gap-2">
           <Select value={citySelect} onValueChange={setCitySelect}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Select city" />
             </SelectTrigger>
             <SelectContent>
@@ -568,29 +553,74 @@ return (
         </div>
     </FormSection>
 
-    {/* ================= SETTINGS ================= */}
-    <FormSection title="Additional Settings">
-
-        <Input
-          label="Optional Supplement"
-          type="number"
-          value={optional_supplement_price}
-          onChange={(v)=>setOptionalSupplementPrice(+v)}
-        />
-
-        <div className="flex gap-6 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={enableReminder} onChange={(e)=>setEnableReminder(e.target.checked)} />
-            Enable Reminder
+    {/* ================= OPTIONS ================= */}
+    <FormSection
+      title="Quotation Options"
+      description="Optional commercial and operational behavior."
+      contentClassName="grid gap-3 md:grid-cols-3"
+    >
+        <div className="rounded-lg border bg-background p-3">
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <Checkbox
+              checked={hasOptionalSupplement}
+              onCheckedChange={(checked) => setHasOptionalSupplement(checked === true)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium">Optional supplement</span>
+              <span className="block text-xs text-muted-foreground">
+                Add an optional extra amount.
+              </span>
+            </span>
           </label>
 
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={allowZeroAtQuotation} onChange={(e)=>setAllowZeroAtQuotation(e.target.checked)} />
-            Allow Zero
+          {hasOptionalSupplement && (
+            <div className="mt-3">
+              <Input
+                label={`Amount (${currency})`}
+                type="number"
+                min="0"
+                value={optional_supplement_price}
+                onChange={(value) => setOptionalSupplementPrice(+value)}
+                error={errors.optionalSupplement}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border bg-background p-3">
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <Checkbox
+              checked={enableReminder}
+              onCheckedChange={(checked) => setEnableReminder(checked === true)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium">Reminder</span>
+              <span className="block text-xs text-muted-foreground">
+                Flag this excursion for follow-up.
+              </span>
+            </span>
           </label>
         </div>
 
-        <div className="text-xs text-muted-foreground">
+        <div className="rounded-lg border bg-background p-3">
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <Checkbox
+              checked={allowZeroAtQuotation}
+              onCheckedChange={(checked) => setAllowZeroAtQuotation(checked === true)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium">Allow zero amount</span>
+              <span className="block text-xs text-muted-foreground">
+                Permit a zero price during quotation.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="text-xs text-muted-foreground md:col-span-3">
           {renderPreview()}
         </div>
     </FormSection>
