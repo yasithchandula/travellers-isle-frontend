@@ -19,7 +19,7 @@ import QuotationManagerPage from "../pages/quotations/quotation-manager/Quotatio
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/">
       <Routes>
         {/* PUBLIC */}
         <Route path="/login" element={<Login />} />
