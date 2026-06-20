@@ -636,6 +636,7 @@ export default function ScheduleTableStep({
                         loading={excursionMatch.loading}
                         error={excursionMatch.error}
                         stopCount={stopsCount}
+                        cities={cities}
                         setSelected={(updater) =>
                           updateExcursions(index, day, updater)
                         }

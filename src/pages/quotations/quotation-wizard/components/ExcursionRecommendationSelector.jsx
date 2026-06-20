@@ -9,6 +9,7 @@ export default function ExcursionRecommendationSelector({
   loading = false,
   error = null,
   stopCount = 0,
+  cities = [],
   setSelected,
   onSearch,
 }) {
@@ -48,8 +49,10 @@ export default function ExcursionRecommendationSelector({
 
       <ExcursionSelector
         compact
+        showSelectedDetails
         items={mergedItems}
         selected={selected}
+        cities={cities}
         setSelected={setSelected}
         onSearch={onSearch}
         recommendedIds={recommended.map((item) => item.id)}
