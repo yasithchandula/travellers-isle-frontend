@@ -9,6 +9,7 @@ export default function ExcursionRecommendationSelector({
   loading = false,
   error = null,
   stopCount = 0,
+  cities = [],
   setSelected,
   onSearch,
 }) {
@@ -33,7 +34,7 @@ export default function ExcursionRecommendationSelector({
               : recommended.length
                 ? `${recommended.length} excursion${
                     recommended.length === 1 ? "" : "s"
-                  } auto-selected`
+                  } recommended`
                 : stopCount
                   ? "No excursions found for selected stops"
                   : "Add stops for excursion recommendations"}
@@ -48,8 +49,10 @@ export default function ExcursionRecommendationSelector({
 
       <ExcursionSelector
         compact
+        showSelectedDetails
         items={mergedItems}
         selected={selected}
+        cities={cities}
         setSelected={setSelected}
         onSearch={onSearch}
         recommendedIds={recommended.map((item) => item.id)}

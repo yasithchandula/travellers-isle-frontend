@@ -14,6 +14,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 
 import {
@@ -147,6 +152,125 @@ function ImageThumb({ item }) {
   );
 }
 
+function getExcursionCityNames(item, cities) {
+  const directNames = [
+    item?.city_name,
+    item?.city?.name,
+    item?.city?.city,
+    ...(Array.isArray(item?.cities)
+      ? item.cities.map((city) => city?.name || city?.city)
+      : []),
+    ...(Array.isArray(item?.destinations)
+      ? item.destinations.map(
+          (destination) => destination?.name || destination?.city
+        )
+      : []),
+  ].filter(Boolean);
+
+  if (directNames.length) {
+    return [...new Set(directNames)];
+  }
+
+  const cityIds = [
+    ...(Array.isArray(item?.city_ids) ? item.city_ids : []),
+    ...(item?.city_id ? [item.city_id] : []),
+  ];
+
+  return cityIds
+    .map((cityId) =>
+      cities.find((city) => String(city.id) === String(cityId))
+    )
+    .filter(Boolean)
+    .map((city) => city.name || city.city)
+    .filter(Boolean);
+}
+
+function SelectedExcursionRow({
+  item,
+  cities,
+  onOptionalChange,
+  onRemove,
+  compact = false,
+}) {
+  const itemId = item?.id;
+  const itemName = item?.name || item?.title || "Untitled excursion";
+  const cityNames = getExcursionCityNames(item, cities);
+  const cityLabel = cityNames.length ? cityNames.join(", ") : "City not specified";
+  const optionalId = useId();
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-xl border bg-background p-2 shadow-sm",
+        compact && "py-1.5"
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <HoverCard openDelay={250} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <button
+              type="button"
+              className="block max-w-full rounded-sm text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label={`View details for ${itemName}`}
+            >
+              <span className="block truncate text-sm font-medium">
+                {itemName}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                {cityLabel}
+              </span>
+            </button>
+          </HoverCardTrigger>
+          <HoverCardContent align="start" className="w-80 space-y-3">
+            <div>
+              <p className="text-sm font-semibold">{itemName}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {cityLabel}
+              </p>
+            </div>
+            <p className="text-sm leading-5 text-muted-foreground">
+              {item?.description || "No description available."}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-muted px-2 py-1 text-[11px]">
+                {pricingLabel(item?.pricing_type)}
+              </span>
+              <span className="rounded-full bg-muted px-2 py-1 text-[11px]">
+                {item?.is_full_day ? "Full day" : "Half day"}
+              </span>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+        <label
+          htmlFor={optionalId}
+          className="mt-1 inline-flex min-h-7 cursor-pointer items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Checkbox
+            id={optionalId}
+            checked={!!item?.is_optional}
+            onCheckedChange={(checked) =>
+              onOptionalChange(itemId, checked)
+            }
+            aria-label={`Mark ${itemName} as optional`}
+          />
+          Optional
+        </label>
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive"
+        onClick={() => onRemove(itemId)}
+        aria-label={`Remove ${itemName}`}
+      >
+        <XIcon className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function ExcursionSelector({
   items = [],
   selected = [],
@@ -154,6 +278,8 @@ export default function ExcursionSelector({
   onSearch,
   compact = false,
   recommendedIds = [],
+  showSelectedDetails = false,
+  cities = [],
 }) {
   const id = useId();
 
@@ -390,10 +516,48 @@ export default function ExcursionSelector({
                   </p>
                 </div>
 
-                <div className="rounded-lg border bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
-                  {selected.length} selected
-                </div>
+                {showSelectedDetails ? (
+                  <div className="flex items-center gap-1">
+                    <div className="rounded-lg border bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
+                      {selected.length} selected
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11"
+                      onClick={() => setOpen(false)}
+                      aria-label="Close excursion search"
+                    >
+                      <XIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
+                    {selected.length} selected
+                  </div>
+                )}
               </div>
+
+              {showSelectedDetails && selected.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Selected excursions
+                  </p>
+                  <div className="max-h-32 space-y-2 overflow-y-auto pr-1">
+                    {selected.map((item) => (
+                      <SelectedExcursionRow
+                        key={item.id}
+                        item={item}
+                        cities={cities}
+                        compact
+                        onOptionalChange={toggleOptional}
+                        onRemove={removeSelection}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 shadow-sm">
                 <SearchIcon className="h-4 w-4 text-muted-foreground" />
@@ -568,6 +732,20 @@ export default function ExcursionSelector({
           </div>
         </PopoverContent>
       </Popover>
+
+      {showSelectedDetails && selected.length > 0 && (
+        <div className="space-y-2" aria-label="Selected excursions">
+          {selected.map((item) => (
+            <SelectedExcursionRow
+              key={item.id}
+              item={item}
+              cities={cities}
+              onOptionalChange={toggleOptional}
+              onRemove={removeSelection}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
