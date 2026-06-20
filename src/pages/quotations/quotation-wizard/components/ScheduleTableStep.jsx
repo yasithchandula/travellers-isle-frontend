@@ -25,6 +25,16 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -74,6 +84,7 @@ export default function ScheduleTableStep({
   const [descriptionMatches, setDescriptionMatches] = useState({});
   const [excursionMatches, setExcursionMatches] = useState({});
   const [previewContext, setPreviewContext] = useState(null);
+  const [pendingRouteChange, setPendingRouteChange] = useState(null);
   const latestRouteSignatures = useRef(new Map());
   const latestDescriptionSignatures = useRef(new Map());
   const latestExcursionSignatures = useRef(new Map());
@@ -249,12 +260,6 @@ export default function ScheduleTableStep({
               },
             }));
 
-            applyExactDescriptionMatch(
-              index,
-              daysRef.current[index],
-              result.exact_match || null,
-              updateDayRef.current
-            );
           } catch (error) {
             if (
               latestDescriptionSignatures.current.get(index) !== signature
@@ -323,12 +328,6 @@ export default function ScheduleTableStep({
               },
             }));
 
-            applyAutoExcursionMatches(
-              index,
-              daysRef.current[index],
-              recommended,
-              updateDayRef.current
-            );
           } catch (error) {
             if (latestExcursionSignatures.current.get(index) !== signature) {
               return;
@@ -363,7 +362,10 @@ export default function ScheduleTableStep({
   function updateExcursions(index, day, updater) {
     const current = day.excursions || [];
     const next = typeof updater === "function" ? updater(current) : updater;
-    onUpdateDay(index, { excursions: next });
+    onUpdateDay(index, {
+      excursions: next,
+      auto_excursion_ids: [],
+    });
   }
 
   function editDescription(description, index) {
@@ -378,6 +380,51 @@ export default function ScheduleTableStep({
       standard_description_id: selected?.id || null,
       auto_standard_description_id: null,
     });
+  }
+
+  function requestRouteChange(index, patch) {
+    const day = days[index];
+    if (!day) return;
+
+    const field = Object.keys(patch)[0];
+    if (String(day[field] || "") === String(patch[field] || "")) return;
+
+    const affectedIndexes = [index];
+    if (field === "destination_city_id" && days[index + 1]) {
+      affectedIndexes.push(index + 1);
+    }
+
+    const daysWithSelections = affectedIndexes.filter((dayIndex) =>
+      hasItinerarySelections(days[dayIndex])
+    );
+
+    if (!daysWithSelections.length) {
+      onUpdateDay(index, patch);
+      return;
+    }
+
+    setPendingRouteChange({
+      index,
+      patch,
+      daysWithSelections,
+    });
+  }
+
+  function confirmRouteChange() {
+    if (!pendingRouteChange) return;
+
+    pendingRouteChange.daysWithSelections.forEach((dayIndex) => {
+      onUpdateDay(dayIndex, {
+        excursions: [],
+        auto_excursion_ids: [],
+        standard_description: null,
+        standard_description_id: null,
+        auto_standard_description_id: null,
+      });
+    });
+
+    onUpdateDay(pendingRouteChange.index, pendingRouteChange.patch);
+    setPendingRouteChange(null);
   }
 
   return (
@@ -518,7 +565,9 @@ export default function ScheduleTableStep({
                           value={day.starting_city_id || ""}
                           placeholder="Start city"
                           onChange={(value) =>
-                            onUpdateDay(index, { starting_city_id: value })
+                            requestRouteChange(index, {
+                              starting_city_id: value,
+                            })
                           }
                         />
                       ) : (
@@ -542,7 +591,7 @@ export default function ScheduleTableStep({
                         value={day.destination_city_id || ""}
                         placeholder="Destination"
                         onChange={(value) =>
-                          onUpdateDay(index, {
+                          requestRouteChange(index, {
                             destination_city_id: value,
                           })
                         }
@@ -719,6 +768,31 @@ export default function ScheduleTableStep({
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={Boolean(pendingRouteChange)}
+        onOpenChange={(open) => {
+          if (!open) setPendingRouteChange(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change this route?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {getRouteChangeConfirmationMessage(
+                pendingRouteChange,
+                days
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current route</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRouteChange}>
+              Change route and clear selections
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -825,28 +899,6 @@ function getDescriptionSearchSignature(day) {
   }|${excursions}`;
 }
 
-function applyExactDescriptionMatch(index, day, exactMatch, updateDay) {
-  if (!day) return;
-
-  const previousAutoId = day.auto_standard_description_id
-    ? String(day.auto_standard_description_id)
-    : null;
-  const currentIsPreviousAuto =
-    previousAutoId &&
-    String(day.standard_description?.id) === previousAutoId;
-  const selectedDescription = exactMatch
-    ? exactMatch
-    : currentIsPreviousAuto
-      ? null
-      : day.standard_description || null;
-
-  updateDay(index, {
-    standard_description: selectedDescription,
-    standard_description_id: selectedDescription?.id || null,
-    auto_standard_description_id: exactMatch?.id || null,
-  });
-}
-
 function getExcursionSearchSignature(day) {
   return (day?.stop_ids || []).map(String).sort().join(",");
 }
@@ -863,29 +915,31 @@ function mergeItemsById(items) {
   return Array.from(result.values());
 }
 
-function applyAutoExcursionMatches(index, day, recommended, updateDay) {
-  if (!day) return;
-
-  const previousAutoIds = new Set(
-    (day.auto_excursion_ids || []).map(String)
-  );
-  const manualSelections = (day.excursions || []).filter(
-    (excursion) => !previousAutoIds.has(String(getExcursionId(excursion)))
-  );
-  const autoSelections = recommended.map((excursion) => ({
-    ...excursion,
-    is_optional: false,
-  }));
-  const excursions = mergeItemsById([...autoSelections, ...manualSelections]);
-
-  updateDay(index, {
-    excursions,
-    auto_excursion_ids: recommended.map((excursion) => excursion.id),
-  });
-}
-
 function getExcursionId(excursion) {
   return excursion?.id ?? excursion?.excursion_id ?? null;
+}
+
+function hasItinerarySelections(day) {
+  return Boolean(
+    day?.excursions?.length ||
+      day?.standard_description ||
+      day?.standard_description_id
+  );
+}
+
+function getRouteChangeConfirmationMessage(pendingRouteChange, days) {
+  const selectedDays = pendingRouteChange?.daysWithSelections || [];
+  const dayLabels = selectedDays.map(
+    (index) => `Day ${days[index]?.day_number || index + 1}`
+  );
+
+  if (!dayLabels.length) {
+    return "Changing the route may affect the current itinerary.";
+  }
+
+  return `Changing this route will clear the currently selected excursions and standard description for ${dayLabels.join(
+    " and "
+  )}. This does not automatically select new recommendations.`;
 }
 
 function CityCombobox({

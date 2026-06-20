@@ -34,7 +34,7 @@ export default function ExcursionRecommendationSelector({
               : recommended.length
                 ? `${recommended.length} excursion${
                     recommended.length === 1 ? "" : "s"
-                  } auto-selected`
+                  } recommended`
                 : stopCount
                   ? "No excursions found for selected stops"
                   : "Add stops for excursion recommendations"}
