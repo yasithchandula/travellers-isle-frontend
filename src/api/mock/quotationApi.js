@@ -41,7 +41,11 @@ export async function updateQuotationDayApi(payload) {
     end_city_id,
     staying_city_id,
     stop_ids,
+    excursions,
     standard_description_id,
+    actual_mileage,
+    buffer_mileage,
+    travel_time_minutes,
     note,
   } = payload;
 
@@ -51,7 +55,11 @@ export async function updateQuotationDayApi(payload) {
     end_city_id,
     staying_city_id,
     stop_ids,
+    excursions,
     standard_description_id,
+    actual_mileage,
+    buffer_mileage,
+    travel_time_minutes,
     note,
   });
 

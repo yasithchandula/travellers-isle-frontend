@@ -419,8 +419,8 @@ export default function StandardDescriptionForm({
         excursion_id: e.id,
         is_optional: e.is_optional,
       })),
-      mileage: 0,
-      travel_time_minutes: 0,
+      mileage: Number(form.mileage) || 0,
+      travel_time_minutes: Number(form.travel_time_minutes) || 0,
     };
 
     onSubmit(payload);

@@ -43,10 +43,15 @@ export function mapQuotationShellToDays(quotationShell) {
         standardDescription?.id || apiDay.standard_description_id || null,
       auto_standard_description_id: null,
       auto_excursion_ids: [],
-      actual_mileage:
-        apiDay.actual_mileage ?? standardDescription?.mileage ?? "",
+      actual_mileage: resolveTravelMetric(
+        apiDay.actual_mileage,
+        standardDescription?.mileage
+      ),
       buffer_mileage: apiDay.buffer_mileage ?? "",
-      travel_time_minutes: apiDay.travel_time_minutes ?? "",
+      travel_time_minutes:
+        apiDay.travel_time_minutes ??
+        standardDescription?.travel_time_minutes ??
+        "",
       note: apiDay.note || "",
     };
   });
@@ -62,6 +67,15 @@ export function mapQuotationShellToDays(quotationShell) {
   });
 }
 
+function resolveTravelMetric(dayValue, descriptionValue) {
+  if (Number(dayValue) > 0) return dayValue;
+  if (descriptionValue !== null && descriptionValue !== undefined) {
+    return descriptionValue;
+  }
+
+  return dayValue ?? "";
+}
+
 export function buildDayUpdatePayload(dayData) {
   return {
     id: dayData.id,
@@ -75,8 +89,32 @@ export function buildDayUpdatePayload(dayData) {
       ? Number(dayData.destination_city_id)
       : null,
     stop_ids: (dayData.stop_ids || []).map((id) => Number(id)),
+    excursions: (dayData.excursions || [])
+      .map((excursion) => ({
+        excursion_id: Number(excursion.excursion_id ?? excursion.id),
+        is_optional: excursion.is_optional === true,
+      }))
+      .filter((excursion) => Boolean(excursion.excursion_id)),
     standard_description_id:
       dayData.standard_description?.id || dayData.standard_description_id || null,
+    actual_mileage:
+      dayData.actual_mileage === "" ||
+      dayData.actual_mileage === null ||
+      dayData.actual_mileage === undefined
+        ? null
+        : Number(dayData.actual_mileage),
+    buffer_mileage:
+      dayData.buffer_mileage === "" ||
+      dayData.buffer_mileage === null ||
+      dayData.buffer_mileage === undefined
+        ? null
+        : Number(dayData.buffer_mileage),
+    travel_time_minutes:
+      dayData.travel_time_minutes === "" ||
+      dayData.travel_time_minutes === null ||
+      dayData.travel_time_minutes === undefined
+        ? null
+        : Number(dayData.travel_time_minutes),
     note: dayData.note || "",
   };
 }

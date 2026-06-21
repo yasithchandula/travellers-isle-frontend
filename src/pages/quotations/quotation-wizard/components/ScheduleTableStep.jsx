@@ -14,13 +14,9 @@ import {
   Sparkles,
   StickyNote,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { fetchExcursionsByCity } from "@/app/slices/excursionSlice";
-import {
-  fetchDistance,
-  searchStandardDescriptions,
-} from "@/app/slices/standardDescriptionSlice";
+import { searchStandardDescriptions } from "@/app/slices/standardDescriptionSlice";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,7 +56,6 @@ import StandardDescriptionMatchSelector from "./StandardDescriptionMatchSelector
 import ExcursionRecommendationSelector from "./ExcursionRecommendationSelector";
 import StopsMultiSelect from "./StopsMultiSelect";
 
-const AUTO_DISTANCE_DELAY = 450;
 const DESCRIPTION_MATCH_DELAY = 500;
 
 export default function ScheduleTableStep({
@@ -80,19 +75,15 @@ export default function ScheduleTableStep({
   onExcursionSearch,
 }) {
   const [savingDayIndex, setSavingDayIndex] = useState(null);
-  const [calculatingDays, setCalculatingDays] = useState(() => new Set());
   const [descriptionMatches, setDescriptionMatches] = useState({});
   const [excursionMatches, setExcursionMatches] = useState({});
   const [previewContext, setPreviewContext] = useState(null);
   const [pendingRouteChange, setPendingRouteChange] = useState(null);
-  const latestRouteSignatures = useRef(new Map());
   const latestDescriptionSignatures = useRef(new Map());
   const latestExcursionSignatures = useRef(new Map());
   const daysRef = useRef(days);
-  const updateDayRef = useRef(onUpdateDay);
 
   daysRef.current = days;
-  updateDayRef.current = onUpdateDay;
 
   const cityNameById = useMemo(
     () =>
@@ -111,113 +102,12 @@ export default function ScheduleTableStep({
     [days]
   );
 
-  const routeSignatureKey = days
-    .map((day) =>
-      [
-        day.starting_city_id || "",
-        ...(day.stop_ids || []),
-        day.destination_city_id || "",
-      ]
-        .map(String)
-        .join(">")
-    )
-    .join("|");
-
   const descriptionSignatureKey = days
     .map((day) => getDescriptionSearchSignature(day))
     .join("|");
   const excursionSignatureKey = days
     .map((day) => getExcursionSearchSignature(day))
     .join("|");
-
-  useEffect(() => {
-    const timers = [];
-
-    daysRef.current.forEach((day, index) => {
-      const originCity = cityNameById[String(day.starting_city_id)] || "";
-      const destinationCity =
-        cityNameById[String(day.destination_city_id)] || "";
-
-      if (!originCity || !destinationCity) {
-        latestRouteSignatures.current.delete(index);
-        setCalculatingDays((current) => {
-          if (!current.has(index)) return current;
-          const next = new Set(current);
-          next.delete(index);
-          return next;
-        });
-        return;
-      }
-
-      const routeSignature = [
-        day.starting_city_id,
-        ...(day.stop_ids || []),
-        day.destination_city_id,
-      ]
-        .map(String)
-        .join(">");
-
-      if (latestRouteSignatures.current.get(index) === routeSignature) return;
-
-      latestRouteSignatures.current.set(index, routeSignature);
-
-      timers.push(
-        setTimeout(async () => {
-          setCalculatingDays((current) => {
-            const next = new Set(current);
-            next.add(index);
-            return next;
-          });
-
-          try {
-            const stops = (day.stop_ids || [])
-              .map((id) => cityNameById[String(id)])
-              .filter(Boolean)
-              .map((name) => `${name}, Sri Lanka`);
-
-            const result = await dispatch(
-              fetchDistance({
-                origin: `${originCity}, Sri Lanka`,
-                destination: `${destinationCity}, Sri Lanka`,
-                stops,
-                travel_mode: "driving",
-              })
-            ).unwrap();
-
-            if (
-              latestRouteSignatures.current.get(index) !== routeSignature
-            ) {
-              return;
-            }
-
-            updateDayRef.current(index, {
-              actual_mileage: Math.round(result.Distance / 1000),
-              travel_time_minutes: Math.round(result.Duration / 1e9 / 60),
-            });
-          } catch (error) {
-            console.error(error);
-            toast.error(
-              `Could not calculate travel details for day ${
-                day.day_number || index + 1
-              }`
-            );
-          } finally {
-            if (
-              latestRouteSignatures.current.get(index) === routeSignature
-            ) {
-              setCalculatingDays((current) => {
-                const next = new Set(current);
-                next.delete(index);
-                return next;
-              });
-            }
-          }
-        }, AUTO_DISTANCE_DELAY)
-      );
-    });
-
-    return () => timers.forEach(clearTimeout);
-  }, [cityNameById, dispatch, routeSignatureKey]);
 
   useEffect(() => {
     const timers = [];
@@ -379,6 +269,8 @@ export default function ScheduleTableStep({
       standard_description: selected || null,
       standard_description_id: selected?.id || null,
       auto_standard_description_id: null,
+      actual_mileage: selected?.mileage ?? "",
+      travel_time_minutes: selected?.travel_time_minutes ?? "",
     });
   }
 
@@ -420,6 +312,8 @@ export default function ScheduleTableStep({
         standard_description: null,
         standard_description_id: null,
         auto_standard_description_id: null,
+        actual_mileage: "",
+        travel_time_minutes: "",
       });
     });
 
@@ -454,7 +348,6 @@ export default function ScheduleTableStep({
       <div className="space-y-5">
           {days.map((day, index) => {
             const isSavingThisDay = isSavingDay && savingDayIndex === index;
-            const isCalculating = calculatingDays.has(index);
             const origin = getCityName(day.starting_city_id);
             const destination = getCityName(day.destination_city_id);
             const isRouteReady = Boolean(origin && destination);
@@ -601,19 +494,13 @@ export default function ScheduleTableStep({
 
                   <CompactField
                     icon={Route}
-                    label="Automatic Travel"
-                    status={isCalculating ? "Calculating" : null}
+                    label="Description Travel"
+                    status={selectedDescription ? "From description" : null}
                   >
-                    <div
-                      className={cn(
-                        "grid grid-cols-[1fr_1fr_76px] items-center gap-2 rounded-lg border bg-background p-2",
-                        isCalculating && "border-primary/30 bg-primary/5"
-                      )}
-                    >
+                    <div className="grid grid-cols-[1fr_1fr_76px] items-center gap-2 rounded-lg border bg-background p-2">
                       <TravelMetric
-                        icon={isCalculating ? Loader2 : Route}
-                        iconClassName={isCalculating ? "animate-spin" : ""}
-                        label={isCalculating ? "Calculating" : "Distance"}
+                        icon={Route}
+                        label="Distance"
                         value={
                           day.actual_mileage !== "" &&
                           day.actual_mileage !== null &&

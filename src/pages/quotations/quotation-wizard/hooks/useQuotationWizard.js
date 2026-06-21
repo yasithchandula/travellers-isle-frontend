@@ -221,6 +221,8 @@ export default function useQuotationWizard({
       updateDay(dayIndex, {
         standard_description: newDescription,
         standard_description_id: newDescription.id,
+        actual_mileage: newDescription.mileage ?? "",
+        travel_time_minutes: newDescription.travel_time_minutes ?? "",
         auto_standard_description_id:
           day.auto_standard_description_id === editingDescription?.id
             ? null
