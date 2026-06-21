@@ -120,6 +120,26 @@ export default function QuotationWizardModernPage() {
                   quotationShell={quotationShell}
                   cities={cities}
                   days={days}
+                  onEditDay={(index) => {
+                    setDayIndex(index);
+                    setStep(0);
+
+                    window.requestAnimationFrame(() => {
+                      window.requestAnimationFrame(() => {
+                        const dayCard = document.getElementById(
+                          `schedule-day-${index}`
+                        );
+                        const reduceMotion = window.matchMedia(
+                          "(prefers-reduced-motion: reduce)"
+                        ).matches;
+
+                        dayCard?.scrollIntoView({
+                          behavior: reduceMotion ? "auto" : "smooth",
+                          block: "start",
+                        });
+                      });
+                    });
+                  }}
                 />
               )}
 

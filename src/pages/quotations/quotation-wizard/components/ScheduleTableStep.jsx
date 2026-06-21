@@ -361,8 +361,9 @@ export default function ScheduleTableStep({
             return (
               <article
                 key={day.id || day.date}
+                id={`schedule-day-${index}`}
                 className={cn(
-                  "group relative overflow-hidden rounded-xl border-2 bg-card shadow-sm transition-all hover:border-primary/25 hover:shadow-md",
+                  "group relative scroll-mt-4 overflow-hidden rounded-xl border-2 bg-card shadow-sm transition-[border-color,box-shadow] duration-150 hover:border-primary/25 hover:shadow-md",
                   isRouteReady ? "border-border" : "border-dashed"
                 )}
               >
