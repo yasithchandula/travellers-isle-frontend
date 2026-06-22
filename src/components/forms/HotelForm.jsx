@@ -55,10 +55,6 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     // if (!contactName.trim()) e.contactName = "Contact name is required";
     // if (!contactPhone.trim()) e.contactPhone = "Contact phone is required";
 
-    if (!roomCategories.length) {
-      e.roomCategories = "At least one room category is required";
-    }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -82,9 +78,6 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
     setRoomPrice("");
     setRoomCount("");
 
-    if (errors.roomCategories) {
-      setErrors((p) => ({ ...p, roomCategories: null }));
-    }
   }
 
   /* ======================
@@ -250,7 +243,7 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
       </div>
 
       <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-        <h3 className="text-sm font-semibold">Room Categories</h3>
+        <h3 className="text-sm font-semibold">Room Categories (Optional)</h3>
 
         <table className="w-full">
           {roomCategories.map((r, i) => (
@@ -269,12 +262,6 @@ export default function HotelForm({ cities, initial, onSubmit, onCancel }) {
             <span><CircleXIcon onClick={() => removeRoom(i)} className="w-4 h-4 mt-1 hover:text-red-400 text-gray-500 cursor-pointer" /></span>
           </div>
         ))} */}
-
-        {errors.roomCategories && (
-          <p className="text-xs text-destructive">
-            {errors.roomCategories}
-          </p>
-        )}
 
         <div className="grid grid-cols-12 gap-2 pt-2">
           <input
